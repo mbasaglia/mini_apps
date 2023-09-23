@@ -8,6 +8,7 @@ export class SocketConnection extends EventTarget
         super();
 
         this.connected = false;
+        this.reconnect = true;
         this.url = null;
         this.socket = null;
     }
@@ -17,6 +18,9 @@ export class SocketConnection extends EventTarget
      */
     connect(url)
     {
+        if ( !this.reconnect )
+            return;
+
         console.log(`Connecting to ${url}`);
         this.connected = true;
         this.url = url;

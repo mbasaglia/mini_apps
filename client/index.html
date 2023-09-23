@@ -12,71 +12,11 @@
     </div>
 
     <script type="module">
-        import { MiniEventApp } from "./src/minievent.js";
-        window.mini_event_app = new MiniEventApp(window.Telegram);
-    </script>
-    <script>
-
-        const data = {
-            events: [
-                {
-                    "title": "GlaxCon Board Game Room",
-                    "description": "Play boardgames with Glax",
-                    "image": "media/games.jpg",
-                    "start": "12:00",
-                    "duration": 5
-                },
-                {
-                    "title": "GlaxCon Board Game Room",
-                    "description": "Play boardgames with Glax",
-                    "image": "media/games.jpg",
-                    "start": "12:00",
-                    "duration": 5
-                }
-            ]
-        };
-
-        const parent = document.getElementById("event-list");
-
-        for ( let ev of data.events )
-        {
-            let div = parent.appendChild(document.createElement("article"));
-            div.classList.add("event");
-            div.appendChild(document.createElement("header")).appendChild(
-                document.createTextNode(ev.title)
-            );
-
-            let content = div.appendChild(document.createElement("section"));
-
-
-            let img = content.appendChild(document.createElement("img"));
-            img.setAttribute("src", ev.image);
-            img.setAttribute("alt", ev.title);
-
-            content.appendChild(document.createElement("p")).appendChild(
-                document.createTextNode(ev.description)
-            );
-
-            let info = content.appendChild(document.createElement("table"));
-            let row = info.appendChild(document.createElement("tr"));
-            row.appendChild(document.createElement("th")).appendChild(
-                document.createTextNode("Starts at")
-            );
-            row.appendChild(document.createElement("td")).appendChild(
-                document.createTextNode(ev.start)
-            );
-            row = info.appendChild(document.createElement("tr"));
-            row.appendChild(document.createElement("th")).appendChild(
-                document.createTextNode("Duration")
-            );
-            row.appendChild(document.createElement("td")).appendChild(
-                document.createTextNode(ev.duration + " hours")
-            );
-
-            let button_row = div.appendChild(document.createElement("p"));
-            let button_attend = button_row.appendChild(document.createElement("button"));
-            button_attend.appendChild(document.createTextNode("Attend"));
-        }
+        import { MiniEventApp } from "./src/mini_event.js";
+        window.mini_event_app = new MiniEventApp(
+            window.Telegram,
+            document.getElementById("event-list")
+        );
     </script>
 </body>
 </html>

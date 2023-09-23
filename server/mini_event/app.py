@@ -85,6 +85,7 @@ class App:
 
         # Disconnect if there is no correct login
         if not client.user:
+            await client.send(type="disconnect")
             await self.disconnect(client)
             return
 

@@ -28,7 +28,7 @@ class MiniEventApp(App):
         """
         Load all the events from the database
         """
-        for event in Event.select().where(cls.telegram_id == telegram_id):
+        for event in Event.select():
             self.events[event.id] = event
 
     async def on_client_connected(self, client: Client):
@@ -44,10 +44,11 @@ class MiniEventApp(App):
         """
         data = self.decode_telegram_data(message["data"])
         if data is None:
-            return
+            # TODO remove this, it's just for testing locally
+            return User()
 
-        with self.atomic():
-            user = User.get_user(data)
+        with self.database.atomic():
+            user = User.get_user(data["user"])
 
         return user
 

@@ -168,3 +168,27 @@ To change the server-side code, you only need to edit a couple files:
 [Peewee](https://docs.peewee-orm.com/en/latest/peewee/models.html).
 
 `server/mini_event/mini_event.py` Handles all the logic and events.
+
+
+Web Socket Messages
+-------------------
+
+This section will describe the messages sent through web sockets.
+All the messages are JSON-encoded, and have a `type` attribute that determintes
+the kind of message.
+
+Connection-related messages:
+
+* `connect`: Sent by the server on connection, notifies the client the server can accept messages
+* `login`: Sent by the client, including the telegam mini app authentication data
+* `disconnect`: Sent by the server if the `login` failed
+* `welcome`: Sent by the server if the `login` succeeded, this includes the telegram id and name
+* `error`: Sent by the server to notify the client of some kind of error. It includes the error message.
+
+Messages specific to the Mini Event data:
+
+* `event`: Sent by the server when there is a new event available
+(or an existing event has been modified). It's also sent after welcome to give all the existing events.
+This includes all the event-specific data.
+* `attend`: Sent by the client to register attendance to an event, it includes the event ID.
+* `leave`: Sent by the client to cancel attendance to an event, it includes the event ID.

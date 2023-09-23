@@ -5,7 +5,7 @@ class Event(BaseModel):
     title = peewee.CharField()
     description = peewee.CharField()
     image = peewee.CharField()
-    duration = peewee.IntegerField()
+    duration = peewee.FloatField()
     start = peewee.CharField()
 
     def to_json(self):
