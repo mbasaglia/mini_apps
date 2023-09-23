@@ -28,7 +28,7 @@ class MiniEventApp(App):
         print("Connected %s" % client.id)
 
     async def on_client_authenticated(self, client: Client):
-        #await client.send(type="welcome", **client.to_json())
+        await client.send(type="welcome", **client.to_json())
 
         for event in self.events.values():
             await client.send(type="event", **event.to_json());
