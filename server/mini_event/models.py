@@ -42,6 +42,12 @@ class User(BaseModel):
 
         return user
 
+    def to_json(self):
+        return {
+            "telegram_id": self.telegram_id,
+            "name": self.name
+        }
+
 
 class UserEvent(BaseModel):
     user = peewee.ForeignKeyField(User, backref="events")

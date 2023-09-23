@@ -51,7 +51,7 @@ with the following content:
 
 ```json
 {
-    "socket": "wss://minievent.example.com/wss"
+    "socket": "wss://minievent.example.com/wss/"
 }
 ```
 
@@ -158,3 +158,13 @@ To generate the certificates you can use the following command:
 ```bash
 certbot --authenticator webroot --installer apache certonly -w /var/www/minievent.example.com --domains minievent.example.com
 ```
+
+Customizing the App
+-------------------
+
+To change the server-side code, you only need to edit a couple files:
+
+`server/mini_event/models.py` defines the database tables in python code using
+[Peewee](https://docs.peewee-orm.com/en/latest/peewee/models.html).
+
+`server/mini_event/mini_event.py` Handles all the logic and events.
