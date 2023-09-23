@@ -1,0 +1,75 @@
+
+:root {
+    --tg-theme-bg-color: #fff;
+    --tg-theme-text-color: #000;
+    --tg-theme-link-color: #00f;
+    --tg-theme-button-color: #00f;
+    --tg-theme-button-text-color: #fff;
+    --tg-theme-secondary-bg-color: #ccf;
+}
+
+html {
+    background: var(--tg-theme-bg-color);
+    color: var(--tg-theme-text-color);
+    font-family: sans-serif;
+}
+
+button {
+    background: var(--tg-theme-button-color);
+    color: var(--tg-theme-button-text-color);
+    border: none;
+    border-radius: 6px;
+    width: 100%;
+    padding: 12px;
+    font-weight: bold;
+    font-size: large;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--tg-theme-button-text-color);
+    color: var(--tg-theme-button-color);
+}
+
+#event-list {
+    display: flex;
+    flex-flow: row wrap;
+    max-width: 1024px;
+    margin: 0 auto;
+    justify-content: center;
+}
+
+.event {
+    background: var(--tg-theme-secondary-bg-color);
+    border-radius: 6px;
+    margin: 12px;
+    padding: 12px;
+}
+
+.event header {
+    font-weight: bold;
+    font-size: x-large;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.event section {
+    background: var(--tg-theme-bg-color);
+    padding: 12px;
+    border-radius: 6px;
+    margin: 12px 0;
+}
+
+.event p {
+    margin: 6px 0;
+}
+
+.event th {
+    text-align: left;
+}
+
+.event img {
+    width: 400px;
+    border-radius: 6px;
+    max-width: 80vw;
+}
