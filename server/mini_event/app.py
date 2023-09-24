@@ -10,6 +10,7 @@ import peewee
 import websockets
 
 from .db import connect
+from .models import User
 
 
 class AutoId:
@@ -63,6 +64,7 @@ class App:
                 data = json.loads(message)
                 yield data
             except Exception as e:
+                self.log("Error", client.id, message)
                 await self.on_exception(client, e)
 
     async def socket_handler(self, socket):
@@ -72,6 +74,7 @@ class App:
 
         # Create the client object for this socket
         client = Client(socket)
+        await client.send(type="connect")
         await self.on_client_connected(client)
 
         # Wait for a login message
@@ -107,6 +110,21 @@ class App:
         self.clients[client.id] = client
         if client.user:
             await self.on_client_authenticated(client)
+
+    def get_user(self, message: dict):
+        """
+        Called to authenticate a user based on the mini app initData
+        Return None if authentication fails, otherwise return a user object
+        """
+        data = self.decode_telegram_data(message["data"])
+        if data is None:
+            # TODO remove this, it's just for testing locally
+            return User()
+
+        with self.database.atomic():
+            user = User.get_user(data["user"])
+
+        return user
 
     async def disconnect(self, client: Client):
         """
@@ -172,6 +190,9 @@ class App:
 
         return clean
 
+    def log(self, *args):
+        print(self.__class__.__name__, *args)
+
     def connect(self):
         """
         Connects to the database
@@ -189,13 +210,6 @@ class App:
         Called when the server starts
         """
         pass
-
-    def get_user(self, message: dict):
-        """
-        Called to authenticate a user based on the message from the socket
-        Return None if authentication fails, otherwise return a user object
-        """
-        return None
 
     async def handle_message(self, client: Client, type: str, data: dict):
         """
@@ -225,6 +239,5 @@ class App:
         """
         Called when there is an exception while processing a message
         """
-        print(message)
         print(traceback.print_exc())
         await client.send(type="error", msg=str(exception))

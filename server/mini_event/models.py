@@ -25,7 +25,7 @@ class User(BaseModel):
 
     @classmethod
     def get_user(cls, telegram_data):
-        user = cls.select().where(cls.telegram_id == telegram_data["id"]).first()
+        user = cls.get_or_none(cls.telegram_id == telegram_data["id"])
 
         name = telegram_data["first_name"]
         if telegram_data["last_name"]:
@@ -51,7 +51,7 @@ class User(BaseModel):
 
 class UserEvent(BaseModel):
     user = peewee.ForeignKeyField(User, backref="events")
-    event = peewee.ForeignKeyField(Event, backref="users")
+    event = peewee.ForeignKeyField(Event, backref="attendees")
 
     class Meta:
         # `indexes` is a tuple of 2-tuples, where the 2-tuples are

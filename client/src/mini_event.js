@@ -1,39 +1,18 @@
-import { SocketConnection } from "./socket_connection.js";
+import { App } from "./app.js";
 
-export class MiniEventApp
+
+export class MiniEventApp extends App
 {
     constructor(telegram, event_list_element)
     {
-        this.webapp = telegram.WebApp;
-
+        super(telegram);
         this.event_list_element = event_list_element;
-
-        this.connection = new SocketConnection();
-        this.connection.addEventListener("connect", this._on_connect.bind(this));
-        this.connection.addEventListener("disconnect", this._on_disconnect.bind(this));
         this.connection.addEventListener("event", this._on_event.bind(this));
-
-        this.connection.connect_from_settings();
     }
 
-    log_in(telegram_data)
-    {
-        this.connection.send({
-            type: "login",
-            data: telegram_data.initData
-        });
-    }
-
-    _on_disconnect(ev)
-    {
-        this.connection.reconnect = false;
-    }
-
-    _on_connect(ev)
-    {
-        this.log_in(this.webapp);
-    }
-
+    /**
+     * \brief Updates the DOM when an event is added / modified on the server
+     */
     _on_event(ev)
     {
         let div = document.querySelector(`[data-event="${ev.detail.id}"]`);
@@ -54,7 +33,6 @@ export class MiniEventApp
 
         let content = div.appendChild(document.createElement("section"));
 
-
         let img = content.appendChild(document.createElement("img"));
         img.setAttribute("src", ev.detail.image);
         img.setAttribute("alt", ev.detail.title);
@@ -71,6 +49,7 @@ export class MiniEventApp
         row.appendChild(document.createElement("td")).appendChild(
             document.createTextNode(ev.detail.start)
         );
+
         row = info.appendChild(document.createElement("tr"));
         row.appendChild(document.createElement("th")).appendChild(
             document.createTextNode("Duration")
@@ -79,8 +58,36 @@ export class MiniEventApp
             document.createTextNode(ev.detail.duration + " hours")
         );
 
+        row = info.appendChild(document.createElement("tr"));
+        row.appendChild(document.createElement("th")).appendChild(
+            document.createTextNode("Attendees")
+        );
+        row.appendChild(document.createElement("td")).appendChild(
+            document.createTextNode(ev.detail.attendees)
+        );
+
         let button_row = div.appendChild(document.createElement("p"));
         let button_attend = button_row.appendChild(document.createElement("button"));
-        button_attend.appendChild(document.createTextNode("Attend"));
+
+        if ( ev.detail.attending )
+        {
+            button_attend.appendChild(document.createTextNode("Leave Event"));
+            button_attend.addEventListener("click", () => {
+                this.connection.send({
+                    type: "leave",
+                    event: ev.detail.id,
+                });
+            });
+        }
+        else
+        {
+            button_attend.appendChild(document.createTextNode("Attend"));
+            button_attend.addEventListener("click", () => {
+                this.connection.send({
+                    type: "attend",
+                    event: ev.detail.id,
+                });
+            });
+        }
     }
 }

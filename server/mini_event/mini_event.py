@@ -35,22 +35,7 @@ class MiniEventApp(App):
         """
         Called when a client connects to the server (before authentication)
         """
-        print("Connected %s" % client.id)
-        await client.send(type="connect")
-
-    def get_user(self, message: dict):
-        """
-        Authenticates the user based on the mini app initData
-        """
-        data = self.decode_telegram_data(message["data"])
-        if data is None:
-            # TODO remove this, it's just for testing locally
-            return User()
-
-        with self.database.atomic():
-            user = User.get_user(data["user"])
-
-        return user
+        self.log("Connected %s" % client.id)
 
     async def on_client_authenticated(self, client: Client):
         """
@@ -59,21 +44,70 @@ class MiniEventApp(App):
         await client.send(type="welcome", **client.to_json())
 
         for event in self.events.values():
-            await client.send(type="event", **event.to_json());
+            await client.send(type="event", **self.event_data(event, client.user))
 
     async def on_client_disconnected(self, client: Client):
         """
         Called when a client disconnects from the server
         """
-        print("Disconnected %s" % client.id)
+        self.log("Disconnected %s" % client.id)
 
-    async def handle(self, client: Client, type: str, data: dict):
+    async def handle_message(self, client: Client, type: str, data: dict):
         """
         Handles messages received from the client
         """
-        print(client.id, message)
+        self.log(client.id, data)
 
         if type == "attend":
-            pass  # TODO
+            # Get the event
+            event_id = data.get("event", "")
+            event = self.events.get(event_id)
+            if not event:
+                await client.send(type="error", msg="No such event")
+                return
+
+            # Create the relation if it doesn't exist
+            created = UserEvent.get_or_create(user_id=client.user.id, event_id=event_id)[1]
+
+            # Update the event on all clients
+            if created:
+                await self.broadcast_event_change(event)
+
+        elif type == "leave":
+            # Get the event
+            event_id = data.get("event", "")
+            event = self.events.get(event_id)
+            if not event:
+                await client.send(type="error", msg="No such event")
+                return
+
+            # If the user is attending the event, delete the attendance
+            attendance = UserEvent.get_or_none(user_id=client.user.id, event_id=event_id)
+            if attendance:
+                attendance.delete_instance()
+                await self.broadcast_event_change(event)
+
         else:
             await client.send(type="error", msg="Unknown command", what=data)
+
+    def event_data(self, event: Event, user: User, attendees: int = None):
+        """
+        Formats an event, adding user-specific data
+        """
+        data = event.to_json()
+
+        data["attending"] = bool(event.attendees.filter(UserEvent.user_id==user.id).first())
+
+        # This allows passing the attendee count so we don't have to calculate it
+        # multiple times on broadcast_event_change()
+        if attendees is None:
+            attendees = event.attendees.count()
+        data["attendees"] = attendees
+
+        return data
+
+    async def broadcast_event_change(self, event):
+        attendees = event.attendees.count()
+
+        for client in self.clients.values():
+            await client.send(type="event", **self.event_data(event, client.user, attendees))

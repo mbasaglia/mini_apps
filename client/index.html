@@ -7,16 +7,20 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
-    <div id="event-list">
-
-    </div>
+    <div id="event-list"></div>
 
     <script type="module">
         import { MiniEventApp } from "./src/mini_event.js";
-        window.mini_event_app = new MiniEventApp(
+
+        const mini_event_app = new MiniEventApp(
             window.Telegram,
             document.getElementById("event-list")
         );
+
+        mini_event_app.connect_from_settings();
+
+        // This makes it easier to debug on the browser console
+        window.mini_event_app = mini_event_app;
     </script>
 </body>
 </html>
