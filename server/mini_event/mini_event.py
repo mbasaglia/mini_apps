@@ -1,5 +1,8 @@
+import inspect
 import pathlib
 import base64
+
+import telethon
 
 from .models import User, Event, UserEvent
 from .app import App, Client
@@ -196,3 +199,8 @@ class MiniEventApp(App):
 
         for client in self.clients.values():
             await client.send(type="event", **self.event_data(event, client.user, attendees))
+
+    async def on_telegram_start(self, event: telethon.events.NewMessage):
+        await self.telegram.send_message(event.chat, inspect.cleandoc("""
+        This bot allows you to sign up for events
+        """))

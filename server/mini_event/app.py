@@ -3,11 +3,14 @@ import json
 import hmac
 import hashlib
 import pathlib
+import traceback
 import urllib.parse
-
 
 import peewee
 import websockets
+
+import telethon
+from telethon.sessions import MemorySession
 
 from .db import connect
 from .models import User
@@ -54,6 +57,7 @@ class App:
         self.clients = {}
         self.database = database
         self.settings = settings
+        self.telegram = None
 
     async def socket_messages(self, client):
         """
@@ -65,7 +69,7 @@ class App:
                 yield data
             except Exception as e:
                 self.log("Error", client.id, message)
-                await self.on_exception(client, e)
+                await self.on_socket_exception(client, e)
 
     async def socket_handler(self, socket):
         """
@@ -135,16 +139,68 @@ class App:
         self.clients.pop(client.id)
         await self.on_client_disconnected(client)
 
-    async def run(self, host: str, port: int):
+    async def run_socket_server(self, host: str, port: int):
         """
-        Runs the server
+        Runs the websocket server
         """
-        self.init_database()
         self.on_server_start()
 
         async with websockets.serve(self.socket_handler, host, port):
             print("Connected as %s:%s" % (host, port))
             await asyncio.Future()  # run forever
+
+    async def run_bot(self, api_id: int, api_hash: str, bot_token: str):
+        """
+        Runs the telegram bot
+        """
+        try:
+            self.telegram = telethon.TelegramClient(MemorySession(), api_id, api_hash)
+            self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
+            await self.telegram.start(bot_token=bot_token)
+            await self.on_telegram_connected()
+        except Exception as e:
+            await self.on_telegram_exception(e)
+
+    async def on_telegram_message_raw(self, event: telethon.events.NewMessage):
+        try:
+            if event.text.startswith("/start"):
+                await self.on_telegram_start(event)
+            else:
+                await self.on_telegram_message(event)
+        except Exception as e:
+            await self.on_telegram_exception(e)
+
+    async def run(self):
+        """
+        Runs the telegram bot and socket server
+        """
+        self.connect()
+
+        try:
+            self.init_database()
+
+            run_app_task = asyncio.create_task(self.run_socket_server(
+                self.settings["hostname"],
+                self.settings["port"]
+            ))
+            run_bot_task = asyncio.create_task(self.run_bot(
+                self.settings["api-id"],
+                self.settings["api-hash"],
+                self.settings["bot-token"]
+            ))
+
+            done, pending = await asyncio.wait(
+                [run_app_task, run_bot_task],
+                return_when=asyncio.ALL_COMPLETED
+            )
+
+            for task in pending:
+                task.cancel()
+
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.database.close()
 
     @classmethod
     def from_settings(cls):
@@ -237,9 +293,33 @@ class App:
         """
         pass
 
-    async def on_exception(self, client: Client, exception: Exception):
+    async def on_socket_exception(self, client: Client, exception: Exception):
         """
-        Called when there is an exception while processing a message
+        Called when there is an exception while processing a socket message
         """
-        print(traceback.print_exc())
+        traceback.print_exc()
         await client.send(type="error", msg=str(exception))
+
+    async def on_telegram_exception(self, exception: Exception):
+        """
+        Called when there is an exception on the telegram connection
+        """
+        traceback.print_exc()
+
+    async def on_telegram_connected(self):
+        """
+        Called when the connection to the telegram bot is established
+        """
+        pass
+
+    async def on_telegram_start(self, event: telethon.events.NewMessage):
+        """
+        Called when a user sends /start to the bot
+        """
+        pass
+
+    async def on_telegram_message(self, event: telethon.events.NewMessage):
+        """
+        Called on messages sent to the telegram bot
+        """
+        pass

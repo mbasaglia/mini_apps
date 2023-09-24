@@ -56,17 +56,21 @@ with the following content:
 ```
 
 And the server-side settings file `/var/www/minievent.example.com/server/settings.json`
-with the following, taking care of setting `bot-token` with the telegram bot token
-given by BotFather:
+with the following:
 
 ```json
 {
     "hostname": "localhost",
     "port": 2536,
     "database": "db/db.sqlite",
-    "bot-token": "(your token)"
+    "bot-token": "(your bot token)",
+    "api-id": "(your api id)",
+    "api-hash": "(your api hash)"
 }
 ```
+Set `bot-token` with the telegram bot token given by BotFather.
+The values for `api-id` and `api-hash` can be found at https://my.telegram.org/apps.
+
 
 ### Permissions
 
