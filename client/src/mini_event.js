@@ -22,6 +22,8 @@ export class MiniEventApp extends App
         document.getElementById("admin-actions").style.display = (
             this.user.is_admin ? "block" : "none"
         );
+
+        document.getElementById("placeholder").style.display = "none";
     }
 
     /**
