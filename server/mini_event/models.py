@@ -22,6 +22,7 @@ class Event(BaseModel):
 class User(BaseModel):
     telegram_id = peewee.IntegerField(unique=True)
     name = peewee.CharField()
+    is_admin = peewee.BooleanField(default=False)
 
     @classmethod
     def get_user(cls, telegram_data):
@@ -45,7 +46,8 @@ class User(BaseModel):
     def to_json(self):
         return {
             "telegram_id": self.telegram_id,
-            "name": self.name
+            "name": self.name,
+            "is_admin": self.is_admin,
         }
 
 

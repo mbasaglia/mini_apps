@@ -11,6 +11,19 @@ export class MiniEventApp extends App
     }
 
     /**
+     * \brief Called when the server sends user details
+     */
+    _on_welcome(ev)
+    {
+        super._on_welcome(ev);
+
+        // Toggle admin widget based on the user we got from the server
+        document.getElementById("admin-actions").style.display = (
+            this.user.is_admin ? "block" : "none"
+        );
+    }
+
+    /**
      * \brief Updates the DOM when an event is added / modified on the server
      */
     _on_event(ev)
@@ -72,7 +85,6 @@ export class MiniEventApp extends App
 
             button_row = container.appendChild(document.createElement("p"));
             button_row.classList.add("buttons");
-
         }
 
         // Set the text / content

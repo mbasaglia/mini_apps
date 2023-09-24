@@ -39,38 +39,62 @@ button:hover {
     justify-content: center;
 }
 
-.event {
+article {
     background: var(--tg-theme-secondary-bg-color);
     border-radius: 6px;
     margin: 12px;
     padding: 12px;
+    flex: 1 1 0;
 }
 
-.event header {
+article header {
     font-weight: bold;
     font-size: x-large;
     margin-bottom: 12px;
     text-align: center;
 }
 
-.event section {
+article section {
     background: var(--tg-theme-bg-color);
     padding: 12px;
     border-radius: 6px;
     margin: 12px 0;
 }
 
-.event p {
+article p {
     margin: 6px 0;
 }
 
-.event th {
+article th {
     text-align: left;
 }
 
-.event img {
+article img {
     width: 400px;
     border-radius: 6px;
     max-width: 80vw;
     aspect-ratio: 16 / 9;
+}
+
+.buttons {
+    display: flex;
+    flex-flow: column;
+    gap: 6px;
+}
+
+form, form section {
+    display: flex;
+    flex-flow: column;
+}
+
+input {
+    background: var(--tg-theme-bg-color);
+    color: var(--tg-theme-text-color);
+    border: 1px solid #888;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+input:hover, input:focus {
+    border-color: var(--tg-theme-button-color);
 }
