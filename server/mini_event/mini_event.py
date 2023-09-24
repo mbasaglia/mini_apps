@@ -195,12 +195,31 @@ class MiniEventApp(App):
         return data
 
     async def broadcast_event_change(self, event):
+        """
+        Sends an event to all connected clients
+        """
         attendees = event.attendees.count()
 
         for client in self.clients.values():
             await client.send(type="event", **self.event_data(event, client.user, attendees))
 
     async def on_telegram_start(self, event: telethon.events.NewMessage):
+        """
+        Called when a user sends /start to the bot
+        """
+
+        # Create a button that opens the web app
+        types = telethon.tl.types
+        buttons = types.ReplyInlineMarkup([
+            types.TypeKeyboardButtonRow([
+                types.KeyboardButtonWebView(
+                    "View Events",
+                    "https://minievent.mattbas.org/"
+                )
+            ])
+        ])
+
+        # Send a short message and a button to open the app on telegram
         await self.telegram.send_message(event.chat, inspect.cleandoc("""
         This bot allows you to sign up for events
-        """))
+        """), buttons=buttons)

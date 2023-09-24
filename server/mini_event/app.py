@@ -156,6 +156,7 @@ class App:
         try:
             self.telegram = telethon.TelegramClient(MemorySession(), api_id, api_hash)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
+            self.telegram.add_event_handler(self.on_telegram_callback_query_raw, telethon.events.CallbackQuery)
             await self.telegram.start(bot_token=bot_token)
             await self.on_telegram_connected()
         except Exception as e:
@@ -167,6 +168,12 @@ class App:
                 await self.on_telegram_start(event)
             else:
                 await self.on_telegram_message(event)
+        except Exception as e:
+            await self.on_telegram_exception(e)
+
+    async def on_telegram_callback_query_raw(self, event: telethon.events.CallbackQuery):
+        try:
+            await self.on_telegram_callback_query(event)
         except Exception as e:
             await self.on_telegram_exception(e)
 
@@ -321,5 +328,11 @@ class App:
     async def on_telegram_message(self, event: telethon.events.NewMessage):
         """
         Called on messages sent to the telegram bot
+        """
+        pass
+
+    async def on_telegram_callback_query(self, event: telethon.events.CallbackQuery):
+        """
+        Called on button presses on the telegram bot
         """
         pass
