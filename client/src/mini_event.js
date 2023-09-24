@@ -8,6 +8,7 @@ export class MiniEventApp extends App
         super(telegram);
         this.event_list_element = event_list_element;
         this.connection.addEventListener("event", this._on_event.bind(this));
+        this.connection.addEventListener("delete-event", this._on_delete_event.bind(this));
     }
 
     /**
@@ -118,5 +119,110 @@ export class MiniEventApp extends App
                 });
             });
         }
+
+        if ( this.user.is_admin )
+        {
+            let button_attend = button_row.appendChild(document.createElement("button"));
+            button_attend.classList.add("admin-action");
+            button_attend.appendChild(document.createTextNode("Delete Event"));
+            button_attend.addEventListener("click", () => {
+                this.connection.send({
+                    type: "delete-event",
+                    id: ev.detail.id,
+                });
+            });
+        }
+    }
+
+    /**
+     * \brief Updates the DOM when an event is deleted on the server
+     */
+    _on_delete_event(ev)
+    {
+        let container = document.querySelector(`[data-event="${ev.detail.id}"]`);
+        if ( container )
+            container.parentNode.removeChild(container);
+    }
+
+    /**
+     * \brief Sets up event listeners for UI elements
+     */
+    connect_ui()
+    {
+        const create_event_button = document.getElementById("create-event-button");
+        const admin_buttons = document.getElementById("admin-buttons");
+        const new_event_form = document.getElementById("new-event");
+        const cancel_button = document.getElementById("cancel-button");
+        const image_error = document.getElementById("image-error");
+
+        // time input is very janky on tdesktop so we fall back
+        if ( this.webapp.platform == "tdesktop" )
+        {
+            const time_input = document.getElementById("new-event-start");
+            time_input.type = "text";
+            time_input.placeholder = "12:00";
+        }
+
+        function toggle_add_event(show)
+        {
+            admin_buttons.style.display = show ? "none" : "flex";
+            new_event_form.style.display = show ? "flex" : "none";
+            new_event_form.reset();
+            image_error.style.display = "none";
+        }
+
+        create_event_button.addEventListener("click", function(){
+            toggle_add_event(true);
+        });
+        cancel_button.addEventListener("click", function(){
+            toggle_add_event(false);
+        });
+        new_event_form.addEventListener("submit", function(ev){
+            ev.preventDefault();
+
+            const data = new FormData(new_event_form);
+            let entries = {};
+            for ( let [name, value] of data.entries() )
+                entries[name] = value;
+
+            const reader = new FileReader();
+
+            reader.onload = function(ev2)
+            {
+                if ( ev2.target.result > 512 * 1024 )
+                {
+                    image_error.style.display = "block";
+                    image_error.innerText = "Image is too large, it should be less than 512KB";
+                    return;
+                }
+
+                entries.image = {
+                    name: entries.image.name,
+                    base64: btoa(ev2.target.result),
+                };
+                toggle_add_event(false);
+                this.connection.send({
+                    type: "create-event",
+                    ...entries
+                });
+            };
+
+            reader.readAsBinaryString(entries["image"]);
+        });
+
+        const show_admin = document.getElementById("show-admin-button");
+        const hide_admin = document.getElementById("hide-admin-button");
+        show_admin.addEventListener("click", function() {
+            hide_admin.style.display = "block";
+            show_admin.style.display = "none";
+            for ( let element of document.querySelectorAll(".admin-action") )
+                element.style.display = "block";
+        });
+        hide_admin.addEventListener("click", function() {
+            hide_admin.style.display = "none";
+            show_admin.style.display = "block";
+            for ( let element of document.querySelectorAll(".admin-action") )
+                element.style.display = "none";
+        });
     }
 }

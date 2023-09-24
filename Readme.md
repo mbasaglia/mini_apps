@@ -68,6 +68,15 @@ given by BotFather:
 }
 ```
 
+### Permissions
+
+The media directory in the client needs to be writable by the web server:
+
+```bash
+chgrp www-data /var/www/minievent.example.com/client/media/
+chmod g+w /var/www/minievent.example.com/client/media/
+```
+
 ### Python Dependencies
 
 Set up a virtual environment and install dependencies:
@@ -158,6 +167,37 @@ To generate the certificates you can use the following command:
 ```bash
 certbot --authenticator webroot --installer apache certonly -w /var/www/minievent.example.com --domains minievent.example.com
 ```
+
+Loading Data
+------------
+
+There are a couple of server-side scripts that allow you to add some data into the system:
+
+`server/add_event.py` `-t` _title_ `-d` _description_ `-s` _start-time_ `-r` _duration_ `-i` _image_<br/>
+This is used to add more events to the database, you pass the image by path
+and it will be copied over to the media directory. Note that images should
+be less that 512 KB in size, have a 16:9 aspect ratio and should be at least 400 pixels wide.
+
+`server/list_users.py`<br/>
+Shows a list of users, with their telegram ID, admin status and name.
+
+`server/make_admin.py` _telegram-id_<br/>
+Makes a user an admin (creating the user if it doesn't exist).
+You can use `server/list_users.py` to find the right telegram ID.
+
+All these scripts support the `--help` command that gives more details on how they work.
+
+Please note that this demo uses SQLite to minimize set up and it only supports a single
+connection at a time. So if you want to call any of these scripts, you need to stop the server.
+
+
+Admin Interface
+---------------
+
+If you created admin users (with `server/make_admin.py`), when those users
+access the mini app, they will see additional options, which allows them to manage
+the events.
+
 
 Customizing the App
 -------------------

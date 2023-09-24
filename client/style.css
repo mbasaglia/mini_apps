@@ -34,7 +34,6 @@ button:hover {
 #event-list {
     display: flex;
     flex-flow: row wrap;
-    max-width: 1024px;
     margin: 0 auto;
     justify-content: center;
 }
@@ -44,7 +43,8 @@ article {
     border-radius: 6px;
     margin: 12px;
     padding: 12px;
-    flex: 1 1 0;
+    width: 100%;
+    max-width: 430px;
 }
 
 article header {
@@ -70,9 +70,8 @@ article th {
 }
 
 article img {
-    width: 400px;
+    width: 100%;
     border-radius: 6px;
-    max-width: 80vw;
     aspect-ratio: 16 / 9;
 }
 
@@ -97,4 +96,12 @@ input {
 
 input:hover, input:focus {
     border-color: var(--tg-theme-button-color);
+}
+
+.error {
+    color: #f00;
+}
+
+.admin-action {
+    display: none
 }

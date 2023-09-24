@@ -1,2 +1,4 @@
 *.sqlite
 settings.json
+*.session*
+client/media
