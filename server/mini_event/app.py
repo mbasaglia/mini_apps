@@ -79,26 +79,28 @@ class App:
 
         # Wait for a login message
         async for message in self.socket_messages(client):
-            print(client.id, message)
+            self.log(client.id, message)
             if message["type"] != "login":
                 await client.send(type="error", msg="You need to login first")
             else:
                 await self.login(client, message)
                 break
 
-        # Disconnect if there is no correct login
-        if not client.user:
-            await client.send(type="disconnect")
+        try:
+            # Disconnect if there is no correct login
+            if not client.user:
+                await client.send(type="disconnect")
+                await self.disconnect(client)
+                return
+
+            # Process messages from the client
+            async for message in self.socket_messages(client):
+                type = message.get("type", "")
+                await self.handle_message(client, type, message)
+
+        finally:
+            # Disconnect when the client has finished
             await self.disconnect(client)
-            return
-
-        # Process messages from the client
-        async for message in self.socket_messages(client):
-            type = message.get("type", "")
-            await self.handle_message(client, type, message)
-
-        # Disconnect if the client has finished
-        await self.disconnect(client)
 
     async def login(self, client: Client, message: dict):
         """
