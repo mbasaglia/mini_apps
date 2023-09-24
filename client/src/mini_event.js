@@ -100,10 +100,18 @@ export class MiniEventApp extends App
         preview_image.setAttribute("src", ev.detail.image);
         preview_image.setAttribute("alt", ev.detail.title);
 
+        // Button to share an event within telegram using inline mode
+        let button_share = button_row.appendChild(document.createElement("button"));
+        button_share.innerText = "Share";
+        button_share.addEventListener("click", () => {
+            this.webapp.switchInlineQuery(`event:${ev.detail.id}`, ["users", "groups", "channels"])
+        });
+
+        // Button to toggle whether the user is attending an event
         let button_attend = button_row.appendChild(document.createElement("button"));
         if ( ev.detail.attending )
         {
-            button_attend.appendChild(document.createTextNode("Leave Event"));
+            button_attend.innerText = "Leave Event";
             button_attend.addEventListener("click", () => {
                 this.connection.send({
                     type: "leave",
@@ -113,7 +121,7 @@ export class MiniEventApp extends App
         }
         else
         {
-            button_attend.appendChild(document.createTextNode("Attend"));
+            button_attend.innerText = "Attend";
             button_attend.addEventListener("click", () => {
                 this.connection.send({
                     type: "attend",
@@ -122,12 +130,13 @@ export class MiniEventApp extends App
             });
         }
 
+        // Admin-only button to delete the event
         if ( this.user.is_admin )
         {
-            let button_attend = button_row.appendChild(document.createElement("button"));
-            button_attend.classList.add("admin-action");
-            button_attend.appendChild(document.createTextNode("Delete Event"));
-            button_attend.addEventListener("click", () => {
+            let button_delete = button_row.appendChild(document.createElement("button"));
+            button_delete.classList.add("admin-action");
+            button_delete.innerText = "Delete Event";
+            button_delete.addEventListener("click", () => {
                 this.connection.send({
                     type: "delete-event",
                     id: ev.detail.id,

@@ -10,6 +10,17 @@ update information to the client.
 Installation
 ------------
 
+### Bot Setup
+
+You need to have a bot for mini apps to work. Talk to [BotFather](https://t.me/BotFather)
+to create the bot. Make sure you enable inline mode and the menu button in the
+bot settings.
+
+Use `/newapp` to create a web app on the bot and give it `events` as short name.
+
+Also, do keep track of the bot token as it's needed in the server
+configuration file.
+
 ### Installation Overview
 
 This project consists of a server-side app written in python that is exposed
@@ -60,6 +71,7 @@ with the following:
 
 ```json
 {
+    "url": "https://minievent.example.com/",
     "hostname": "localhost",
     "port": 2536,
     "database": "db/db.sqlite",

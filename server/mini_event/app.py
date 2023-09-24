@@ -58,6 +58,7 @@ class App:
         self.database = database
         self.settings = settings
         self.telegram = None
+        self.telegram_me = None
 
     async def socket_messages(self, client):
         """
@@ -146,7 +147,7 @@ class App:
         self.on_server_start()
 
         async with websockets.serve(self.socket_handler, host, port):
-            print("Connected as %s:%s" % (host, port))
+            self.log("Connected as %s:%s" % (host, port))
             await asyncio.Future()  # run forever
 
     async def run_bot(self, api_id: int, api_hash: str, bot_token: str):
@@ -156,13 +157,20 @@ class App:
         try:
             self.telegram = telethon.TelegramClient(MemorySession(), api_id, api_hash)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
-            self.telegram.add_event_handler(self.on_telegram_callback_query_raw, telethon.events.CallbackQuery)
+            self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
+            self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)
             await self.telegram.start(bot_token=bot_token)
+            self.telegram_me = await self.telegram.get_me()
+            self.log("Telegram bot @%s" % self.telegram_me.username)
             await self.on_telegram_connected()
         except Exception as e:
             await self.on_telegram_exception(e)
 
     async def on_telegram_message_raw(self, event: telethon.events.NewMessage):
+        """
+        Called on messages sent to the telegram bot
+        wraps on_telegram_message() for convenience and detects the /start message
+        """
         try:
             if event.text.startswith("/start"):
                 await self.on_telegram_start(event)
@@ -171,9 +179,23 @@ class App:
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def on_telegram_callback_query_raw(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_callback_raw(self, event: telethon.events.CallbackQuery):
+        """
+        Called on telegram callback queries (inline button presses),
+        just wraps on_telegram_callback() with exception handling for convenience
+        """
         try:
-            await self.on_telegram_callback_query(event)
+            await self.on_telegram_callback(event)
+        except Exception as e:
+            await self.on_telegram_exception(e)
+
+    async def on_telegram_inline_raw(self, event: telethon.events.InlineQuery):
+        """
+        Called on telegram inline queries,
+        just wraps on_telegram_inline() with exception handling for convenience
+        """
+        try:
+            await self.on_telegram_inline(event)
         except Exception as e:
             await self.on_telegram_exception(e)
 
@@ -331,8 +353,14 @@ class App:
         """
         pass
 
-    async def on_telegram_callback_query(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_callback(self, event: telethon.events.CallbackQuery):
         """
         Called on button presses on the telegram bot
+        """
+        pass
+
+    async def on_telegram_inline(self, event: telethon.events.InlineQuery):
+        """
+        Called on telegram bot inline queries
         """
         pass

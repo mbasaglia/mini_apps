@@ -1,6 +1,7 @@
-import inspect
-import pathlib
 import base64
+import inspect
+import mimetypes
+import pathlib
 
 import telethon
 
@@ -208,18 +209,57 @@ class MiniEventApp(App):
         Called when a user sends /start to the bot
         """
 
-        # Create a button that opens the web app
-        types = telethon.tl.types
-        buttons = types.ReplyInlineMarkup([
-            types.TypeKeyboardButtonRow([
-                types.KeyboardButtonWebView(
-                    "View Events",
-                    "https://minievent.mattbas.org/"
-                )
-            ])
-        ])
 
         # Send a short message and a button to open the app on telegram
         await self.telegram.send_message(event.chat, inspect.cleandoc("""
         This bot allows you to sign up for events
-        """), buttons=buttons)
+        """), buttons=self.inline_buttons())
+
+    def inline_buttons(self):
+        """
+        Returns the telegram inline button that opens the web app
+        """
+        types = telethon.tl.types
+        return types.ReplyInlineMarkup([
+            types.TypeKeyboardButtonRow([
+                types.KeyboardButtonWebView(
+                    "View Events",
+                    self.settings["url"]
+                )
+            ])
+        ])
+
+    async def on_telegram_inline(self, query: telethon.events.InlineQuery):
+        """
+        Called on telegram bot inline queries
+        """
+        events = []
+
+        if query.text.startswith("event:"):
+            event_id = int(query.text.split(":")[1])
+            event = Event.get_or_none(id=event_id)
+            if not event:
+                return
+
+            events = [event]
+
+        if events:
+            data = []
+
+            for event in events:
+                data.append(query.builder.article(
+                    title=event.title,
+                    description=event.description,
+                    text="**{event.title}**\n{event.description}\n{url}".format(
+                        event=event,
+                        url="https://t.me/%s/events" % self.telegram_me.username
+                    ),
+                    #buttons=self.inline_buttons(),
+                    thumb=telethon.tl.types.InputWebDocument(
+                        self.settings["url"] + event.image,
+                        size=0,
+                        mime_type=mimetypes.guess_type(event.image)[0],
+                        attributes=[]
+                    )
+                ))
+                await query.answer(data)
