@@ -72,4 +72,5 @@ button:hover {
     width: 400px;
     border-radius: 6px;
     max-width: 80vw;
+    aspect-ratio: 16 / 9;
 }

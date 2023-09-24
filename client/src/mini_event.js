@@ -15,60 +15,77 @@ export class MiniEventApp extends App
      */
     _on_event(ev)
     {
-        let div = document.querySelector(`[data-event="${ev.detail.id}"]`);
-        if ( div )
+        let container = document.querySelector(`[data-event="${ev.detail.id}"]`);
+        let title;
+        let preview_image;
+        let description;
+        let start;
+        let duration;
+        let attendees;
+        let button_row;
+
+        if ( container )
         {
-            div.innerHTML = "";
+            // Find the right elements
+            title = container.querySelector("header");
+            preview_image = container.querySelector("img");
+            description = container.querySelector(".description");
+            let table_cells = container.querySelectorAll("td");
+            start = table_cells[0];
+            duration = table_cells[1];
+            attendees = table_cells[2];
+            button_row = container.querySelector(".buttons");
+            button_row.innerHTML = "";
         }
         else
         {
-            div = this.event_list_element.appendChild(document.createElement("article"));
-            div.dataset.event = ev.detail.id;
+            // Create the structure
+            container = this.event_list_element.appendChild(document.createElement("article"));
+            container.dataset.event = ev.detail.id;
+            container.classList.add("event");
+            title = container.appendChild(document.createElement("header"));
+
+            let content = container.appendChild(document.createElement("section"));
+            preview_image = content.appendChild(document.createElement("img"));
+
+            description = content.appendChild(document.createElement("p"));
+            description.classList.add("description");
+
+            let info = content.appendChild(document.createElement("table"));
+            let row = info.appendChild(document.createElement("tr"));
+            row.appendChild(document.createElement("th")).appendChild(
+                document.createTextNode("Starts at")
+            );
+            start = row.appendChild(document.createElement("td"));
+
+            row = info.appendChild(document.createElement("tr"));
+            row.appendChild(document.createElement("th")).appendChild(
+                document.createTextNode("Duration")
+            );
+            duration = row.appendChild(document.createElement("td"));
+
+            row = info.appendChild(document.createElement("tr"));
+            row.appendChild(document.createElement("th")).appendChild(
+                document.createTextNode("Attendees")
+            );
+            attendees = row.appendChild(document.createElement("td"));
+
+            button_row = container.appendChild(document.createElement("p"));
+            button_row.classList.add("buttons");
+
         }
 
-        div.classList.add("event");
-        div.appendChild(document.createElement("header")).appendChild(
-            document.createTextNode(ev.detail.title)
-        );
+        // Set the text / content
+        title.innerText = ev.detail.title;
+        description.innerText = ev.detail.description;
+        start.innerText = ev.detail.start;
+        duration.innerText = ev.detail.duration + " hours";
+        attendees.innerText = ev.detail.attendees;
 
-        let content = div.appendChild(document.createElement("section"));
+        preview_image.setAttribute("src", ev.detail.image);
+        preview_image.setAttribute("alt", ev.detail.title);
 
-        let img = content.appendChild(document.createElement("img"));
-        img.setAttribute("src", ev.detail.image);
-        img.setAttribute("alt", ev.detail.title);
-
-        content.appendChild(document.createElement("p")).appendChild(
-            document.createTextNode(ev.detail.description)
-        );
-
-        let info = content.appendChild(document.createElement("table"));
-        let row = info.appendChild(document.createElement("tr"));
-        row.appendChild(document.createElement("th")).appendChild(
-            document.createTextNode("Starts at")
-        );
-        row.appendChild(document.createElement("td")).appendChild(
-            document.createTextNode(ev.detail.start)
-        );
-
-        row = info.appendChild(document.createElement("tr"));
-        row.appendChild(document.createElement("th")).appendChild(
-            document.createTextNode("Duration")
-        );
-        row.appendChild(document.createElement("td")).appendChild(
-            document.createTextNode(ev.detail.duration + " hours")
-        );
-
-        row = info.appendChild(document.createElement("tr"));
-        row.appendChild(document.createElement("th")).appendChild(
-            document.createTextNode("Attendees")
-        );
-        row.appendChild(document.createElement("td")).appendChild(
-            document.createTextNode(ev.detail.attendees)
-        );
-
-        let button_row = div.appendChild(document.createElement("p"));
         let button_attend = button_row.appendChild(document.createElement("button"));
-
         if ( ev.detail.attending )
         {
             button_attend.appendChild(document.createTextNode("Leave Event"));

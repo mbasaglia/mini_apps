@@ -41,6 +41,7 @@ class MiniEventApp(App):
         """
         Called when a client has been authenticated
         """
+        self.log("%s is %s" % (client.id, client.user.name))
         await client.send(type="welcome", **client.to_json())
 
         for event in self.events.values():
