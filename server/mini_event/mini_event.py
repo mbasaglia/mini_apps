@@ -1,4 +1,5 @@
 import base64
+import bisect
 import inspect
 import mimetypes
 import pathlib
@@ -14,9 +15,10 @@ class MiniEventApp(App):
     This class has custom logic
     """
 
-    def __init__(self, database, settings):
-        super().__init__(database, settings)
+    def __init__(self, *args):
+        super().__init__(*args)
         self.events = {}
+        self.sorted_events = []
 
     def init_database(self):
         """
@@ -38,6 +40,8 @@ class MiniEventApp(App):
         for event in Event.select():
             self.events[event.id] = event
 
+        self.sorted_events = sorted(self.events.values())
+
     async def on_client_connected(self, client: Client):
         """
         Called when a client connects to the server (before authentication)
@@ -51,7 +55,7 @@ class MiniEventApp(App):
         self.log("%s is %s" % (client.id, client.user.name))
         await client.send(type="welcome", **client.to_json())
 
-        for event in self.events.values():
+        for event in self.sorted_events:
             await client.send(type="event", **self.event_data(event, client.user))
 
     async def on_client_disconnected(self, client: Client):
@@ -136,7 +140,11 @@ class MiniEventApp(App):
 
         # Delete from the dabase
         event.delete_instance(recursive=True)
-        self.events.pop(event_id)
+        ev = self.events.pop(event_id)
+        try:
+            self.sorted_events.pop(self.sorted_events.index(ev))
+        except ValueError:
+            pass
 
         # Broadcast the change to all users
         for client in self.clients.values():
@@ -234,32 +242,69 @@ class MiniEventApp(App):
         Called on telegram bot inline queries
         """
         events = []
+        # Telegram supports up to 50 inline results
+        limit = 50
 
+        # Specific event from the web app
         if query.text.startswith("event:"):
-            event_id = int(query.text.split(":")[1])
-            event = Event.get_or_none(id=event_id)
-            if not event:
+            try:
+                event_id = int(query.text.split(":")[1])
+                event = Event.get_or_none(id=event_id)
+                if event:
+                    events = [event]
+            except Exception:
                 return
+        # Not enough to search, show all
+        elif len(query.text) < 2:
+            events = self.sorted_events[:limit]
+        # Text-based search
+        else:
+            pattern = query.text.lower()
 
-            events = [event]
+            for i in range(min(limit, len(self.sorted_events))):
+                event = self.sorted_events[i]
+                if pattern in event.title.lower() or pattern in event.description.lower():
+                    events.append(event)
 
-        if events:
-            data = []
+        # Format and return the results
+        results = []
 
-            for event in events:
-                data.append(query.builder.article(
-                    title=event.title,
-                    description=event.description,
-                    text="**{event.title}**\n{event.description}\n{url}".format(
-                        event=event,
-                        url="https://t.me/%s/events" % self.telegram_me.username
-                    ),
-                    #buttons=self.inline_buttons(),
-                    thumb=telethon.tl.types.InputWebDocument(
-                        self.settings["url"] + event.image,
-                        size=0,
-                        mime_type=mimetypes.guess_type(event.image)[0],
-                        attributes=[]
-                    )
-                ))
-                await query.answer(data)
+        for event in events:
+            image_url = self.settings["url"] + event.image
+
+            text = inspect.cleandoc("""
+            **{event.title}**[\u200B]({image_url})
+            {event.description}
+
+            **Starts at** {event.start}
+            **Duration** {event.duration:g} hours
+
+            [View Events]({url}?startapp={event.id})
+            """).format(
+                event=event,
+                url="https://t.me/%s/events" % self.telegram_me.username,
+                image_url=image_url
+            )
+
+            preview_text = inspect.cleandoc("""
+            {event.description}
+            Starts at {event.start}. Duration: {event.duration:g} hours
+            """).format(
+                event=event
+            )
+
+            results.append(query.builder.article(
+                title=event.title,
+                description=preview_text,
+                text=text,
+                #buttons=self.inline_buttons(),
+                thumb=telethon.tl.types.InputWebDocument(
+                    image_url,
+                    size=0,
+                    mime_type=mimetypes.guess_type(event.image)[0],
+                    attributes=[]
+                ),
+                link_preview=True,
+            ))
+
+        await query.answer(results)

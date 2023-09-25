@@ -53,12 +53,14 @@ class App:
     Contains boilerplate code to manage the database and the web socket connections
     Inherit from this and override the relevant methods to implement your own app
     """
-    def __init__(self, database, settings):
+    def __init__(self, database, settings, server_path, client_path):
         self.clients = {}
         self.database = database
         self.settings = settings
         self.telegram = None
         self.telegram_me = None
+        self.server_path = server_path
+        self.client_path = client_path
 
     async def socket_messages(self, client):
         """
@@ -111,8 +113,6 @@ class App:
         """
         Login logic
         """
-
-        # Get the user object from the login data
         client.user = self.get_user(message)
         self.clients[client.id] = client
         if client.user:
@@ -125,8 +125,7 @@ class App:
         """
         data = self.decode_telegram_data(message["data"])
         if data is None:
-            # TODO remove this, it's just for testing locally
-            return User()
+            return None
 
         with self.database.atomic():
             user = User.get_user(data["user"])
@@ -150,12 +149,12 @@ class App:
             self.log("Connected as %s:%s" % (host, port))
             await asyncio.Future()  # run forever
 
-    async def run_bot(self, api_id: int, api_hash: str, bot_token: str):
+    async def run_bot(self, session, api_id: int, api_hash: str, bot_token: str):
         """
         Runs the telegram bot
         """
         try:
-            self.telegram = telethon.TelegramClient(MemorySession(), api_id, api_hash)
+            self.telegram = telethon.TelegramClient(session, api_id, api_hash)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
             self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
             self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)
@@ -213,6 +212,7 @@ class App:
                 self.settings["port"]
             ))
             run_bot_task = asyncio.create_task(self.run_bot(
+                self.settings.get("session", MemorySession()),
                 self.settings["api-id"],
                 self.settings["api-hash"],
                 self.settings["bot-token"]
@@ -247,7 +247,7 @@ class App:
 
         database = peewee.SqliteDatabase(str(database_path))
 
-        return cls(database, settings)
+        return cls(database, settings, server_path, root / "client")
 
     def decode_telegram_data(self, data: str):
         """

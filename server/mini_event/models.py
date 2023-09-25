@@ -18,6 +18,9 @@ class Event(BaseModel):
             "duration": self.duration
         }
 
+    def __lt__(self, other):
+        return (self.start, self.id) < (other.start, other.id)
+
 
 class User(BaseModel):
     telegram_id = peewee.IntegerField(unique=True)
