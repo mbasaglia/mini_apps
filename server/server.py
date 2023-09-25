@@ -2,7 +2,7 @@
 import asyncio
 import argparse
 
-from mini_apps.app import Settings
+from mini_apps.settings import Settings
 
 
 async def run_server(settings, host, port):

@@ -5,8 +5,8 @@ import pathlib
 
 import telethon
 
-from .models import User, Event, UserEvent
-from .app import App, Client
+from mini_apps.models import User, Event, UserEvent
+from mini_apps.app import App, Client
 
 
 class MiniEventApp(App):

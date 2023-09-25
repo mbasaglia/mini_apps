@@ -1,11 +1,11 @@
-import { App } from "./app.js";
+import { App } from "./src/app.js";
 
 
 export class MiniEventApp extends App
 {
     constructor(telegram, event_list_element)
     {
-        super("events", telegram);
+        super("mini_event", telegram);
         this.event_list_element = event_list_element;
         this.connection.addEventListener("event", this._on_event.bind(this));
         this.connection.addEventListener("delete-event", this._on_delete_event.bind(this));

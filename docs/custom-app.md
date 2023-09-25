@@ -16,22 +16,29 @@ Basic Setup
 Ensure you have a bot registered to [BotFather](https://t.me/BotFather), also
 ensure you followed all the installation steps.
 
+### Files
 
-### Server Side Code
+You need to create a directory called `server/mini_apps/apps/my_app`,
+and create three files in there:
 
-At minimum you need a Python class that inherits `mini_apps.app.App`.
-
-Create a python file as `server/mini_apps/my_app.py` with the following content:
-
-```py
-from .app import App
+`my_app.py`: This is a python file that will contain the server-side code
+`my_app.html`: This is an html file that will have the HTML structure
+`my_app.js`: This is a javascript file that will have the client-side code
 
 
-class MyApp(App):
-    pass
+### Configuration
+
+There's the script `server/enable_app.py` that will create the symlinks
+and configuration for you, simply run it like this:
+
+```bash
+server/enable_app.py mini_apps.apps.my_app.my_app.MyApp -w
 ```
 
-In `server/settings.json` add a new app like so:
+That script will need python to be installed on your system.
+
+It creates symlinks in `client/` and it adds something like the following to
+`server/settings.json`:
 
 ```js
 {
@@ -43,12 +50,36 @@ In `server/settings.json` add a new app like so:
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://miniapps.example.com/myapp.html",
+            "url": "https://miniapps.example.com/my_app.html",
             "media-url": "https://miniapps.example.com/media/"
         }
     }
 }
 ```
+
+(The settings will need to be tweaked to include your actual bot token).
+
+If you don't have python on the server, you can also create the symlinks and
+edit `server/settings.json` manually, which is what the main Readme does in
+the installation instructions.
+
+
+### Server Side Code
+
+At minimum you need a Python class that inherits `mini_apps.app.App`.
+
+Add the following to `my_app.py`:
+
+```py
+from mini_apps.app import App
+
+
+class MyApp(App):
+    pass
+```
+
+In `server/settings.json` add a new app like so:
+
 
 Then restart the server script. If you're using docker-compose, run
 
@@ -64,10 +95,10 @@ any logic to it.
 
 First we need the JavaScript code that handles the client-side logic.
 
-Create the file `client/src/myapp.js` with the following contents:
+Create the file `my_app.js` with the following contents:
 
 ```js
-import { App } from "./app.js";
+import { App } from "./src/app.js";
 
 
 export class MyApp extends App
@@ -75,12 +106,12 @@ export class MyApp extends App
     constructor(telegram)
     {
         // `myapp` here is the App ID as from the server settings
-        super("myapp", telegram);
+        super("my_app", telegram);
     }
 }
 ```
 
-Then we will create the frontent page as `client/myapp.html` (the file
+Then we will create the frontent page in `my_app.html` (the file
 name must match what you have as `url` in the server settings).
 
 ```html
@@ -101,7 +132,7 @@ name must match what you have as `url` in the server settings).
     </main>
 
     <script type="module">
-        import { MyApp } from "./src/myapp.js";
+        import { MyApp } from "./my_app.js";
 
         const myapp = new MyApp(window.Telegram);
 
@@ -199,14 +230,14 @@ with a `welcome` message.
 We can change the JavaScript code to show a personalized greeting when this happens.
 
 ```js
-import { App } from "./app.js";
+import { App } from "./src/app.js";
 
 
 export class MyApp extends App
 {
     constructor(telegram)
     {
-        super("myapp", telegram);
+        super("my_app", telegram);
     }
 
     /**
@@ -249,7 +280,7 @@ Let's add the button to the html, and add an event that calls a method on the ap
     </main>
 
     <script type="module">
-        import { MyApp } from "./src/myapp.js";
+        import { MyApp } from "./my_app.js";
 
         const myapp = new MyApp(window.Telegram);
 
@@ -273,14 +304,14 @@ real time:
 
 
 ```js
-import { App } from "./app.js";
+import { App } from "./src/app.js";
 
 
 export class MyApp extends App
 {
     constructor(telegram)
     {
-        super("myapp", telegram);
+        super("my_app", telegram);
 
         // When we receive a "clicks-updated" message from the server,
         // we call myapp.on_clicks_updated
@@ -318,7 +349,7 @@ Finally, we update the server-side code:
 import inspect
 import telethon
 
-from .app import App
+from mini_apps.app import App
 
 
 class MyApp(App):
@@ -394,8 +425,8 @@ they are simple [Peewee Models](https://docs.peewee-orm.com/en/latest/peewee/mod
 Also you need to register models on your app:
 
 ```py
-from .app import App
-from .db import BaseModel
+from mini_apps.app import App
+from mini_apps.db import BaseModel
 
 
 class Button(BaseModel):
@@ -424,7 +455,7 @@ To handle the request, you need to add a method to MyApp in Python
 ```python
 import telethon
 
-from .app import App
+from mini_apps.app import App
 
 class MyApp(App):
     async def on_telegram_inline(self, query: telethon.events.InlineQuery):

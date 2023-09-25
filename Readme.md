@@ -80,12 +80,12 @@ with the following:
         "port": 2536
     },
     "apps": {
-        "events": {
-            "class": "mini_apps.mini_event.MiniEventApp",
+        "mini_event": {
+            "class": "mini_apps.apps.mini_event.mini_event.MiniEventApp",
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://miniapps.example.com/events.html",
+            "url": "https://miniapps.example.com/mini_event.html",
             "media-url": "https://miniapps.example.com/media/"
         }
     }
@@ -109,6 +109,14 @@ Explanation of the settings fields:
     * `url`: URL of the mini app page
     * `media-url`: URL used to host images and the like
 
+
+You need to make the mini event public files visible to the web server,
+this can be done with the following commands:
+
+```bash
+cd /var/www/miniapps.example.com
+ln -sr server/mini_apps/apps/mini_event/mini_event.{html,js} client
+```
 
 ### Permissions
 
@@ -191,7 +199,15 @@ To generate the certificates you can use the following command:
 certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
 ```
 
-Loading Data
+More Apps
+---------
+
+This guide installs the `mini_event` app, which serves as a demo of the mini apps system.
+
+To make your own mini app, see [Making Your Own App](./docs/custom-app.md) page.
+
+
+Initial Data
 ------------
 
 There are a couple of server-side scripts that allow you to add some data into the system:
@@ -213,11 +229,6 @@ All these scripts support the `--help` command that gives more details on how th
 Please note that this demo uses SQLite to minimize set up and it only supports a single
 connection at a time. So if you want to call any of these scripts, you need to stop the server.
 
-
-Customizing
------------
-
-To make your own MiniApp, see [Making Your Own App](./docs/custom-app.md).
 
 Admin Interface
 ---------------

@@ -3,7 +3,7 @@ import argparse
 import pathlib
 import shutil
 
-from mini_apps.app import Settings
+from mini_apps.settings import Settings
 from mini_apps.models import Event
 
 
