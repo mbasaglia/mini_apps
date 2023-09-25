@@ -3,20 +3,17 @@ import argparse
 import pathlib
 import shutil
 
-from mini_event.mini_event import MiniEventApp
-from mini_event.models import User
+from mini_apps.app import Settings
+from mini_apps.models import User
 
 
 parser = argparse.ArgumentParser(description="Make a user an admin")
 parser.add_argument("telegram_id", type=int)
 args = parser.parse_args()
 
-app = MiniEventApp.from_settings()
+settings = Settings.load_global()
 
-
-with app.connect():
-    app.init_database()
-
+with settings.connect_database():
     user, created = User.get_or_create(
         telegram_id=args.telegram_id,
         defaults={

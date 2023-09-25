@@ -20,12 +20,11 @@ class MiniEventApp(App):
         self.events = {}
         self.sorted_events = []
 
-    def init_database(self):
+    def register_models(self):
         """
-        Register the tables used by the app to ensure the database is
-        initialized correctly
+        Registers the database models
         """
-        self.database.create_tables([User, Event, UserEvent])
+        self.settings.databse_models += [User, Event, UserEvent]
 
     def on_server_start(self):
         """
@@ -65,6 +64,9 @@ class MiniEventApp(App):
         self.log("Disconnected %s" % client.id)
 
     async def _on_attend(self, client: Client, data: dict):
+        """
+        Called on an `attend` message
+        """
         # Get the event
         event_id = data.get("event", "")
         event = self.events.get(event_id)
@@ -80,6 +82,9 @@ class MiniEventApp(App):
             await self.broadcast_event_change(event)
 
     async def _on_leave(self, client: Client, data: dict):
+        """
+        Called on an `leave` message
+        """
         # Get the event
         event_id = data.get("event", "")
         event = self.events.get(event_id)
@@ -94,6 +99,9 @@ class MiniEventApp(App):
             await self.broadcast_event_change(event)
 
     async def _on_create_event(self, client: Client, data: dict):
+        """
+        Called on an `create-event` message
+        """
         # Check if the user is an admin
         if not client.user.is_admin:
             await client.send(type="error", msg="You are not an admin")
@@ -125,6 +133,9 @@ class MiniEventApp(App):
             await client.send(type="error", msg="Invalid data")
 
     async def _on_delete_event(self, client: Client, data: dict):
+        """
+        Called on an `delete-event` message
+        """
         # Check if the user is an admin
         if not client.user.is_admin:
             await client.send(type="error", msg="You are not an admin")
@@ -232,7 +243,7 @@ class MiniEventApp(App):
             types.TypeKeyboardButtonRow([
                 types.KeyboardButtonWebView(
                     "View Events",
-                    self.settings["url"]
+                    self.settings.url
                 )
             ])
         ])
@@ -270,7 +281,7 @@ class MiniEventApp(App):
         results = []
 
         for event in events:
-            image_url = self.settings["url"] + event.image
+            image_url = self.settings.url + event.image
 
             text = inspect.cleandoc("""
             **{event.title}**[\u200B]({image_url})

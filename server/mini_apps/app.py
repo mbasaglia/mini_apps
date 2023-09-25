@@ -2,6 +2,7 @@ import asyncio
 import json
 import hmac
 import hashlib
+import importlib
 import pathlib
 import traceback
 import urllib.parse
@@ -48,19 +49,116 @@ class Client(AutoId):
         return self.user.to_json()
 
 
+class SettingsValue:
+    """
+    Object to access settings in a more convenient way than a dict
+    """
+    def __init__(self, data: dict = {}):
+        for key, value in data.items():
+            if isinstance(value, dict):
+                value = SettingsValue(value)
+            setattr(self, key.replace("-", "_"), value)
+
+    def pop(self, key: str):
+        """
+        Removes a setting and returns its value
+        """
+        value = getattr(self, key)
+        delattr(self, key)
+        return value
+
+    @classmethod
+    def load(cls, filename, **extra):
+        """
+        Loads settings from a JSON file
+        """
+        with open(filename, "r") as settings_file:
+            data = json.load(settings_file)
+            data.update(extra)
+            return cls(data)
+
+
+class Settings(SettingsValue):
+    """
+    Global settings
+    """
+    def __init__(self, data: dict):
+        database = data.pop("database")
+        apps = data.pop("apps")
+        super().__init__(data)
+
+        self.database = self.load_database(database)
+        self.apps = SettingsValue()
+        self.app_list = []
+        self.database_models = []
+
+        for name, app_settings in apps.items():
+            app = self.load_app(app_settings)
+            setattr(self.apps, name, app)
+            self.app_list.append(app)
+
+    @classmethod
+    def load_global(cls):
+        """
+        Loads the global settings file
+        """
+        server_path = pathlib.Path(__file__).absolute().parent.parent
+        root = server_path.parent
+
+        return cls.load(
+            server_path / "settings.json",
+            paths={
+                "root": root,
+                "server": server_path,
+                "client": root / "client",
+            }
+        )
+
+    def load_database(self, db_settings: dict):
+        """
+        Loads database settings
+        """
+        class_name = db_settings.pop("class")
+        cls = getattr(peewee, class_name)
+
+        if class_name == "SqliteDatabase":
+            database_path = self.paths.root / db_settings["database"]
+            database_path.parent.mkdir(parents=True, exist_ok=True)
+            db_settings["database"] = str(database_path)
+
+        return cls(**db_settings)
+
+    def load_app(self, app_settings: dict):
+        """
+        Loads a mini app / bot
+        """
+        module_name, class_name = app_settings.pop("class").rsplit(".", 1)
+        cls = getattr(importlib.import_module(module_name), class_name)
+        app_settings.update(vars(self))
+        settings = SettingsValue(app_settings)
+        return cls(settings)
+
+    def connect_database(self):
+        """
+        Connects to the database and initializes the models
+        """
+        database = connect(self.database)
+        database.connect()
+        database.create_tables(self.database_models)
+        return database
+
+
 class App:
     """
     Contains boilerplate code to manage the database and the web socket connections
     Inherit from this and override the relevant methods to implement your own app
     """
-    def __init__(self, database, settings, server_path, client_path):
+
+    def __init__(self, settings):
         self.clients = {}
-        self.database = database
         self.settings = settings
         self.telegram = None
         self.telegram_me = None
-        self.server_path = server_path
-        self.client_path = client_path
 
     async def socket_messages(self, client):
         """
@@ -127,7 +225,7 @@ class App:
         if data is None:
             return None
 
-        with self.database.atomic():
+        with self.settings.database.atomic():
             user = User.get_user(data["user"])
 
         return user
@@ -139,21 +237,29 @@ class App:
         self.clients.pop(client.id)
         await self.on_client_disconnected(client)
 
-    async def run_socket_server(self, host: str, port: int):
+    async def run_socket_server(self):
         """
         Runs the websocket server
         """
         self.on_server_start()
 
+        host = self.settings.hostname
+        port = self.settings.port
+
         async with websockets.serve(self.socket_handler, host, port):
             self.log("Connected as %s:%s" % (host, port))
             await asyncio.Future()  # run forever
 
-    async def run_bot(self, session, api_id: int, api_hash: str, bot_token: str):
+    async def run_bot(self):
         """
         Runs the telegram bot
         """
         try:
+            session = getattr(self.settings, "session", MemorySession())
+            api_id = self.settings.api_id
+            api_hash = self.settings.api_hash
+            bot_token = self.settings.bot_token
+
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
             self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
@@ -198,57 +304,6 @@ class App:
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def run(self):
-        """
-        Runs the telegram bot and socket server
-        """
-        self.connect()
-
-        try:
-            self.init_database()
-
-            run_app_task = asyncio.create_task(self.run_socket_server(
-                self.settings["hostname"],
-                self.settings["port"]
-            ))
-            run_bot_task = asyncio.create_task(self.run_bot(
-                self.settings.get("session", MemorySession()),
-                self.settings["api-id"],
-                self.settings["api-hash"],
-                self.settings["bot-token"]
-            ))
-
-            done, pending = await asyncio.wait(
-                [run_app_task, run_bot_task],
-                return_when=asyncio.ALL_COMPLETED
-            )
-
-            for task in pending:
-                task.cancel()
-
-        except KeyboardInterrupt:
-            pass
-        finally:
-            self.database.close()
-
-    @classmethod
-    def from_settings(cls):
-        """
-        Constructs an instance by loading the settings file
-        """
-        server_path = pathlib.Path(__file__).absolute().parent.parent
-        root = server_path.parent
-
-        with open(server_path / "settings.json", "r") as settings_file:
-            settings = json.load(settings_file)
-
-        database_path = root / settings["database"]
-        database_path.parent.mkdir(parents=True, exist_ok=True)
-
-        database = peewee.SqliteDatabase(str(database_path))
-
-        return cls(database, settings, server_path, root / "client")
-
     def decode_telegram_data(self, data: str):
         """
         Decodes data as per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
@@ -267,7 +322,7 @@ class App:
 
         # Check the hash
         data_check_string = data_check_string.strip()
-        token = self.settings["bot-token"].encode("ascii")
+        token = self.settings.bot_token.encode("ascii")
         secret_key = hmac.new(b"WebAppData", token, digestmod=hashlib.sha256).digest()
         correct_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), digestmod=hashlib.sha256).hexdigest()
 
@@ -280,15 +335,9 @@ class App:
     def log(self, *args):
         print(self.__class__.__name__, *args)
 
-    def connect(self):
+    def register_models(self):
         """
-        Connects to the database
-        """
-        return connect(self.database)
-
-    def init_database(self):
-        """
-        Override in derived classes to register the models
+        Override in derived classes to register the models in self.settings.database_models
         """
         pass
 
