@@ -204,7 +204,16 @@ To change the server-side code, you only need to edit a couple files:
 `server/mini_event/models.py` defines the database tables in python code using
 [Peewee](https://docs.peewee-orm.com/en/latest/peewee/models.html).
 
-`server/mini_event/mini_event.py` Handles all the logic and events.
+`server/mini_event/mini_event.py` handles all the logic and events.
+
+The front end is split into 3 files:
+
+`client/index.html` has the HTML structure.
+`client/style.css` contains the style.
+`client/mini_event.js` handles the client-side logic.
+
+There are more files both in `server/` and `client/` that handle all the boilerplate
+and low-level connection workings, these can be easily reused.
 
 
 Web Socket Messages
