@@ -1,8 +1,11 @@
 import base64
+import datetime
 import inspect
 import mimetypes
 import pathlib
 
+import aiocron
+import asyncio
 import telethon
 
 from mini_apps.models import User, Event, UserEvent
@@ -30,6 +33,9 @@ class MiniEventApp(App):
         Called when the server starts
         """
         self.load_events()
+
+        # Run every minute
+        aiocron.crontab('* * * * * 0', func=self.check_starting)
 
     def load_events(self):
         """
@@ -310,3 +316,23 @@ class MiniEventApp(App):
             ))
 
         await query.answer(results)
+
+    async def check_starting(self):
+        """
+        Called periodically, used to check if the user needs to be notified of
+        an event
+        """
+        now = datetime.datetime.now().strftime("%H:%M")
+        for event in self.sorted_events:
+            if event.start > now:
+                break
+            elif event.start == now:
+                text = "**{event.title}** is starting!".format(event=event)
+                for user in event.attendees:
+                    try:
+                        await self.telegram.send_message(
+                            user.user.telegram_id,
+                            message=text
+                        )
+                    except Exception:
+                        pass

@@ -19,11 +19,12 @@ class App:
     Inherit from this and override the relevant methods to implement your own app
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings, name=None):
         self.clients = {}
         self.settings = settings
         self.telegram = None
         self.telegram_me = None
+        self.name = name or self.__class__.__name__
 
     async def login(self, client: Client, message: dict):
         """
@@ -138,7 +139,16 @@ class App:
         return clean
 
     def log(self, *args):
-        print(self.__class__.__name__, *args)
+        """
+        Prints a log message
+        """
+        print(self.name, *args)
+
+    def server_tasks(self):
+        """
+        Returns any extra async tasks needed to run the app
+        """
+        return []
 
     def register_models(self):
         """

@@ -48,7 +48,7 @@ class Settings(SettingsValue):
 
         for name, app_settings in apps.items():
             if app_settings.pop("enabled", True):
-                app = self.load_app(app_settings)
+                app = self.load_app(app_settings, name)
                 setattr(self.apps, name, app)
                 self.app_list.append(app)
 
@@ -89,14 +89,14 @@ class Settings(SettingsValue):
 
         return cls(**db_settings)
 
-    def load_app(self, app_settings: dict):
+    def load_app(self, app_settings: dict, name: str):
         """
         Loads a mini app / bot
         """
         cls = self.import_class(app_settings.pop("class"))
         app_settings.update(vars(self))
         settings = SettingsValue(app_settings)
-        return cls(settings)
+        return cls(settings, name)
 
     def import_class(self, import_string: str):
         """

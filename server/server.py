@@ -14,10 +14,11 @@ async def run_server(settings, host, port):
     tasks = []
 
     websocket_server = settings.websocket_server(host, port)
-    tasks.append(asyncio.create_task(websocket_server.run()))
+    tasks.append(asyncio.create_task(websocket_server.run(), name="websocket"))
 
     for app in settings.app_list:
-        tasks.append(asyncio.create_task(app.run_bot()))
+        tasks.append(asyncio.create_task(app.run_bot(), name=app.name))
+        tasks += app.server_tasks()
 
     try:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
