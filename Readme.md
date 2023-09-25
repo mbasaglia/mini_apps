@@ -140,7 +140,7 @@ To ensure everything is secured, we'll use `certbot` to generate certificates.
 
 Create a new site on apache as `/etc/apache2/sites-available/minievent.evample.com.conf`:
 
-```
+```apache
 # This sets up the SSL (ecrypted) virtual host, which actually hosts the website
 <VirtualHost *:443>
     # Basic Setup (domain and directory)
