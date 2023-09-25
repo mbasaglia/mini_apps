@@ -5,7 +5,7 @@ export class MiniEventApp extends App
 {
     constructor(telegram, event_list_element)
     {
-        super(telegram);
+        super("events", telegram);
         this.event_list_element = event_list_element;
         this.connection.addEventListener("event", this._on_event.bind(this));
         this.connection.addEventListener("delete-event", this._on_delete_event.bind(this));

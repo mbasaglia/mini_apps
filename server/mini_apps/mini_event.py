@@ -41,12 +41,6 @@ class MiniEventApp(App):
 
         self.sorted_events = sorted(self.events.values())
 
-    async def on_client_connected(self, client: Client):
-        """
-        Called when a client connects to the server (before authentication)
-        """
-        self.log("Connected %s" % client.id)
-
     async def on_client_authenticated(self, client: Client):
         """
         Called when a client has been authenticated
@@ -281,7 +275,7 @@ class MiniEventApp(App):
         results = []
 
         for event in events:
-            image_url = self.settings.url + event.image
+            image_url = self.settings.media_url + event.image
 
             text = inspect.cleandoc("""
             **{event.title}**[\u200B]({image_url})

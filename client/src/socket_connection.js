@@ -3,7 +3,7 @@
  */
 export class SocketConnection extends EventTarget
 {
-    constructor()
+    constructor(app_id)
     {
         super();
 
@@ -11,6 +11,7 @@ export class SocketConnection extends EventTarget
         this.reconnect = true;
         this.url = null;
         this.socket = null;
+        this.app_id = app_id;
     }
 
     /**
@@ -54,6 +55,7 @@ export class SocketConnection extends EventTarget
      */
     send(data)
     {
+        data.app = this.app_id;
         this.socket.send(JSON.stringify(data));
     }
 

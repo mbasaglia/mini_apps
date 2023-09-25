@@ -5,13 +5,13 @@ import { SocketConnection } from "./socket_connection.js";
  */
 export class App
 {
-    constructor(telegram)
+    constructor(app_id, telegram)
     {
         this.webapp = telegram.WebApp;
 
         this.user = {};
 
-        this.connection = new SocketConnection();
+        this.connection = new SocketConnection(app_id);
         this.connection.addEventListener("connect", this._on_connect.bind(this));
         this.connection.addEventListener("disconnect", this._on_disconnect.bind(this));
         this.connection.addEventListener("welcome", this._on_welcome.bind(this));

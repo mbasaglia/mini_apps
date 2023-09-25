@@ -147,18 +147,28 @@ class Settings(SettingsValue):
         database.create_tables(self.database_models)
         return database
 
+    def websocket_server(self, host=None, port=None):
+        """
+        Returns a WebsocketServer instance based on settings
+        """
+        self.server = WebsocketServer(
+            host or self.websocket.hostname,
+            port or self.websocket.port,
+            self.apps
+        )
+        return self.server
 
-class App:
+
+class WebsocketServer:
     """
-    Contains boilerplate code to manage the database and the web socket connections
-    Inherit from this and override the relevant methods to implement your own app
+    Class that runs the websocket server and dispatches incoming messages to
+    the installed apps
     """
 
-    def __init__(self, settings):
-        self.clients = {}
-        self.settings = settings
-        self.telegram = None
-        self.telegram_me = None
+    def __init__(self, host, port, apps):
+        self.host = host
+        self.port = port
+        self.apps = apps
 
     async def socket_messages(self, client):
         """
@@ -167,10 +177,19 @@ class App:
         async for message in client.socket:
             try:
                 data = json.loads(message)
-                yield data
-            except Exception as e:
-                self.log("Error", client.id, message)
-                await self.on_socket_exception(client, e)
+                # Find the app this message is for
+                app_name = data.pop("app", None)
+                if app_name:
+                    app = getattr(self.apps, app_name, None)
+                    if app:
+                        yield app, data
+                        continue
+                print("Unknown Message", client.id, message)
+                await client.send(type="error", msg="Missing App ID")
+            except Exception as exception:
+                print("Socket Error", client.id, message)
+                traceback.print_exc()
+                await client.send(type="error", msg="Internal server error")
 
     async def socket_handler(self, socket):
         """
@@ -180,32 +199,53 @@ class App:
         # Create the client object for this socket
         client = Client(socket)
         await client.send(type="connect")
-        await self.on_client_connected(client)
 
         # Wait for a login message
-        async for message in self.socket_messages(client):
-            self.log(client.id, message)
+        async for app, message in self.socket_messages(client):
             if message["type"] != "login":
                 await client.send(type="error", msg="You need to login first")
             else:
-                await self.login(client, message)
+                await app.login(client, message)
                 break
 
         try:
             # Disconnect if there is no correct login
             if not client.user:
                 await client.send(type="disconnect")
-                await self.disconnect(client)
+                await app.disconnect(client)
                 return
 
             # Process messages from the client
-            async for message in self.socket_messages(client):
+            async for app, message in self.socket_messages(client):
                 type = message.get("type", "")
-                await self.handle_message(client, type, message)
+                await app.handle_message(client, type, message)
 
         finally:
             # Disconnect when the client has finished
-            await self.disconnect(client)
+            await app.disconnect(client)
+
+    async def run(self):
+        """
+        Runs the websocket server
+        """
+        for app in vars(self.apps).values():
+            app.on_server_start()
+
+        async with websockets.serve(self.socket_handler, self.host, self.port):
+            print("Connected as %s:%s" % (self.host, self.port))
+            await asyncio.Future()  # run forever
+
+class App:
+    """
+    Contains boilerplate code to manage the various connections
+    Inherit from this and override the relevant methods to implement your own app
+    """
+
+    def __init__(self, settings):
+        self.clients = {}
+        self.settings = settings
+        self.telegram = None
+        self.telegram_me = None
 
     async def login(self, client: Client, message: dict):
         """
@@ -236,19 +276,6 @@ class App:
         """
         self.clients.pop(client.id)
         await self.on_client_disconnected(client)
-
-    async def run_socket_server(self):
-        """
-        Runs the websocket server
-        """
-        self.on_server_start()
-
-        host = self.settings.hostname
-        port = self.settings.port
-
-        async with websockets.serve(self.socket_handler, host, port):
-            self.log("Connected as %s:%s" % (host, port))
-            await asyncio.Future()  # run forever
 
     async def run_bot(self):
         """
@@ -353,12 +380,6 @@ class App:
         """
         pass
 
-    async def on_client_connected(self, client: Client):
-        """
-        Called when a client connects to the server (before authentication)
-        """
-        pass
-
     async def on_client_authenticated(self, client: Client):
         """
         Called when a client has been authenticated
@@ -370,13 +391,6 @@ class App:
         Called when a client disconnects from the server
         """
         pass
-
-    async def on_socket_exception(self, client: Client, exception: Exception):
-        """
-        Called when there is an exception while processing a socket message
-        """
-        traceback.print_exc()
-        await client.send(type="error", msg=str(exception))
 
     async def on_telegram_exception(self, exception: Exception):
         """
