@@ -43,8 +43,8 @@ In `server/settings.json` add a new app like so:
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://minievent.example.com/myapp.html",
-            "media-url": "https://minievent.example.com/media/"
+            "url": "https://miniapps.example.com/myapp.html",
+            "media-url": "https://miniapps.example.com/media/"
         }
     }
 }

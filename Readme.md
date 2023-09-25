@@ -31,7 +31,7 @@ They both have a JSON with settings so you can configure it to your needs.
 The following guide shows how to install and configure the various tools
 on a Ubuntu server with Apache.
 
-This gues assumes the domain is `minievent.example.com`, replace with the
+This gues assumes the domain is `miniapps.example.com`, replace with the
 appropriate value in the various config files.
 
 Most steps require to have root access on a default configuration, if you are
@@ -54,19 +54,19 @@ Ensure the project is installed in a directory that apache can serve,
 If you want to use git to install the project, use the following commands:
 ```bash
 cd /var/www/
-git clone https://github.com/mbasaglia/mini_event.git minievent.example.com
+git clone https://github.com/mbasaglia/mini_apps.git miniapps.example.com
 ```
 
-Add the settings file for the client `/var/www/minievent.example.com/client/settings.json`
+Add the settings file for the client `/var/www/miniapps.example.com/client/settings.json`
 with the following content:
 
 ```json
 {
-    "socket": "wss://minievent.example.com/wss/"
+    "socket": "wss://miniapps.example.com/wss/"
 }
 ```
 
-And the server-side settings file `/var/www/minievent.example.com/server/settings.json`
+And the server-side settings file `/var/www/miniapps.example.com/server/settings.json`
 with the following:
 
 ```json
@@ -85,8 +85,8 @@ with the following:
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://minievent.example.com/events.html",
-            "media-url": "https://minievent.example.com/media/"
+            "url": "https://miniapps.example.com/events.html",
+            "media-url": "https://miniapps.example.com/media/"
         }
     }
 }
@@ -115,8 +115,8 @@ Explanation of the settings fields:
 The media directory in the client needs to be writable by the web server:
 
 ```bash
-chgrp www-data /var/www/minievent.example.com/client/media/
-chmod g+w /var/www/minievent.example.com/client/media/
+chgrp www-data /var/www/miniapps.example.com/client/media/
+chmod g+w /var/www/miniapps.example.com/client/media/
 ```
 
 ### Back-End With Docker
@@ -126,7 +126,7 @@ There is a docker-compose file that wraps the back-end service as a container.
 To start the container simply run the following:
 
 ```bash
-cd /var/www/var/www/minievent.example.com
+cd /var/www/var/www/miniapps.example.com
 docker-compose up -d
 ```
 
@@ -188,7 +188,7 @@ Follow the installation instructions for `certbot` at https://certbot.eff.org/in
 To generate the certificates you can use the following command:
 
 ```bash
-certbot --authenticator webroot --installer apache certonly -w /var/www/minievent.example.com --domains minievent.example.com
+certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
 ```
 
 Loading Data
