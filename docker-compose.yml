@@ -1,0 +1,10 @@
+version: "2"
+services:
+    miniapp:
+        image: python:3.10
+        ports:
+            - 2536:2536
+        volumes:
+            - .:/var/miniapp/
+        working_dir: /var/miniapp/
+        command: bash -c "pip install -r server/requirements.txt && python server/server.py --host 0.0.0.0"

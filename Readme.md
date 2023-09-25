@@ -39,12 +39,12 @@ not logged in as `root`, you can try `sudo`.
 
 ### Installing Dependencies
 
-We need Apache to run the web server, python, virtualenv, and supervisor to run
+We need Apache to run the web server, docker-compose to run
 the web socket code.
 
 
 ```bash
-apt install -y apache2 python3 python3-virtualenv supervisor git
+apt install -y apache2 docker-compose git
 ```
 
 ### Configuration
@@ -93,40 +93,21 @@ chgrp www-data /var/www/minievent.example.com/client/media/
 chmod g+w /var/www/minievent.example.com/client/media/
 ```
 
-### Python Dependencies
+### Back-End With Docker
 
-Set up a virtual environment and install dependencies:
+There is a docker-compose file that wraps the back-end service as a container.
 
-```
-cd /var/www/minievent.example.com
-virtualenv env
-pip install -r server/requirements
-```
+To start the container simply run the following:
 
-### Supervisor
-
-Supervisor is a tool that allows you to keep running scripts in the background,
-and it provides commands to start and stop them. Here we use it to run the
-python script that manages the server-side web socket.
-
-The supervisor config will be in `/etc/supervisor/conf.d/minievent.conf`
-with the following content:
-
-```
-[program:minievent]
-user=www-data
-group=www-data
-stderr_logfile=/var/log/apache2/minievent.evample.com/supervisor-err.log
-redirect_stderr=true
-stdout_logfile=/var/log/apache2/minievent.evample.com/supervisor.log
-directory=/var/www/minievent.evample.com/
-command=/var/www/minievent.evample.com/env/bin/python server/server.py
+```bash
+cd /var/www/var/www/minievent.example.com
+docker-compose up -d
 ```
 
-Then run `supervisorctl reload` to load the new job, you can see whether it's running
-with `supervisor status`.
+If you want to install the back-end on your machine directly (without docker)
+you can follow the instructions for a [manual installation](./docs/manual-installation.md).
 
-### Apache
+### Front-End With Apache
 
 This step is what makes the app accessible from outside the server machine.
 To ensure everything is secured, we'll use `certbot` to generate certificates.
