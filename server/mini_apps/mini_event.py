@@ -1,5 +1,4 @@
 import base64
-import bisect
 import inspect
 import mimetypes
 import pathlib
@@ -46,7 +45,6 @@ class MiniEventApp(App):
         Called when a client has been authenticated
         """
         self.log("%s is %s" % (client.id, client.user.name))
-        await client.send(type="welcome", **client.to_json())
 
         for event in self.sorted_events:
             await client.send(type="event", **self.event_data(event, client.user))
@@ -221,7 +219,6 @@ class MiniEventApp(App):
         """
         Called when a user sends /start to the bot
         """
-
 
         # Send a short message and a button to open the app on telegram
         await self.telegram.send_message(event.chat, inspect.cleandoc("""

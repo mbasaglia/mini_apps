@@ -71,17 +71,43 @@ with the following:
 
 ```json
 {
-    "url": "https://minievent.example.com/",
-    "hostname": "localhost",
-    "port": 2536,
-    "database": "db/db.sqlite",
-    "bot-token": "(your bot token)",
-    "api-id": "(your api id)",
-    "api-hash": "(your api hash)"
+    "database": {
+        "class": "SqliteDatabase",
+        "database": "db/db.sqlite"
+    },
+    "websocket": {
+        "hostname": "localhost",
+        "port": 2536
+    },
+    "apps": {
+        "events": {
+            "class": "mini_apps.mini_event.MiniEventApp",
+            "bot-token": "(your bot token)",
+            "api-id": "(your api id)",
+            "api-hash": "(your api hash)",
+            "url": "https://minievent.example.com/events.html",
+            "media-url": "https://minievent.example.com/media/"
+        }
+    }
 }
 ```
-Set `bot-token` with the telegram bot token given by BotFather.
-The values for `api-id` and `api-hash` can be found at https://my.telegram.org/apps.
+
+Explanation of the settings fields:
+
+* `database`: This configures the database connection
+    * `class`: One of the [Peewee database classes](https://docs.peewee-orm.com/en/latest/peewee/database.html)
+    * The rest of the properties here are passed as class constructor arguments
+* `websocket`: Web socket settings
+    * `hostname`: Socket bind host name or address
+    * `port`: Socket port
+* `apps`: Map of app short name to app settings. App settings contain the following:
+    * `class`: Python class that runs the bot / app
+    * `api-id`: MTProto API ID, you can get its value from https://my.telegram.org/apps
+    * `api-hash`: MTProto API hash, you can get its value from https://my.telegram.org/apps
+    * `session`: (Optional) [session name](https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.telegrambaseclient.TelegramBaseClient) for Telethon
+    * `bot-token`: Bot API token as kiven by BotFather
+    * `url`: URL of the mini app page
+    * `media-url`: URL used to host images and the like
 
 
 ### Permissions
@@ -188,6 +214,11 @@ Please note that this demo uses SQLite to minimize set up and it only supports a
 connection at a time. So if you want to call any of these scripts, you need to stop the server.
 
 
+Customizing
+-----------
+
+To make your own MiniApp, see [Making Your Own App](./docs/custom-app.md).
+
 Admin Interface
 ---------------
 
@@ -196,32 +227,14 @@ access the mini app, they will see additional options, which allows them to mana
 the events.
 
 
-Customizing the App
--------------------
-
-To change the server-side code, you only need to edit a couple files:
-
-`server/mini_event/models.py` defines the database tables in python code using
-[Peewee](https://docs.peewee-orm.com/en/latest/peewee/models.html).
-
-`server/mini_event/mini_event.py` handles all the logic and events.
-
-The front end is split into 3 files:
-
-`client/index.html` has the HTML structure.
-`client/style.css` contains the style.
-`client/mini_event.js` handles the client-side logic.
-
-There are more files both in `server/` and `client/` that handle all the boilerplate
-and low-level connection workings, these can be easily reused.
-
-
 Web Socket Messages
 -------------------
 
 This section will describe the messages sent through web sockets.
 All the messages are JSON-encoded, and have a `type` attribute that determintes
 the kind of message.
+
+Messages sent from the client, have an `app` attribute to identify which app the message is delivered to.
 
 Connection-related messages:
 

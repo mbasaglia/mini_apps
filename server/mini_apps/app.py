@@ -41,6 +41,7 @@ class Client(AutoId):
         super().__init__()
         self.socket = socket
         self.user = None
+        self.app = None
 
     async def send(self, **data):
         await self.socket.send(json.dumps(data))
@@ -118,10 +119,9 @@ class Settings(SettingsValue):
         """
         Loads database settings
         """
-        class_name = db_settings.pop("class")
-        cls = getattr(peewee, class_name)
+        cls = self.import_class(db_settings.pop("class"))
 
-        if class_name == "SqliteDatabase":
+        if cls.__name__ == "SqliteDatabase":
             database_path = self.paths.root / db_settings["database"]
             database_path.parent.mkdir(parents=True, exist_ok=True)
             db_settings["database"] = str(database_path)
@@ -132,11 +132,17 @@ class Settings(SettingsValue):
         """
         Loads a mini app / bot
         """
-        module_name, class_name = app_settings.pop("class").rsplit(".", 1)
-        cls = getattr(importlib.import_module(module_name), class_name)
+        cls = self.import_class(app_settings.pop("class"))
         app_settings.update(vars(self))
         settings = SettingsValue(app_settings)
         return cls(settings)
+
+    def import_class(self, import_string: str):
+        """
+        Imports a python class from its module.class notation
+        """
+        module_name, class_name = import_string.rsplit(".", 1)
+        return getattr(importlib.import_module(module_name), class_name)
 
     def connect_database(self):
         """
@@ -184,6 +190,7 @@ class WebsocketServer:
                     if app:
                         yield app, data
                         continue
+
                 print("Unknown Message", client.id, message)
                 await client.send(type="error", msg="Missing App ID")
             except Exception as exception:
@@ -205,15 +212,17 @@ class WebsocketServer:
             if message["type"] != "login":
                 await client.send(type="error", msg="You need to login first")
             else:
+                client.app = app
                 await app.login(client, message)
                 break
 
+        # Disconnect if there is no correct login
+        if not client.app or not client.user:
+            await client.send(type="disconnect")
+            return
+
         try:
-            # Disconnect if there is no correct login
-            if not client.user:
-                await client.send(type="disconnect")
-                await app.disconnect(client)
-                return
+            await client.send(type="welcome", **client.to_json())
 
             # Process messages from the client
             async for app, message in self.socket_messages(client):
@@ -222,7 +231,7 @@ class WebsocketServer:
 
         finally:
             # Disconnect when the client has finished
-            await app.disconnect(client)
+            await client.app.disconnect(client)
 
     async def run(self):
         """
@@ -234,6 +243,7 @@ class WebsocketServer:
         async with websockets.serve(self.socket_handler, self.host, self.port):
             print("Connected as %s:%s" % (self.host, self.port))
             await asyncio.Future()  # run forever
+
 
 class App:
     """
@@ -252,8 +262,8 @@ class App:
         Login logic
         """
         client.user = self.get_user(message)
-        self.clients[client.id] = client
         if client.user:
+            self.clients[client.id] = client
             await self.on_client_authenticated(client)
 
     def get_user(self, message: dict):

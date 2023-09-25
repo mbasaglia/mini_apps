@@ -17,7 +17,7 @@ html {
 button {
     background: var(--tg-theme-button-color);
     color: var(--tg-theme-button-text-color);
-    border: none;
+    border: 1px solid var(--tg-theme-button-text-color);
     border-radius: 6px;
     width: 100%;
     padding: 12px;
@@ -29,12 +29,16 @@ button {
 button:hover {
     background: var(--tg-theme-button-text-color);
     color: var(--tg-theme-button-color);
+    border-color: var(--tg-theme-button-color);
+}
+
+main {
+    margin: 0 auto;
 }
 
 #event-list {
     display: flex;
     flex-flow: row wrap;
-    margin: 0 auto;
     justify-content: center;
 }
 
