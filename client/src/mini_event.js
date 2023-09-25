@@ -9,6 +9,7 @@ export class MiniEventApp extends App
         this.event_list_element = event_list_element;
         this.connection.addEventListener("event", this._on_event.bind(this));
         this.connection.addEventListener("delete-event", this._on_delete_event.bind(this));
+        this.admin_visible = false;
     }
 
     /**
@@ -142,6 +143,9 @@ export class MiniEventApp extends App
                     id: ev.detail.id,
                 });
             });
+
+            if ( this.admin_visible )
+                button_delete.style.display = "block";
         }
     }
 
@@ -223,17 +227,19 @@ export class MiniEventApp extends App
 
         const show_admin = document.getElementById("show-admin-button");
         const hide_admin = document.getElementById("hide-admin-button");
-        show_admin.addEventListener("click", function() {
+        show_admin.addEventListener("click", (function() {
+            this.admin_visible = true;
             hide_admin.style.display = "block";
             show_admin.style.display = "none";
             for ( let element of document.querySelectorAll(".admin-action") )
                 element.style.display = "block";
-        });
-        hide_admin.addEventListener("click", function() {
+        }).bind(this));
+        hide_admin.addEventListener("click", (function() {
+            this.admin_visible = false;
             hide_admin.style.display = "none";
             show_admin.style.display = "block";
             for ( let element of document.querySelectorAll(".admin-action") )
                 element.style.display = "none";
-        });
+        }).bind(this));
     }
 }
