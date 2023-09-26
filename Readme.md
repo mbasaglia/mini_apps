@@ -199,6 +199,22 @@ To generate the certificates you can use the following command:
 certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
 ```
 
+Known Limitations
+-----------------
+
+The events app is a technical demo, for a fully functional app some changes are needed.
+
+For one the events are only specified as a time (not a date), this allows the bot
+to always show events without having to set up many events throughout the course
+of several days.
+
+The bot notifies users that registered as attendding an event, this is done
+based on the server time (which is in Germany).
+
+The live database might get wiped and recreated periodically so some data will
+be deleted.
+
+
 More Apps
 ---------
 

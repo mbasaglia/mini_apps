@@ -3,12 +3,14 @@ import datetime
 import inspect
 import mimetypes
 import pathlib
+import time
 
 import aiocron
 import telethon
 
-from mini_apps.models import User, Event, UserEvent
+from mini_apps.models import User
 from mini_apps.app import App, Client
+from .models import Event, UserEvent
 
 
 class MiniEventApp(App):
@@ -321,17 +323,28 @@ class MiniEventApp(App):
         Called periodically, used to check if the user needs to be notified of
         an event
         """
-        now = datetime.datetime.now().strftime("%H:%M")
+        now = datetime.datetime.now()
+        hour = now.strftime("%H:%M")
+        message_count = 0
         for event in self.sorted_events:
-            if event.start > now:
+            if event.start > hour:
                 break
-            elif event.start == now:
+            elif event.start == hour:
                 text = "**{event.title}** is starting!".format(event=event)
                 for user in event.attendees:
                     try:
+                        # We can't send more than 30 messages (to diferent chats)
+                        # per second, so we wait if that happens
+                        message_count += 1
+                        if message_count >= 30:
+                            message_count = 0
+                            time.sleep(1)
+
                         await self.telegram.send_message(
                             user.user.telegram_id,
                             message=text
                         )
-                    except Exception:
+
+                    except Exception as exception:
+                        self.log("Notification error %s %s" % (exception.__clas__, exception))
                         pass
