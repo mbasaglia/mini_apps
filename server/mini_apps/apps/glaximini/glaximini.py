@@ -1,4 +1,5 @@
 import inspect
+import json
 
 import telethon
 
@@ -39,17 +40,18 @@ class Glaximini(App):
         Called when a client has been authenticated
         """
         # Send the initial count when the client connects
+        client.lottie = "";
         await client.send(type="clicks-updated", count=self.click_count)
 
     async def handle_message(self, client: Client, type: str, data: dict):
         """
         Handles messages received from the client
         """
-        if type == "click":
-            # Increment count
-            self.click_count += 1
-            # Update on all clients
-            for client in self.clients.values():
-                await client.send(type="clicks-updated", count=self.click_count)
+        if type == "document.start":
+            client.lottie = ""
+        elif type == "document.chunk":
+            client.lottie += data["data"]
+        elif type == "document.end":
+            client.lottie = json.loads(client.lottie)
         else:
             await client.send(type="error", msg="Unknown command", what=data)

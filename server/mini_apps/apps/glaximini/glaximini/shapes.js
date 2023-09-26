@@ -1,6 +1,151 @@
 import { Point, Matrix, BoundingBox, Polygon } from "./math.js";
 import { Bezier } from "./bezier.js";
+import { lerp_hex, hex_to_rgb } from "./color.js"
 
+function value_to_lottie(value, make_array = false)
+{
+    if ( typeof value == "number" )
+    {
+        if ( make_array )
+            return [value];
+        return value;
+    }
+    else if ( typeof value == "string" && value[0] == "#" )
+    {
+        return hex_to_rgb(value, 1/255);
+    }
+    else if ( value instanceof Point )
+    {
+        return [value.x, value.y];
+    }
+    else if ( value instanceof Bezier )
+    {
+        let lottie_bezier = {
+            c: false,
+            v: [],
+            i: [],
+            o: [],
+        };
+
+        if ( value.segments.length == 0 )
+            return lottie_bezier;
+
+        let flat = value.toJSON();
+
+        let closed = flat[0].is_equal(flat[flat.length-1]);
+
+        if ( closed )
+        {
+            lottie_bezier.c = true;
+            flat.pop();
+            lottie_bezier.i.push(value_to_lottie(flat.pop().sub(flat[0])));
+        }
+        else
+        {
+            lottie_bezier.i.push([0, 0]);
+        }
+
+        for ( let i = 0; i < value.segments.length; i += 3 )
+        {
+            let pos = flat[i];
+            lottie_bezier.o.push(value_to_lottie(pos));
+            lottie_bezier.o.push(value_to_lottie(flat[i+1].sub(pos)));
+            lottie_bezier.i.push(value_to_lottie(flat[i+2].sub(pos)));
+        }
+
+        if ( !closed )
+            lottie_bezier.o.push([0, 0]);
+
+        return lottie_bezier;
+    }
+    else
+    {
+        return value;
+    }
+}
+
+class LottieConverterProperty
+{
+    constructor(input_props, lottie_name, conversion = x => x)
+    {
+        this.keyframes = [];
+        this.value = null;
+        this.input_props = input_props;
+        this.conversion = conversion;
+        this.lottie_name = lottie_name;
+    }
+
+    extract_value(props, make_array)
+    {
+        let vals = [];
+        for ( let prop of this.input_props )
+            vals.push(props[prop]);
+        return value_to_lottie(this.conversion(...vals, make_array));
+    }
+
+    process_keyframe(keyframe, props)
+    {
+        this.keyframes.push({...keyframe, s: this.extract_value(props, true)});
+    }
+
+    process_value(props)
+    {
+        this.value = this.extract_value(props, false);
+    }
+
+    to_lottie()
+    {
+        if ( this.keyframes.length )
+            return {"a": 1, "k": this.keyframes};
+        return {"a": 0, "k": this.value};
+    }
+}
+
+class LottieConverter
+{
+    constructor(properties)
+    {
+        this.properties = {};
+        for ( let prop of properties )
+            this.properties[prop.lottie_name] = prop;
+    }
+
+    process_keyframe(keyframe, props)
+    {
+        for ( let prop of Object.values(this.properties) )
+            prop.process_keyframe(keyframe, props);
+    }
+
+    process_value(props)
+    {
+        for ( let prop of Object.values(this.properties) )
+            prop.process_value(props);
+    }
+
+    process_object(object)
+    {
+        this.process_value(object.props);
+        for ( let kf of object.timeline.keyframes )
+        {
+            let lkf = {
+                t: this.time,
+                o: {x: 0, y: 0},
+                i: {x: 1, y: 1},
+            };
+            this.process_keyframe(lkf, kf.props);
+        }
+
+        return this;
+    }
+
+    to_lottie(init={})
+    {
+        let lottie_object = {...init};
+        for ( let prop of Object.values(this.properties) )
+            lottie_object[prop.lottie_name] = prop.to_lottie();
+        return lottie_object;
+    }
+}
 
 export class EditorObject
 {
@@ -44,6 +189,21 @@ export class EditorObject
         this.timeline.remove_keyframe(time);
     }
 
+    to_lottie()
+    {
+        return this.to_lottie_converter().process_object(this).to_lottie();
+    }
+
+    to_lottie_properties()
+    {
+        return [];
+    }
+
+    to_lottie_converter()
+    {
+        return new LottieConverter(this.to_lottie_properties());
+    }
+
     filter_props(props) {}
 
     paint(context) {}
@@ -72,6 +232,54 @@ export class GroupObject extends EditorObject
         };
         this.matrix = new Matrix();
         this.inverted_matrix = new Matrix()
+    }
+
+    to_lottie()
+    {
+        let lottie_object = {
+            ty: "gr",
+            it: []
+        };
+
+        for ( let child of this.children )
+            lottie_object.it.push(child.to_lottie());
+
+        lottie_object.it.push(this.to_lottie_converter().process_object(this).to_lottie({
+            ty: "tr",
+            o: {a: 0, k: 100}
+        }));
+
+        return lottie_object;
+    }
+
+    to_lottie_properties()
+    {
+        return [
+            new LottieConverterProperty(["anchor"], "a"),
+            new LottieConverterProperty(["position"], "p"),
+            new LottieConverterProperty(["rotation"], "r"),
+            new LottieConverterProperty(["scale"], "s", p => p.mul(100)),
+        ];
+    }
+
+    to_lottie_layer(ip, op)
+    {
+        let lottie_object = {
+            ty: 4,
+            ip: ip,
+            op: op,
+            st: 0,
+            sr: 1,
+            ks: this.to_lottie_converter().process_object(this).to_lottie({
+                o: {a: 0, k: 100}
+            }),
+            shapes: []
+        };
+
+        for ( let child of this.children )
+            lottie_object.shapes.push(child.to_lottie());
+
+        return lottie_object;
     }
 
     insert_child(obj)
@@ -168,7 +376,6 @@ export class GroupObject extends EditorObject
         }
         else
         {
-
             box = new BoundingBox();
             for ( let i = 0; i < this.children.length; i++ )
                 box.include(this.children[i].bounding_box(include_stroke));
@@ -202,6 +409,26 @@ export class Layer extends GroupObject
     object_at(pos)
     {
         return this.child_at(pos);
+    }
+
+    to_lottie_animation(w, h, ip, op)
+    {
+        let lottie_object = {
+            w: w,
+            h: h,
+            ip: ip,
+            op: op,
+            fr: 60,
+            layers: []
+        };
+
+        for ( let child of this.children )
+        {
+            lottie_object.layers.push(child.to_lottie_layer(ip, op));
+        }
+
+        return lottie_object;
+
     }
 }
 
@@ -310,6 +537,62 @@ class EditorShape extends EditorObject
             stroke: "#000000",
             stroke_width: 4,
         };
+        this.lottie_ty = "";
+    }
+
+    to_lottie()
+    {
+        let converter = this.to_lottie_converter().process_object(this);
+        let obj = converter.to_lottie({ty: this.lottie_ty});
+        let group = {
+            ty: "gr",
+            it: [
+                obj,
+                {
+                    ty: "st",
+                    o: {a: 0, k: 100},
+                    c: obj._stroke,
+                    w: obj._stroke_width,
+                },
+                {
+                    ty: "fl",
+                    o: {a: 0, k: 100},
+                    c: obj._fill,
+                },
+                {
+                    ty: "tr",
+                    o: {a: 0, k: 100},
+                },
+            ]
+        };
+
+        delete obj._fill;
+        delete obj._stroke;
+        delete obj._stroke_width;
+        return group;
+    }
+
+    to_lottie_layer(ip, op)
+    {
+        let lottie_object = {
+            ty: 4,
+            ip: ip,
+            op: op,
+            st: 0,
+            sr: 1,
+            ks: {},
+            shapes: [this.to_lottie()]
+        };
+        return lottie_object;
+    }
+
+    to_lottie_properties()
+    {
+        return [
+            new LottieConverterProperty(["fill"], "_fill"),
+            new LottieConverterProperty(["stroke"], "_stroke"),
+            new LottieConverterProperty(["stroke_width"], "_stroke_width"),
+        ];
     }
 
     set_fill(fill, opacity)
@@ -370,6 +653,7 @@ export class EllipseShape extends EditorShape
         this.props.cy = 0;
         this.props.rx = 0;
         this.props.ry = 0;
+        this.lottie_ty = "el";
     }
 
     draw_path(context)
@@ -392,6 +676,14 @@ export class EllipseShape extends EditorShape
     {
         return point_in_ellipse(pos, this.props.cx, this.props.cy, this.props.rx, this.props.ry);
     }
+
+    to_lottie_properties()
+    {
+        return super.to_lottie_properties().concat([
+            new LottieConverterProperty(["cx", "cy"], "p", (x, y) => [x, y]),
+            new LottieConverterProperty(["rx", "ry"], "s", (x, y) => [x * 2, y * 2]),
+        ]);
+    }
 }
 
 export class RectangleShape extends EditorShape
@@ -403,6 +695,7 @@ export class RectangleShape extends EditorShape
         this.props.left = 0;
         this.props.width = 0;
         this.props.height = 0;
+        this.lottie_ty = "rc";
     }
 
     draw_path(context)
@@ -419,6 +712,17 @@ export class RectangleShape extends EditorShape
     {
         return point_in_rect(pos, this.props);
     }
+
+    to_lottie_properties()
+    {
+        return super.to_lottie_properties().concat([
+            new LottieConverterProperty(
+                ["top", "left", "width", "height"], "p",
+                (t, l, w, h) => [l + w/2, t + h/2]
+            ),
+            new LottieConverterProperty(["width", "height"], "s", (x, y) => [x, y]),
+        ]);
+    }
 }
 
 export class BezierShape extends EditorShape
@@ -428,6 +732,7 @@ export class BezierShape extends EditorShape
         super(id, editor);
         this.props.bezier = new Bezier();
         this.bbox = null;
+        this.lottie_ty = "sh";
     }
 
     filter_props(props)
@@ -456,5 +761,12 @@ export class BezierShape extends EditorShape
     draw_path(context)
     {
         this.props.bezier.draw_path(context);
+    }
+
+    to_lottie_properties()
+    {
+        return super.to_lottie_properties().concat([
+            new LottieConverterProperty("bezier", "ks")
+        ]);
     }
 }

@@ -334,7 +334,7 @@ export class CommandStack
         {
             if ( this.last().merge(command) )
             {
-                this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
+//                 this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
                 return this.last();
             }
 
@@ -366,7 +366,7 @@ export class CommandStack
         if ( !command.committed )
         {
             command.committed = true;
-            this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
+//             this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
         }
     }
 
@@ -410,7 +410,7 @@ export class CommandStack
         command.committed = true;
 
         command.undo(this.editor);
-        this.connection.send({type: "document.edit", ...command.to_remote_command_undo()});
+//         this.connection.send({type: "document.edit", ...command.to_remote_command_undo()});
 
         this.editor.on_edit();
     }
@@ -424,7 +424,7 @@ export class CommandStack
         this.commands.push(command);
 
         command.redo(this.editor);
-        this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
+//         this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
 
         this.editor.on_edit();
     }

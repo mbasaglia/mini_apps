@@ -35,7 +35,7 @@ if __name__ == "__main__":
     source_path = paths["server"] / pathlib.Path(module_name.replace(".", "/")).parent
     dest_path = paths["client"]
     for source_file in source_path.iterdir():
-        if source_file.suffix in (".css", ".js", ".html"):
+        if source_file.suffix != ".py" and source_file.name != "__pycache__":
             dest_file = dest_path / source_file.name
             if not dest_file.exists():
                 dest_file.symlink_to(source_file)

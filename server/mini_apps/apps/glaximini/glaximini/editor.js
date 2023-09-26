@@ -208,6 +208,8 @@ export class Editor extends EventTarget
     on_touch_start(ev)
     {
         ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
 
         if ( this.tool )
             this.tool.on_mouse_down(ev);
@@ -218,6 +220,8 @@ export class Editor extends EventTarget
     on_touch_move(ev)
     {
         ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
 
         if ( this.tool )
             this.tool.on_mouse_move(ev);
@@ -228,6 +232,8 @@ export class Editor extends EventTarget
     on_touch_end(ev)
     {
         ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
 
         if ( this.tool )
             this.tool.on_mouse_up(ev);
@@ -370,5 +376,10 @@ export class Editor extends EventTarget
         this.transform.scale(scale, scale);
         this.refresh_transform();
         this.dispatchEvent(new CustomEvent("zoomed", {detail: {zoom: scale}}));
+    }
+
+    to_lottie(duration)
+    {
+        return this.root.to_lottie_animation(this.canvas.width, this.canvas.height, 0, duration);
     }
 }
