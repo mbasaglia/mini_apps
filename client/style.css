@@ -1,9 +1,13 @@
 
+/*
+ * Ugly defaults so you can see the page from a browser without telgram
+ * Only really useful for initial setup / debugging
+ */
 :root {
     --tg-theme-bg-color: #fff;
     --tg-theme-text-color: #000;
     --tg-theme-link-color: #00f;
-    --tg-theme-button-color: #00f;
+    --tg-theme-button-color: #aaf;
     --tg-theme-button-text-color: #fff;
     --tg-theme-secondary-bg-color: #ccf;
 }
