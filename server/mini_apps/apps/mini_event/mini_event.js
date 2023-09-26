@@ -9,7 +9,9 @@ export class MiniEventApp extends App
         this.event_list_element = event_list_element;
         this.connection.addEventListener("event", this._on_event.bind(this));
         this.connection.addEventListener("delete-event", this._on_delete_event.bind(this));
+        this.connection.addEventListener("events-loaded", this._on_events_loaded.bind(this));
         this.admin_visible = false;
+        this.just_started = true
     }
 
     /**
@@ -177,7 +179,23 @@ export class MiniEventApp extends App
     }
 
     /**
-     * \brief Sets up event listeners for UI elements
+     * \brief Called when the server has sent all the initial events after login
+     */
+    _on_events_loaded(ev)
+    {
+        // Only scroll on first start (not on server reconnection)
+        if ( this.just_started )
+        {
+            let container = document.querySelector(`[data-event="${ev.detail.selected}"]`);
+            if ( container )
+                container.scrollIntoView(true);
+        }
+
+        this.just_started = false;
+    }
+
+    /**
+     * \brief Sets up event listeners for UI elements (mostly the admin interface)
      */
     connect_ui()
     {

@@ -56,6 +56,11 @@ class MiniEventApp(App):
         for event in self.sorted_events:
             await client.send(type="event", **self.event_data(event, client.user))
 
+        await client.send(
+            type="events-loaded",
+            selected=client.user.telegram_data.get("start_param", None)
+        )
+
     async def on_client_disconnected(self, client: Client):
         """
         Called when a client disconnects from the server

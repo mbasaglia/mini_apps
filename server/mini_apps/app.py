@@ -44,6 +44,7 @@ class App:
 
         with self.settings.database.atomic():
             user = User.get_user(data["user"])
+            user.telegram_data = data
 
         return user
 

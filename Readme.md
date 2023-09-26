@@ -86,7 +86,7 @@ with the following:
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
             "url": "https://miniapps.example.com/mini_event.html",
-            "media-url": "https://miniapps.example.com/media/"
+            "media-url": "https://miniapps.example.com/"
         }
     }
 }
@@ -106,8 +106,8 @@ Explanation of the settings fields:
     * `api-hash`: MTProto API hash, you can get its value from https://my.telegram.org/apps
     * `session`: (Optional) [session name](https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.telegrambaseclient.TelegramBaseClient) for Telethon
     * `bot-token`: Bot API token as kiven by BotFather
-    * `url`: URL of the mini app page
-    * `media-url`: URL used to host images and the like
+    * `url`: URL of the mini app main page
+    * `media-url`: Base URL for images
 
 
 You need to make the mini event public files visible to the web server,
