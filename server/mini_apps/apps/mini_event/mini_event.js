@@ -124,9 +124,20 @@ export class MiniEventApp extends App
         {
             button_attend.innerText = "Attend";
             button_attend.addEventListener("click", () => {
-                this.connection.send({
-                    type: "attend",
-                    event: ev.detail.id,
+                // We ask for permission to send messages to the user
+                this.webapp.requestWriteAccess((confirm) => {
+                    // If we can we register attendance
+                    if ( confirm )
+                    {
+                        this.connection.send({
+                            type: "attend",
+                            event: ev.detail.id,
+                        });
+                    }
+                    else
+                    {
+                        this.webapp.showAlert("To get event notifications you need to allow the bot to send you messages!");
+                    }
                 });
             });
         }
@@ -138,9 +149,15 @@ export class MiniEventApp extends App
             button_delete.classList.add("admin-action");
             button_delete.innerText = "Delete Event";
             button_delete.addEventListener("click", () => {
-                this.connection.send({
-                    type: "delete-event",
-                    id: ev.detail.id,
+                // Show telegram native confirmation dialog, and delete if confirmed
+                this.webapp.showConfirm(`Delete ${ev.detail.title}?`, (confirm) => {
+                    if ( confirm )
+                    {
+                        this.connection.send({
+                            type: "delete-event",
+                            id: ev.detail.id,
+                        });
+                    }
                 });
             });
 
