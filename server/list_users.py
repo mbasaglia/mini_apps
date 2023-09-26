@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import pathlib
-import shutil
 
 from mini_apps.settings import Settings
 from mini_apps.models import User

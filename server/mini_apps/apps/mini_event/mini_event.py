@@ -5,7 +5,6 @@ import mimetypes
 import pathlib
 
 import aiocron
-import asyncio
 import telethon
 
 from mini_apps.models import User, Event, UserEvent
@@ -202,7 +201,7 @@ class MiniEventApp(App):
         """
         data = event.to_json()
 
-        data["attending"] = bool(event.attendees.filter(UserEvent.user_id==user.id).first())
+        data["attending"] = bool(event.attendees.filter(UserEvent.user_id == user.id).first())
 
         # This allows passing the attendee count so we don't have to calculate it
         # multiple times on broadcast_event_change()

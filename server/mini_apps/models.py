@@ -1,6 +1,7 @@
 import peewee
 from .db import BaseModel
 
+
 class Event(BaseModel):
     title = peewee.CharField()
     description = peewee.CharField()
@@ -65,4 +66,3 @@ class UserEvent(BaseModel):
         indexes = (
             (("user", "event"), True),
         )
-

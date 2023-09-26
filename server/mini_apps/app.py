@@ -4,8 +4,6 @@ import hashlib
 import traceback
 import urllib.parse
 
-import peewee
-
 import telethon
 from telethon.sessions import MemorySession
 

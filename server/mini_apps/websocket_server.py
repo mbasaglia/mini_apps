@@ -66,7 +66,7 @@ class WebsocketServer:
 
                 print("Unknown Message", client.id, message)
                 await client.send(type="error", msg="Missing App ID")
-            except Exception as exception:
+            except Exception:
                 print("Socket Error", client.id, message)
                 traceback.print_exc()
                 await client.send(type="error", msg="Internal server error")

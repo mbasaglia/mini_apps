@@ -58,10 +58,10 @@ class Settings(SettingsValue):
         root = server_path.parent
         settings_path = server_path / "settings.json"
         return {
-                "root": root,
-                "server": server_path,
-                "client": root / "client",
-                "settings": settings_path,
+            "root": root,
+            "server": server_path,
+            "client": root / "client",
+            "settings": settings_path,
         }
 
     @classmethod

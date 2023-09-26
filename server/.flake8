@@ -1,0 +1,13 @@
+[flake8]
+# E116 unexpected indentation (comment)
+# E117 over-indented (comment)
+# E226 missing whitespace around arithmetic operator
+# E261 at least two spaces before inline comment
+# E262 inline comment should start with '# '
+# E265 block comment should start with '# '
+# E266 too many leading '#' for block comment
+# W503 line break before binary operator
+# W504 line break after binary operator
+# E227 missing whitespace around bitwise or shift operator
+ignore = E116,E117,E226,E261,E262,E265,E266,W503,W504,E241,E227
+max-line-length = 128
