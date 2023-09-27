@@ -287,6 +287,7 @@ export class EditHandle
         this.radius = radius;
         this.handle_shape = handle_shape;
         this.colors = HandleColors;
+        this.drag_offset = {x: 0, y: 0};
     }
 
     draw(context, highlight)
@@ -328,15 +329,20 @@ export class EditHandle
         context.stroke();
     }
 
-    drag_start()
+    drag_start(pos = null)
     {
         this.dragged = true;
+
+        if ( pos )
+            this.drag_offset = {x: pos.x - this.x, y: pos.y - this.y};
+        else
+            this.drag_offset = {x: 0, y: 0};
     }
 
     drag(ev)
     {
-        let x = ev.pos.x;
-        let y = ev.pos.y;
+        let x = ev.pos.x - this.drag_offset.x;
+        let y = ev.pos.y - this.drag_offset.y;
 
         if ( this.lock_x )
             x = this.x;

@@ -418,12 +418,16 @@ export class SelectTool extends DragTool
         this.handles = [];
         this.active_handle = null;
         this.highlight_handle = null;
+        this.active_object = null;
+        this.position_handle = null;
     }
 
     prepare_handles()
     {
         this.handles = [];
         this.active_handle = null;
+        this.active_object = this.editor.current_shape;
+        this.position_handle = null;
 
         if ( this.editor.current_shape instanceof RectangleShape )
         {
@@ -431,15 +435,17 @@ export class SelectTool extends DragTool
             this.handles.push(new HandleRectTop(this.command_stack, this.editor.current_shape));
             this.handles.push(new HandleRectRight(this.command_stack, this.editor.current_shape));
             this.handles.push(new HandleRectBottom(this.command_stack, this.editor.current_shape));
-            this.handles.push(new HandleRectCenter(this.command_stack, this.editor.current_shape));
+            this.position_handle = new HandleRectCenter(this.command_stack, this.editor.current_shape);
+            this.handles.push(this.position_handle);
         }
         else if ( this.editor.current_shape instanceof EllipseShape )
         {
+            this.position_handle = new HandleEllipseCenter(this.command_stack, this.editor.current_shape);
+            this.handles.push(this.position_handle);
             this.handles.push(new HandleEllipseX(this.command_stack, this.editor.current_shape, 1));
             this.handles.push(new HandleEllipseX(this.command_stack, this.editor.current_shape, -1));
             this.handles.push(new HandleEllipseY(this.command_stack, this.editor.current_shape, 1));
             this.handles.push(new HandleEllipseY(this.command_stack, this.editor.current_shape, -1));
-            this.handles.push(new HandleEllipseCenter(this.command_stack, this.editor.current_shape));
         }
         else if ( this.editor.current_shape instanceof BezierShape )
         {
@@ -459,11 +465,13 @@ export class SelectTool extends DragTool
                 top.push(new HandleBezierPoint(this.command_stack, this.editor.current_shape, -1, segs.length-1));
 
             this.handles = bottom.concat(top);
-            this.handles.push(new HandleBezierCenter(this.command_stack, this.editor.current_shape));
+            this.position_handle = new HandleBezierCenter(this.command_stack, this.editor.current_shape);
+            this.handles.push(this.position_handle);
         }
         else if ( this.editor.current_shape instanceof GroupObject )
         {
-            this.handles.push(new HandleGroupPosition(this.command_stack, this.editor.current_shape));
+            this.position_handle = new HandleGroupPosition(this.command_stack, this.editor.current_shape);
+            this.handles.push(this.position_handle);
             this.handles.push(new HandleGroupRotation(this.command_stack, this.editor.current_shape));
             this.handles.push(new HandleGroupAnchor(this.command_stack, this.editor.current_shape));
         }
@@ -484,10 +492,21 @@ export class SelectTool extends DragTool
             }
         }
 
+        this.maybe_drag = false;
         if ( !this.active_handle )
+        {
             this.dragging = false;
+            this.under_mouse = this.command_stack.editor.root.object_at(ev.pos);
+            this.maybe_drag = this.under_mouse != null;
+            if ( this.under_mouse && this.under_mouse !== this.active_object )
+            {
+                this.editor.select_shape(this.under_mouse);
+            }
+        }
         else
+        {
             this.under_mouse = null;
+        }
 
         this.highlight_handle = null;
     }
@@ -498,6 +517,12 @@ export class SelectTool extends DragTool
         {
             this.active_handle.drag(ev);
             this.refresh_handles();
+        }
+        else if ( this.maybe_drag )
+        {
+            this.maybe_drag = false;
+            this.active_handle = this.position_handle;
+            this.active_handle.drag_start(ev.pos);
         }
     }
 
@@ -513,6 +538,9 @@ export class SelectTool extends DragTool
 
     on_mouse_move(ev)
     {
+        if ( this.maybe_drag && this.position_handle )
+            this.dragging = true;
+
         super.on_mouse_move(ev);
         if ( !this.active_handle )
         {

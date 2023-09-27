@@ -46,7 +46,9 @@ export class Editor extends EventTarget
             "mouse_down", "mouse_move", "mouse_up", "wheel", "mouse_leave",
             "touch_start", "touch_move", "touch_end"
         ] )
+        {
             this.ev.add(canvas, ev.replace("_", ""), this["on_" + ev].bind(this));
+        }
 
         this.ev.add(connection, "document.edit", this.on_edit.bind(this));
         this.ev.add(connection, "document.loaded", this.on_load_finish.bind(this));
