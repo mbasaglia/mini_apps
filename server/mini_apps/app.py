@@ -31,7 +31,6 @@ class App:
         client.user = self.get_user(message)
         if client.user:
             self.clients[client.id] = client
-            await self.on_client_authenticated(client)
 
     def get_user(self, message: dict):
         """

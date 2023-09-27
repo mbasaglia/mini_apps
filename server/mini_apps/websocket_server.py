@@ -96,6 +96,7 @@ class WebsocketServer:
 
         try:
             await client.send(type="welcome", **client.to_json())
+            await client.app.on_client_authenticated(client)
 
             # Process messages from the client
             async for app, message in self.socket_messages(client):

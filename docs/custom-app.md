@@ -18,27 +18,17 @@ ensure you followed all the installation steps.
 
 ### Files
 
-You need to create a directory called `server/mini_apps/apps/my_app`,
-and create three files in there:
+An custom app needs at least 3 files:
 
-`my_app.py`: This is a python file that will contain the server-side code
-`my_app.html`: This is an html file that will have the HTML structure
-`my_app.js`: This is a javascript file that will have the client-side code
+`server/mini_apps/apps/my_app.py`: This is a python file that will contain the server-side code
+`client/my_app/index.html`: This is an html file that will have the HTML structure
+`client/my_app/my_app.js`: This is a javascript file that will have the client-side code
 
 
 ### Configuration
 
-There's the script `server/enable_app.py` that will create the symlinks
-and configuration for you, simply run it like this:
 
-```bash
-server/enable_app.py mini_apps.apps.my_app.my_app.MyApp -w
-```
-
-That script will need python to be installed on your system.
-
-It creates symlinks in `client/` and it adds something like the following to
-`server/settings.json`:
+Ass something like the following to `server/settings.json`:
 
 ```js
 {
@@ -46,11 +36,11 @@ It creates symlinks in `client/` and it adds something like the following to
 
     "apps": {
         "my_app": {
-            "class": "mini_apps.my_app.MyApp",
+            "class": "mini_apps.apps.my_app.MyApp",
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://miniapps.example.com/my_app.html",
+            "url": "https://miniapps.example.com/my_app/",
             "media-url": "https://miniapps.example.com/media/"
         }
     }
@@ -58,10 +48,6 @@ It creates symlinks in `client/` and it adds something like the following to
 ```
 
 (The settings will need to be tweaked to include your actual bot token).
-
-If you don't have python on the server, you can also create the symlinks and
-edit `server/settings.json` manually, which is what the main Readme does in
-the installation instructions.
 
 
 ### Server Side Code
@@ -95,10 +81,10 @@ any logic to it.
 
 First we need the JavaScript code that handles the client-side logic.
 
-Create the file `my_app.js` with the following contents:
+Edit `my_app.js` with the following contents:
 
 ```js
-import { App } from "./src/app.js";
+import { App } from "../src/app.js";
 
 
 export class MyApp extends App
@@ -111,8 +97,7 @@ export class MyApp extends App
 }
 ```
 
-Then we will create the frontent page in `my_app.html` (the file
-name must match what you have as `url` in the server settings).
+Then we will create the frontent page (`my_app/index.html`):
 
 ```html
 <!DOCTYPE html>
@@ -124,7 +109,7 @@ name must match what you have as `url` in the server settings).
     <!-- Script to communicate with telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- This CSS sets up some basic styling using the telgram theme -->
-    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
 </head>
 <body>
     <main>
@@ -175,7 +160,7 @@ Modify `my_app.py` as follows:
 import inspect
 import telethon
 
-from .app import App
+from mini_apps.app import App
 
 
 class MyApp(App):
@@ -230,7 +215,7 @@ with a `welcome` message.
 We can change the JavaScript code to show a personalized greeting when this happens.
 
 ```js
-import { App } from "./src/app.js";
+import { App } from "../src/app.js";
 
 
 export class MyApp extends App
@@ -269,7 +254,7 @@ Let's add the button to the html, and add an event that calls a method on the ap
     <!-- Script to communicate with telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- This CSS sets up some basic styling using the telgram theme -->
-    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
 </head>
 <body>
     <main>
@@ -304,7 +289,7 @@ real time:
 
 
 ```js
-import { App } from "./src/app.js";
+import { App } from "../src/app.js";
 
 
 export class MyApp extends App
@@ -425,13 +410,14 @@ they are simple [Peewee Models](https://docs.peewee-orm.com/en/latest/peewee/mod
 Also you need to register models on your app:
 
 ```py
+import peewee
+
 from mini_apps.app import App
 from mini_apps.db import BaseModel
 
 
 class Button(BaseModel):
     count = peewee.IntegerField()
-
 
 
 class MyApp(App):
@@ -447,7 +433,7 @@ class MyApp(App):
 You can trigger inline queries from JavaScript with:
 
 ```js
-this.webapp.switchInlineQuery(`(query)`, ["users", "groups", "channels"]);
+this.webapp.switchInlineQuery("(query)", ["users", "groups", "channels"]);
 ```
 
 To handle the request, you need to add a method to MyApp in Python

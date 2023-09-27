@@ -1,4 +1,4 @@
-import { App } from "./src/app.js";
+import { App } from "../src/app.js";
 
 
 export class MiniEventApp extends App
@@ -100,7 +100,7 @@ export class MiniEventApp extends App
         duration.innerText = ev.detail.duration + " hours";
         attendees.innerText = ev.detail.attendees;
 
-        preview_image.setAttribute("src", ev.detail.image);
+        preview_image.setAttribute("src", "/" + ev.detail.image);
         preview_image.setAttribute("alt", ev.detail.title);
 
         // Button to share an event within telegram using inline mode
@@ -227,6 +227,7 @@ export class MiniEventApp extends App
         cancel_button.addEventListener("click", function(){
             toggle_add_event(false);
         });
+        let events_app = this;
         new_event_form.addEventListener("submit", function(ev){
             ev.preventDefault();
 
@@ -251,7 +252,7 @@ export class MiniEventApp extends App
                     base64: btoa(ev2.target.result),
                 };
                 toggle_add_event(false);
-                this.connection.send({
+                events_app.connection.send({
                     type: "create-event",
                     ...entries
                 });

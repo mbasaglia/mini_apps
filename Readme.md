@@ -81,11 +81,11 @@ with the following:
     },
     "apps": {
         "mini_event": {
-            "class": "mini_apps.apps.mini_event.mini_event.MiniEventApp",
+            "class": "mini_apps.apps.mini_event.MiniEventApp",
             "bot-token": "(your bot token)",
             "api-id": "(your api id)",
             "api-hash": "(your api hash)",
-            "url": "https://miniapps.example.com/mini_event.html",
+            "url": "https://miniapps.example.com/mini_event/",
             "media-url": "https://miniapps.example.com/"
         }
     }
@@ -109,14 +109,6 @@ Explanation of the settings fields:
     * `url`: URL of the mini app main page
     * `media-url`: Base URL for images
 
-
-You need to make the mini event public files visible to the web server,
-this can be done with the following commands:
-
-```bash
-cd /var/www/miniapps.example.com
-ln -sr server/mini_apps/apps/mini_event/mini_event.{html,js} client
-```
 
 ### Permissions
 

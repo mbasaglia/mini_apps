@@ -1,4 +1,5 @@
 import base64
+import bisect
 import datetime
 import inspect
 import mimetypes
@@ -6,11 +7,46 @@ import pathlib
 import time
 
 import aiocron
+import peewee
 import telethon
 
 from mini_apps.models import User
 from mini_apps.app import App, Client
-from .models import Event, UserEvent
+from mini_apps.db import BaseModel
+
+
+class Event(BaseModel):
+    title = peewee.CharField()
+    description = peewee.CharField()
+    image = peewee.CharField()
+    duration = peewee.FloatField()
+    start = peewee.CharField()
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "image": self.image,
+            "start": self.start,
+            "duration": self.duration
+        }
+
+    def __lt__(self, other):
+        return (self.start, self.id) < (other.start, other.id)
+
+
+class UserEvent(BaseModel):
+    user = peewee.ForeignKeyField(User, backref="events")
+    event = peewee.ForeignKeyField(Event, backref="attendees")
+
+    class Meta:
+        # `indexes` is a tuple of 2-tuples, where the 2-tuples are
+        # a tuple of column names to index and a boolean indicating
+        # whether the index is unique or not.
+        indexes = (
+            (("user", "event"), True),
+        )
 
 
 class MiniEventApp(App):
@@ -118,8 +154,7 @@ class MiniEventApp(App):
             event.duration = float(data["duration"])
             event.start = data["start"]
             image_name = data["image"]["name"].replace("/", "_")
-            root = pathlib.Path(__file__).absolute().parent.parent.parent
-            image_path = root / "client" / "media" / image_name
+            image_path = self.settings.paths.client / "media" / image_name
 
             # Save the image, avoiding overwriting existing ones
             image_path = self.unique_filename(image_path)
@@ -129,6 +164,9 @@ class MiniEventApp(App):
             event.image = "media/" + image_path.name
 
             event.save()
+
+            self.events[event.id] = event
+            bisect.insort(self.sorted_events, event)
 
             await self.broadcast_event_change(event)
 
@@ -169,7 +207,10 @@ class MiniEventApp(App):
         """
         Handles messages received from the client
         """
-        self.log(client.id, data)
+        if type != "create-event":
+            self.log(client.id, data)
+        else:
+            self.log(client.id, {**data, "image": "..."})
 
         # User attends an event
         if type == "attend":

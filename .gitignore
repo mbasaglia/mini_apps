@@ -1,6 +1,4 @@
 *.sqlite
 settings.json
 *.session*
-client/*
-!client/src/
-!client/style.css
+client/media/
