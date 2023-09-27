@@ -200,6 +200,17 @@ export class EditorObject
         return new LottieConverter(this.to_lottie_properties());
     }
 
+    styled_objects()
+    {
+        let objects = [];
+        this.gather_styled_objects(objects);
+        return objects;
+    }
+
+    gather_styled_objects(objects)
+    {
+    }
+
     filter_props(props) {}
 
     paint(context) {}
@@ -397,6 +408,12 @@ export class GroupObject extends EditorObject
         }
 
         return null;
+    }
+
+    gather_styled_objects(objects)
+    {
+        for ( let child of this.children )
+            child.gather_styled_objects(objects);
     }
 }
 

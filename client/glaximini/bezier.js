@@ -185,6 +185,7 @@ export class Bezier
     constructor(segments = [])
     {
         this.segments = segments;
+        this._closed = false;
     }
 
     add_segment(...points)
@@ -201,6 +202,7 @@ export class Bezier
         let [first, last, closed] = this._closed_impl();
         if ( first != null && !closed )
             this.segments.push(new BezierSegment(last, last, first, first));
+        this._closed = true;
     }
 
     _closed_impl()
@@ -215,7 +217,7 @@ export class Bezier
 
     is_closed()
     {
-        return this._closed_impl()[2];
+        return this._closed;
     }
 
     get last_segment()

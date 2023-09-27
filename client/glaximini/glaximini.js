@@ -12,6 +12,7 @@ export class GlaximiniApp extends App
 
         this.canvas = document.getElementById("canvas");
         this.editor = new Editor(this.connection, this.canvas);
+        this.editor.addEventListener("selected", this.update_style_inputs.bind(this));
         this.playback = new Playback(this.on_enter_frame.bind(this));
         this.playback.set_range(0, 180);
 
@@ -38,7 +39,9 @@ export class GlaximiniApp extends App
         this.editor.loading = false;
     }
 
-
+    /**
+     * \brief Adds event listeners to the buttons and such
+     */
     connect_ui()
     {
         document.getElementById("action-undo").addEventListener("click", this.undo.bind(this));
@@ -51,6 +54,8 @@ export class GlaximiniApp extends App
         this.inputs = {
             frame_slider: document.getElementById("frame"),
             frame_edit: document.getElementById("frame-edit"),
+            fill: document.getElementById("action-fill"),
+            stroke: document.getElementById("action-stroke"),
         };
 
         this.inputs.frame_slider.addEventListener("input", ((ev) => {
@@ -65,6 +70,48 @@ export class GlaximiniApp extends App
                 this.editor.switch_tool(tool.slug);
             }).bind(this));
         }
+
+        const style_callback = ((ev) => this.on_style_control_input(ev.target)).bind(this);
+        this.inputs.fill.addEventListener("input", style_callback);
+        this.inputs.stroke.addEventListener("input", style_callback);
+        this.update_style_inputs();
+    }
+
+    /**
+     * \brief Updates fill/stroke inputs based on the selected shape
+     */
+    update_style_inputs()
+    {
+        this.inputs.fill.value = this.editor.current_style.fill.substr(0, 7);
+        // this.inputs.fill_opacity.value = Number("0x" + this.editor.current_style.fill.substr(-2));
+        this.inputs.stroke.value = this.editor.current_style.stroke.substr(0, 7);
+        // this.inputs.stroke_opacity.value = Number("0x" + this.editor.current_style.stroke.substr(-2));
+        // this.inputs.stroke_width.value = this.editor.current_style.stroke_width;
+    }
+
+    /**
+     * \brief Apply fill/stroke changes on user input
+     */
+    on_style_control_input(input)
+    {
+        let new_style = {
+            fill: this.inputs.fill.value + "ff",
+            stroke: this.inputs.stroke.value + "ff",
+            stroke_width: 4,
+        };
+
+        this.editor.current_style = new_style;
+        if ( this.editor.current_shape )
+        {
+            let last = this.editor.stack.last();
+            let shapes = this.editor.current_shape.styled_objects();
+            let command = this.editor.stack.edit_command(shapes, new_style, false);
+            command._input = input.id;
+            if ( !last || last._input != command._input )
+                this.editor.stack.commit();
+        }
+
+        this.editor.draw();
     }
 
     undo()
