@@ -30,7 +30,7 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+button:hover, button.active {
     background: var(--tg-theme-button-text-color);
     color: var(--tg-theme-button-color);
     border-color: var(--tg-theme-button-color);

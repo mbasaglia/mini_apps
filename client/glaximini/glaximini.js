@@ -67,14 +67,26 @@ export class GlaximiniApp extends App
             let button = document.getElementById("tool-" + tool.slug);
             button.setAttribute("title", tool.name);
             button.addEventListener("click", (() => {
-                this.editor.switch_tool(tool.slug);
+                this.switch_tool(tool);
             }).bind(this));
+            tool._button = button;
         }
 
         const style_callback = ((ev) => this.on_style_control_input(ev.target)).bind(this);
         this.inputs.fill.addEventListener("input", style_callback);
         this.inputs.stroke.addEventListener("input", style_callback);
         this.update_style_inputs();
+    }
+
+    /**
+     * \brief Switch the editor tool based on UI buttons
+     */
+    switch_tool(tool)
+    {
+        for ( let other_tool of Object.values(this.editor.tools) )
+            other_tool._button.classList.remove("active");
+        tool._button.classList.add("active");
+        this.editor.switch_tool(tool.slug);
     }
 
     /**
