@@ -131,7 +131,7 @@ docker-compose up -d
 ```
 
 If you want to install the back-end on your machine directly (without docker)
-you can follow the instructions for a [manual installation](./docs/manual-installation.md).
+you can follow the instructions for an [advanced installation](./docs/advanced-installation.md).
 
 ### Front-End With Apache
 

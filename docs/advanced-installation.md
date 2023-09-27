@@ -1,5 +1,5 @@
-Manual Installation
--------------------
+Advanced Installation
+---------------------
 
 This page shows the steps to install the back-end directly, without using docker.
 
