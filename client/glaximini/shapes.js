@@ -21,7 +21,7 @@ function value_to_lottie(value, make_array = false)
     else if ( value instanceof Bezier )
     {
         let lottie_bezier = {
-            c: false,
+            c: value.is_closed(),
             v: [],
             i: [],
             o: [],
@@ -32,29 +32,25 @@ function value_to_lottie(value, make_array = false)
 
         let flat = value.toJSON();
 
-        let closed = flat[0].is_equal(flat[flat.length-1]);
 
-        if ( closed )
+        if ( value.is_closed() )
         {
-            lottie_bezier.c = true;
+            flat.unshift(flat.pop());
             flat.pop();
-            lottie_bezier.i.push(value_to_lottie(flat.pop().sub(flat[0])));
         }
         else
         {
-            lottie_bezier.i.push([0, 0]);
+            flat.unshift(flat[0]);
+            flat.push(flat[flat.length-1]);
         }
 
-        for ( let i = 0; i < value.segments.length; i += 3 )
+        for ( let i = 1; i < flat.length - 1; i += 3 )
         {
             let pos = flat[i];
-            lottie_bezier.o.push(value_to_lottie(pos));
+            lottie_bezier.v.push(value_to_lottie(pos));
             lottie_bezier.o.push(value_to_lottie(flat[i+1].sub(pos)));
-            lottie_bezier.i.push(value_to_lottie(flat[i+2].sub(pos)));
+            lottie_bezier.i.push(value_to_lottie(flat[i-1].sub(pos)));
         }
-
-        if ( !closed )
-            lottie_bezier.o.push([0, 0]);
 
         return lottie_bezier;
     }
@@ -80,7 +76,7 @@ class LottieConverterProperty
         let vals = [];
         for ( let prop of this.input_props )
             vals.push(props[prop]);
-        return value_to_lottie(this.conversion(...vals, make_array));
+        return value_to_lottie(this.conversion(...vals), make_array);
     }
 
     process_keyframe(keyframe, props)
@@ -128,7 +124,7 @@ class LottieConverter
         for ( let kf of object.timeline.keyframes )
         {
             let lkf = {
-                t: this.time,
+                t: kf.time,
                 o: {x: 0, y: 0},
                 i: {x: 1, y: 1},
             };
@@ -411,14 +407,15 @@ export class Layer extends GroupObject
         return this.child_at(pos);
     }
 
-    to_lottie_animation(w, h, ip, op)
+    to_lottie_animation(w, h, ip, op, fr)
     {
         let lottie_object = {
+            v: "5.10.0",
             w: w,
             h: h,
             ip: ip,
             op: op,
-            fr: 60,
+            fr: fr,
             layers: []
         };
 
@@ -721,6 +718,7 @@ export class RectangleShape extends EditorShape
                 (t, l, w, h) => [l + w/2, t + h/2]
             ),
             new LottieConverterProperty(["width", "height"], "s", (x, y) => [x, y]),
+            new LottieConverterProperty([], "r", () => 0),
         ]);
     }
 }
@@ -766,7 +764,7 @@ export class BezierShape extends EditorShape
     to_lottie_properties()
     {
         return super.to_lottie_properties().concat([
-            new LottieConverterProperty("bezier", "ks")
+            new LottieConverterProperty(["bezier"], "ks")
         ]);
     }
 }

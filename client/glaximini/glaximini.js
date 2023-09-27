@@ -1,71 +1,6 @@
 import { App } from "../src/app.js";
 import { Editor } from "./editor.js";
-
-
-class Playback
-{
-    constructor(callback)
-    {
-        this.callback = callback;
-        this.run = false;
-        this.frame = 0;
-        this.min = 0;
-        this.max = 0;
-        this.duration = 180;
-        this.fps = 60;
-        this.request_id = null;
-        this.start_frame = null;
-        this.start_time = null;
-    }
-
-    _request_frame()
-    {
-        this.request_id = window.requestAnimationFrame(this._on_frame.bind(this));
-    }
-
-    set_range(min, max)
-    {
-        this.min = min;
-        this.max = max;
-        this.duration = max - min;
-        this.frame = min;
-        this.callback(this.frame);
-    }
-
-    start()
-    {
-        this.run = true;
-        this.start_time = null;
-        this.start_frame = this.frame;
-        this._request_frame();
-    }
-
-    _on_frame(timer)
-    {
-        if ( this.start_time == null )
-            this.start_time = timer;
-
-        let delta_frames = this.start_frame + (timer - this.start_time) / 1000 * this.fps;
-        this.frame = this.min + (delta_frames % this.duration);
-        this.callback(this.frame);
-
-        if ( this.run )
-            this._request_frame();
-    }
-
-    stop()
-    {
-        this.run = false;
-        if ( this.request_id !== null )
-            window.cancelAnimationFrame(this.request_id);
-    }
-
-    go_to(frame)
-    {
-        this.frame = frame;
-        this.callback(this.frame);
-    }
-}
+import { Playback } from "./playback.js";
 
 
 export class GlaximiniApp extends App
@@ -73,9 +8,12 @@ export class GlaximiniApp extends App
     constructor(telegram)
     {
         super("glaximini", telegram);
+        this.connection.addEventListener("sticker-id", this.send_sticker_ask.bind(this));
+
         this.canvas = document.getElementById("canvas");
         this.editor = new Editor(this.connection, this.canvas);
         this.playback = new Playback(this.on_enter_frame.bind(this));
+        this.playback.set_range(0, 180);
 
         // Debug mode when accessing from browser that disables server side stuff
         if ( !this.webapp.initData )
@@ -108,6 +46,7 @@ export class GlaximiniApp extends App
         document.getElementById("action-keyframe").addEventListener("click", this.add_keyframe.bind(this));
         document.getElementById("action-play").addEventListener("click", this.playback.start.bind(this.playback));
         document.getElementById("action-pause").addEventListener("click", this.playback.stop.bind(this.playback));
+        document.getElementById("action-telegram").addEventListener("click", this.send_sticker_prepare.bind(this));
 
         this.inputs = {
             frame_slider: document.getElementById("frame"),
@@ -154,5 +93,20 @@ export class GlaximiniApp extends App
     add_keyframe()
     {
         this.editor.add_keyframe();
+    }
+
+    to_lottie()
+    {
+        return this.editor.to_lottie(this.playback.min, this.playback.max, this.playback.fps);
+    }
+
+    send_sticker_prepare()
+    {
+        this.connection.send({type: "sticker", lottie: this.to_lottie()});
+    }
+
+    send_sticker_ask(ev)
+    {
+        this.webapp.switchInlineQuery(ev.detail.id, ["users", "groups", "channels", "bots"]);
     }
 }

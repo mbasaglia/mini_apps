@@ -378,8 +378,8 @@ export class Editor extends EventTarget
         this.dispatchEvent(new CustomEvent("zoomed", {detail: {zoom: scale}}));
     }
 
-    to_lottie(duration)
+    to_lottie(start, end, fps)
     {
-        return this.root.to_lottie_animation(this.canvas.width, this.canvas.height, 0, duration);
+        return this.root.to_lottie_animation(this.canvas.width, this.canvas.height, start, end, fps);
     }
 }
