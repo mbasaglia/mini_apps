@@ -55,6 +55,10 @@ export class SocketConnection extends EventTarget
      */
     send(data)
     {
+        /// \todo if this.reconnect queue messages?
+        if ( !this.connected )
+            return;
+
         data.app = this.app_id;
         this.socket.send(JSON.stringify(data));
     }
