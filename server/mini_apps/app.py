@@ -65,6 +65,9 @@ class App:
             bot_token = self.settings.bot_token
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
+            if hasattr(self.settings, "server"):
+                dc = self.settings.server
+                self.telegram.session.set_dc(dc.dc, dc.address, dc.port)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
             self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
             self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)

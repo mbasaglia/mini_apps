@@ -109,6 +109,17 @@ Explanation of the settings fields:
     * `url`: URL of the mini app main page
     * `media-url`: Base URL for images
 
+If you want to run on the Telegram test server, add the following to `apps.mini_event` in the JSON,
+with the values from https://my.telegram.org/apps.
+
+```js
+"server": {
+    "dc": 2,
+    "address": "127.0.0.1",
+    "port": 443
+}
+```
+
 
 ### Permissions
 
