@@ -425,7 +425,7 @@ class MyApp(App):
         """
         Registers the database models
         """
-        self.settings.databse_models += [Button]
+        self.settings.database_models += [Button]
 ```
 
 ### Inline Queries

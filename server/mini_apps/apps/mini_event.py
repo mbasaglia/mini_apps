@@ -63,7 +63,7 @@ class MiniEventApp(App):
         """
         Registers the database models
         """
-        self.settings.databse_models += [User, Event, UserEvent]
+        self.settings.database_models += [User, Event, UserEvent]
 
     def on_server_start(self):
         """
