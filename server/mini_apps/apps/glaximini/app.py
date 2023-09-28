@@ -6,16 +6,24 @@ import json
 import random
 import uuid
 
+import hashids
 import telethon
 
 from mini_apps.app import App, Client
+from . import models
+from . import document
 
 
 class Glaximini(App):
-
     def __init__(self, *args):
         super().__init__(*args)
-        self.lotties = {}
+        self.documents = {}
+
+    def register_models(self):
+        """
+        Registers the database models
+        """
+        self.settings.database_models += [models.User, models.Document, models.UserDoc, models.Shape, models.Keyframe]
 
     def inline_buttons(self):
         """
@@ -43,37 +51,55 @@ class Glaximini(App):
         """
         Called when a client has been authenticated
         """
-        # Send the initial count when the client connects
-        client.lottie_id = str(uuid.uuid4())
-        self.lotties[client.lottie_id] = client
+        userdoc = models.UserDoc.get_or_none(models.UserDoc.user_id == client.user.id)
+        if userdoc:
+            doc = document.Document(userdoc.document)
+        else:
+            doc = document.Document.from_data({"width": 512, "height": 512, "fps": 60, "duration": 180})
+
+        client.document = doc
+        self.documents[doc.public_id] = doc
+        await doc.join(client)
 
     async def on_client_disconnected(self, client: Client):
         """
         Called when a client disconnects from the server
         """
-        #self.lotties.pop(client.lottie_id)
-        pass
+        self.save_document(client)
+        self.documents.pop(client.document.public_id)
+
+    def save_document(self, client: Client):
+        if client.document:
+            client.document.cached_lottie()
+            # with self.settings.database.atomic():
+                # client.document.save()
 
     async def handle_message(self, client: Client, type: str, data: dict):
         """
         Handles messages received from the client
         """
-        if type == "sticker":
-            self.lotties[client.lottie_id] = data["lottie"]
-            # Only used to avoid telegram cache
-            random_stuff = "%06d" % random.randint(0, 999999)
-            await client.send(type="sticker-id", id="%s %s" % (client.lottie_id, random_stuff))
+        if type == "document.edit":
+            if client.document:
+                await client.document.edit(client, data["command"], data["data"])
+        elif type == "document.save":
+            self.save_document(client)
         else:
             await client.send(type="error", msg="Unknown command", what=data)
 
     def telegram_inline_results(self, query: telethon.events.InlineQuery):
-        client_id = query.text.split(" ")[0]
-        if not client_id:
+        document_id = query.text.split(" ")[0]
+        if not document_id:
             return []
 
-        lottie_data = self.lotties.get(client_id);
-        if not lottie_data:
-            return []
+        doc = self.documents.get(document_id);
+        if doc:
+            lottie_data = doc.cached_lottie()
+        else:
+            raw_id = document.decode_id(document_id)
+            doc = models.Document.select(models.Document.lottie).where(models.Document.id == raw_id).first()
+            if not doc:
+                return []
+            lottie_data = doc.lottie
 
         file = io.BytesIO()
         with gzip.open(file, "wb") as gzfile:
@@ -89,7 +115,6 @@ class Glaximini(App):
                 telethon.tl.types.DocumentAttributeFilename("sticker.tgs")
             ]
         )]
-
 
     async def on_telegram_inline(self, query: telethon.events.InlineQuery):
         """

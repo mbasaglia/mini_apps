@@ -78,6 +78,7 @@ class WebsocketServer:
 
         # Create the client object for this socket
         client = Client(socket)
+        print("#%s connected from %s" % (client.id, socket.host))
         await client.send(type="connect")
 
         # Wait for a login message

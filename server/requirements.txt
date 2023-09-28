@@ -1,3 +1,8 @@
 peewee
 telethon
 websockets
+
+# Glaximini
+#lottie
+git+https://gitlab.com/mattbas/python-lottie.git@master
+hashids
