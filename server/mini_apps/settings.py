@@ -32,6 +32,21 @@ class SettingsValue:
             return cls(data)
 
 
+class AppSettings(SettingsValue):
+    """
+    Access both app-specific and global settings
+    """
+    def __init__(self, data, global_settings):
+        super().__init__(data)
+        self._global = global_settings
+
+    def __getattr__(self, name):
+        if name != "_global" and hasattr(self._global, name):
+            return getattr(self._global, name)
+
+        raise AttributeError(name)
+
+
 class Settings(SettingsValue):
     """
     Global settings
@@ -94,9 +109,10 @@ class Settings(SettingsValue):
         Loads a mini app / bot
         """
         cls = self.import_class(app_settings.pop("class"))
-        app_settings.update(vars(self))
-        settings = SettingsValue(app_settings)
-        return cls(settings, name)
+        settings = AppSettings(app_settings, self)
+        app = cls(settings, name)
+        app.register_models()
+        return app
 
     def import_class(self, import_string: str):
         """
