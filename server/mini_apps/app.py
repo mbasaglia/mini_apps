@@ -2,7 +2,6 @@ import asyncio
 import json
 import hmac
 import hashlib
-import traceback
 import urllib.parse
 
 import telethon

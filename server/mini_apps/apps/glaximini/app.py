@@ -3,10 +3,7 @@ import gzip
 import inspect
 import io
 import json
-import random
-import uuid
 
-import hashids
 import telethon
 
 from mini_apps.app import App, Client
@@ -91,7 +88,7 @@ class Glaximini(App):
         if not document_id:
             return []
 
-        doc = self.documents.get(document_id);
+        doc = self.documents.get(document_id)
         if doc:
             lottie_data = doc.cached_lottie()
         else:

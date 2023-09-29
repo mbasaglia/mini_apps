@@ -162,7 +162,7 @@ class MiniEventApp(App):
 
             await self.broadcast_event_change(event)
 
-        except Exception as exception:
+        except Exception:
             self.log_exception("Create event")
             await client.send(type="error", msg="Invalid data")
 
@@ -378,6 +378,6 @@ class MiniEventApp(App):
                             message=text
                         )
 
-                    except Exception as exception:
+                    except Exception:
                         self.log_exception("Notification error")
                         pass

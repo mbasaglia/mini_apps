@@ -1,7 +1,11 @@
 import peewee
 from .db import BaseModel
 
+
 class User(BaseModel):
+    """
+    User model
+    """
     telegram_id = peewee.IntegerField(unique=True)
     name = peewee.CharField()
     is_admin = peewee.BooleanField(default=False)

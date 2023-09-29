@@ -148,9 +148,9 @@ class Document:
         elif command == "shape.delete":
             self.shapes[data["id"]].delete()
         elif command == "shape.edit":
-            shapes = [];
+            shapes = []
             fail = False
-            timestamp = data["timestamp"];
+            timestamp = data["timestamp"]
             for id in data["ids"]:
                 shape = self.shapes.get(id)
                 shapes.append(shape)
@@ -214,11 +214,11 @@ class Document:
         models.Shape.bulk_create(to_insert)
 
         # Delete old
-        models.Shape.delete().where((models.Shape.document==self.model) & models.Shape.public_id.in_(to_delete)).execute()
+        models.Shape.delete().where((models.Shape.document == self.model) & models.Shape.public_id.in_(to_delete)).execute()
 
         # Update keyframes
         shape_ids = {}
-        for db_shape in models.Shape.select(models.Shape.id, models.Shape.public_id).where(models.Shape.document==self.model.id):
+        for db_shape in models.Shape.select(models.Shape.id, models.Shape.public_id).where(models.Shape.document == self.model.id):
             shape_ids[db_shape.public_id] = db_shape.id
 
         models.Keyframe.delete().where(models.Keyframe.shape.in_(list(shape_ids.values()))).execute()
@@ -255,7 +255,7 @@ class Document:
 class Keyframe:
     def __init__(self, shape_id, time, props):
         self.shape_id = shape_id
-        self.time = time;
+        self.time = time
         self.props = props
 
     def to_command(self):

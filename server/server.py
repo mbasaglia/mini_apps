@@ -6,7 +6,7 @@ import traceback
 import subprocess
 import sys
 
-from mini_apps.settings import  Settings
+from mini_apps.settings import Settings
 from mini_apps.reloader import Reloader
 
 
