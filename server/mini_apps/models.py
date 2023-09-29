@@ -11,8 +11,9 @@ class User(BaseModel):
         user = cls.get_or_none(cls.telegram_id == telegram_data["id"])
 
         name = telegram_data["first_name"]
-        if telegram_data["last_name"]:
-            name += " " + telegram_data["last_name"]
+        last_name = telegram_data.get("last_name")
+        if last_name:
+            name += " " + last_name
 
         if not user:
             user = cls()

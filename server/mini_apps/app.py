@@ -40,7 +40,11 @@ class App(LogSource):
         """
         data = self.decode_telegram_data(message["data"])
         if data is None:
-            return None
+            fake_user = self.settings.get("fake-user")
+            if fake_user:
+                data = {"user": fake_user.dict()}
+            else:
+                return None
 
         with self.settings.database.atomic():
             user = User.get_user(data["user"])
