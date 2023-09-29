@@ -1,5 +1,5 @@
 Advanced Installation
----------------------
+=====================
 
 This page shows the steps to install the mini apps directly, without using docker.
 

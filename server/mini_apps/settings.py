@@ -7,6 +7,9 @@ import traceback
 
 
 class LogSource:
+    """
+    Class to simplify logging
+    """
     level = logging.WARN
 
     def __init__(self, name):

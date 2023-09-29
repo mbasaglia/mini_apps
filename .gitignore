@@ -2,3 +2,5 @@
 settings.json
 *.session*
 client/media/
+*.rst
+docs-build
