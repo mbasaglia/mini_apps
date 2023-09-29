@@ -10,10 +10,10 @@ jobs:
                     python-version: 3.10
             - uses: actions/checkout@master
             -
-                run:
-                    - pip install flake8
-                    - cd server
-                    - flake8
+                run: |
+                    pip install flake8
+                    cd server
+                    flake8
     docs:
         if: false
         runs-on: ubuntu-latest
