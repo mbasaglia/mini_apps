@@ -2,6 +2,9 @@ peewee
 telethon
 websockets
 
+# Mini Events
+aiocron
+
 # Glaximini
 #lottie
 git+https://gitlab.com/mattbas/python-lottie.git@master
