@@ -37,6 +37,9 @@ appropriate value in the various config files.
 Most steps require to have root access on a default configuration, if you are
 not logged in as `root`, you can try `sudo`.
 
+This guide will install the mini app in `/var/www/miniapps.example.com`,
+you might want to use a different directory.
+
 ### Installing Dependencies
 
 We need Apache to run the web server, docker-compose to run
@@ -44,7 +47,7 @@ the web socket code.
 
 
 ```bash
-apt install -y apache2 docker-compose git
+apt install -y docker-compose git
 ```
 
 ### Configuration
@@ -130,9 +133,9 @@ chgrp www-data /var/www/miniapps.example.com/client/media/
 chmod g+w /var/www/miniapps.example.com/client/media/
 ```
 
-### Back-End With Docker
+### Running Docker
 
-There is a docker-compose file that wraps the back-end service as a container.
+There is a docker-compose file that wraps the all services as containers.
 
 To start the container simply run the following:
 
@@ -141,68 +144,12 @@ cd /var/www/var/www/miniapps.example.com
 docker-compose up -d
 ```
 
-If you want to install the back-end on your machine directly (without docker)
+This will make the app accessible from `http://localhost:2537/`. You might want to add a web server on top of it
+to expose it to the public with your domain name and set up TLS certificates for a secure connection.
+
+If you want to install the apps on your machine directly (without docker)
 you can follow the instructions for an [advanced installation](./docs/advanced-installation.md).
 
-### Front-End With Apache
-
-This step is what makes the app accessible from outside the server machine.
-To ensure everything is secured, we'll use `certbot` to generate certificates.
-
-Create a new site on apache as `/etc/apache2/sites-available/minievent.evample.com.conf`:
-
-```apache
-# This sets up the SSL (ecrypted) virtual host, which actually hosts the website
-<VirtualHost *:443>
-    # Basic Setup (domain and directory)
-    ServerName minievent.evample.com
-    DocumentRoot /var/www/minievent.evample.com/client
-
-    # Makes the local websocket available as wss://minievent.evample.com/wss/
-    ProxyRequests Off
-    ProxyPass /wss/ ws://localhost:2536
-
-    # SSL settings
-    SSLEngine on
-    SSLCertificateFile      /etc/letsencrypt/live/minievent.evample.com/cert.pem
-    SSLCertificateKeyFile   /etc/letsencrypt/live/minievent.evample.com/privkey.pem
-    SSLCertificateChainFile /etc/letsencrypt/live/minievent.evample.com/chain.pem
-    Header always set Strict-Transport-Security "max-age=2678400"
-</VirtualHost>
-
-# This is the non-encrypted virtual host, which redirects all requests from http to https
-# only giving access to the certbot
-<VirtualHost *:80>
-    ServerName minievent.evample.com
-
-    <Location ~ "^(?!/.well-known)">
-        Redirect permanent / "https://minievent.evample.com/"
-    </Location>
-
-    Alias "/.well-known" "/var/www/minievent.evample.com/.well-known"
-    <Directory /var/www/minievent.evample.com/.well-known>
-        Allow from all
-        Options -Indexes
-    </Directory>
-</VirtualHost>
-```
-
-Enable the new site and restart Apache
-
-```bash
-a2enmod proxy
-a2enmod proxy_http
-a2ensite minievent.evample.com
-apache2ctl restart
-```
-
-Follow the installation instructions for `certbot` at https://certbot.eff.org/instructions?ws=apache&os=ubuntufocal
-
-To generate the certificates you can use the following command:
-
-```bash
-certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
-```
 
 Known Limitations
 -----------------

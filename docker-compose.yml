@@ -16,4 +16,3 @@ services:
         volumes:
             - ./server/httpd/httpd.conf:/usr/local/apache2/conf/httpd.conf
             - ./client/:/usr/local/apache2/htdocs/
-
