@@ -1,37 +1,68 @@
 #!/usr/bin/env python3
-import asyncio
 import argparse
+import asyncio
+import traceback
+import subprocess
+import sys
 
-from mini_apps.settings import Settings
+from mini_apps.settings import  Settings
+from mini_apps.reloader import Reloader
 
 
-async def run_server(settings, host, port):
+async def coro_wrapper(coro):
+    """
+    Awaits a coroutine and prints exceptions (if any)
+    """
+    try:
+        await coro
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        traceback.print_exc()
+        sys.stdout.flush()
+        raise
+
+
+async def run_server(settings, host, port, reload):
     """
     Runs the telegram bot and socket server
     """
 
     database = settings.connect_database()
     tasks = []
+    reloader = Reloader(settings.log, settings.paths.server)
 
     websocket_server = settings.websocket_server(host, port)
-    tasks.append(asyncio.create_task(websocket_server.run(), name="websocket"))
+    tasks.append(asyncio.create_task(coro_wrapper(websocket_server.run()), name="websocket"))
 
     for app in settings.app_list:
-        tasks.append(asyncio.create_task(app.run_bot(), name=app.name))
+        tasks.append(asyncio.create_task(coro_wrapper(app.run_bot()), name=app.name))
         tasks += app.server_tasks()
 
+    reload = False
     try:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-
-        for task in pending:
-            task.cancel()
+        await reloader.watch()
+        reload = True
 
     except KeyboardInterrupt:
-        pass
+        return
 
     finally:
         print("Shutting down")
         database.close()
+        websocket_server.stop()
+
+        for task in tasks:
+            print("Stopping", task.get_name())
+            task.cancel()
+
+        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+        print("All stopped")
+
+        if reload:
+            print("\nReloading\n")
+            p = subprocess.run(sys.argv)
+            sys.exit(p.returncode)
 
 
 if __name__ == "__main__":
@@ -50,6 +81,11 @@ if __name__ == "__main__":
         default=settings.websocket.port,
         help="Websocket port"
     )
+    parser.add_argument(
+        "--reload", "-r",
+        action="store_true",
+        help="If present, auto-reloads the server when sources change"
+    )
     args = parser.parse_args()
 
-    asyncio.run(run_server(settings, args.host, args.port))
+    asyncio.run(run_server(settings, args.host, args.port, args.reload or settings.get("reload")))

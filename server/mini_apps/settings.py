@@ -2,6 +2,7 @@ import sys
 import importlib
 import json
 import pathlib
+import traceback
 
 
 # TODO use python logging module

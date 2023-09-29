@@ -50,6 +50,7 @@ class WebsocketServer(LogSource):
         self.host = host
         self.port = port
         self.apps = apps
+        self.stop_future = None
 
     async def socket_messages(self, client: Client):
         """
@@ -114,9 +115,16 @@ class WebsocketServer(LogSource):
         """
         Runs the websocket server
         """
+        loop = asyncio.get_running_loop()
+        self.stop_future = loop.create_future()
+
         for app in vars(self.apps).values():
             app.on_server_start()
 
         async with websockets.serve(self.socket_handler, self.host, self.port):
             self.log("Connected as %s:%s" % (self.host, self.port))
-            await asyncio.Future()  # run forever
+            await self.stop_future # run forever (or until stop)
+            self.log("Stopped")
+
+    def stop(self):
+        self.stop_future.set_result(None)
