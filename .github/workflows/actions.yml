@@ -26,4 +26,5 @@ jobs:
         steps:
             -
                 uses: sphinx-notes/pages@v3
-                requirements_path: docs/requirements.txt
+                with:
+                    requirements_path: docs/requirements.txt
