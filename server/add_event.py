@@ -4,7 +4,7 @@ import pathlib
 import shutil
 
 from mini_apps.settings import Settings
-from mini_apps.apps.mini_event.models import Event
+from mini_apps.apps.mini_event import Event
 
 
 parser = argparse.ArgumentParser(description="Adds an event to the database")

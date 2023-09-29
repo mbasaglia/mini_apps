@@ -194,9 +194,17 @@ You can use `server/list_users.py` to find the right telegram ID.
 
 All these scripts support the `--help` command that gives more details on how they work.
 
-Please note that this demo uses SQLite to minimize set up and it only supports a single
-connection at a time. So if you want to call any of these scripts, you need to stop the server.
+If you want to run these on the docker instance, they should be invoked like this:
 
+```bash
+docker exec -ti mini_apps_miniapp_1  server/list_users.py
+```
+
+If you want to run them directly, you need to ensure you have Python
+and the pip requirements from `server/requirements.txt` installed.
+
+Please note that this demo uses SQLite to minimize set up, you might need to restart the server after changing data
+from the database.
 
 Admin Interface
 ---------------
