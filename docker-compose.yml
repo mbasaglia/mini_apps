@@ -7,13 +7,13 @@ services:
         volumes:
             - .:/var/miniapp/
         working_dir: /var/miniapp/
-        command: bash -c "pip install -r server/requirements.txt && python server/server.py --host 0.0.0.0"
+        command: bash -c "pip install -r server/requirements.txt &>/dev/null && python server/server.py --host 0.0.0.0"
 
     httpd:
         image: httpd:latest
         ports:
             - 2537:80
         volumes:
-            - ./server/httpd/httpd.conf:/usr/local/apache/conf/httpd.conf
-            - ./client/:/usr/local/apache/htdocs/
+            - ./server/httpd/httpd.conf:/usr/local/apache2/conf/httpd.conf
+            - ./client/:/usr/local/apache2/htdocs/
 
