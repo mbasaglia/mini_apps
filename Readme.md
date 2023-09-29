@@ -238,3 +238,9 @@ Messages specific to the Mini Event data:
 This includes all the event-specific data.
 * `attend`: Sent by the client to register attendance to an event, it includes the event ID.
 * `leave`: Sent by the client to cancel attendance to an event, it includes the event ID.
+
+
+License
+-------
+
+GPLv3+ https://www.gnu.org/licenses/gpl-3.0.en.html
