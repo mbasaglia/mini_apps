@@ -34,8 +34,13 @@ class Reloader(LogSource):
         last_known_modification = self.most_recent()[0]
 
         while True:
-            most_recent, file = self.most_recent()
-            if last_known_modification < most_recent:
-                self.log("%s was modified" % file)
-                return
-            await asyncio.sleep(1)
+            try:
+                most_recent, file = self.most_recent()
+                if last_known_modification < most_recent:
+                    self.log("%s was modified" % file)
+                    return True
+                await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                return False
+            except asyncio.exceptions.CancelledError:
+                return False

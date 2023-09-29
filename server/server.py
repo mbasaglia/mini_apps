@@ -17,6 +17,8 @@ async def coro_wrapper(coro):
         await coro
     except KeyboardInterrupt:
         pass
+    except asyncio.exceptions.CancelledError:
+        pass
     except Exception:
         traceback.print_exc()
         sys.stdout.flush()
@@ -41,11 +43,10 @@ async def run_server(settings, host, port, reload):
 
     reload = False
     try:
-        await reloader.watch()
-        reload = True
+        reload = await reloader.watch()
 
     except KeyboardInterrupt:
-        return
+        pass
 
     finally:
         print("Shutting down")

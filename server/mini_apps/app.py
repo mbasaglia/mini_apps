@@ -1,3 +1,4 @@
+import asyncio
 import json
 import hmac
 import hashlib
@@ -76,7 +77,15 @@ class App(LogSource):
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
             self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
             self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)
-            await self.telegram.start(bot_token=bot_token)
+
+            while True:
+                try:
+                    await self.telegram.start(bot_token=bot_token)
+                    break
+                except telethon.errors.rpcerrorlist.FloodWaitError as e:
+                    self.log("Wating for %ss (Flood Wait)")
+                    await asyncio.sleep(e.seconds)
+
             self.telegram_me = await self.telegram.get_me()
             self.log("Telegram bot @%s" % self.telegram_me.username)
             await self.on_telegram_connected()
