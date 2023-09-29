@@ -9,20 +9,21 @@ from telethon.sessions import MemorySession
 
 from .models import User
 from .websocket_server import Client
+from .settings import LogSource
 
 
-class App:
+class App(LogSource):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app
     """
 
     def __init__(self, settings, name=None):
+        super().__init__(name or self.__class__.__name__, settings.log)
         self.clients = {}
         self.settings = settings
         self.telegram = None
         self.telegram_me = None
-        self.name = name or self.__class__.__name__
 
     async def login(self, client: Client, message: dict):
         """
@@ -65,8 +66,8 @@ class App:
             bot_token = self.settings.bot_token
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
-            if hasattr(self.settings, "server"):
-                dc = self.settings.server
+            dc = getattr(self.settings, "telegram_server")
+            if dc:
                 self.telegram.session.set_dc(dc.dc, dc.address, dc.port)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
             self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
@@ -139,12 +140,6 @@ class App:
 
         return clean
 
-    def log(self, *args):
-        """
-        Prints a log message
-        """
-        print(self.name, *args)
-
     def server_tasks(self):
         """
         Returns any extra async tasks needed to run the app
@@ -185,7 +180,7 @@ class App:
         """
         Called when there is an exception on the telegram connection
         """
-        traceback.print_exc()
+        self.log_exception("Telegram Error")
 
     async def on_telegram_connected(self):
         """

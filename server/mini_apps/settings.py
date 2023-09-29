@@ -1,6 +1,36 @@
+import sys
 import importlib
 import json
 import pathlib
+
+
+# TODO use python logging module
+class LogSource:
+    def __init__(self, name, backend):
+        self.name = name
+        self.backend = backend
+
+    def log(self, message):
+        self.backend.log(self.name, message)
+
+    def log_exception(self, *message):
+        self.backend.log_exception(self.name, message)
+
+
+class StreamLog:
+    def __init__(self, stream=sys.stdout):
+        self.stream = stream
+
+    def log(self, *message):
+        self.stream.write(" ".join(map(str, message)))
+        self.stream.write("\n")
+        self.stream.flush()
+
+    def log_exception(self, *message):
+        self.log(*message)
+        traceback.print_exc()
+
+
 
 
 class SettingsValue:
@@ -20,6 +50,12 @@ class SettingsValue:
         value = getattr(self, key)
         delattr(self, key)
         return value
+
+    def get(self, key):
+        return getattr(self, key.replace("-", "_"), None)
+
+    def dict(self):
+        return vars(self)
 
     @classmethod
     def load(cls, filename, **extra):
@@ -56,6 +92,7 @@ class Settings(SettingsValue):
         apps = data.pop("apps")
         super().__init__(data)
 
+        self.log = StreamLog()
         self.database = self.load_database(database)
         self.apps = SettingsValue()
         self.app_list = []
@@ -141,6 +178,7 @@ class Settings(SettingsValue):
         self.server = WebsocketServer(
             host or self.websocket.hostname,
             port or self.websocket.port,
-            self.apps
+            self.apps,
+            self.log
         )
         return self.server

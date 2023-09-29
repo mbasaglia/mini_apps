@@ -1,8 +1,9 @@
 import asyncio
 import json
-import traceback
 
 import websockets
+
+from .settings import LogSource
 
 
 class AutoId:
@@ -38,13 +39,14 @@ class Client(AutoId):
         return self.user.to_json()
 
 
-class WebsocketServer:
+class WebsocketServer(LogSource):
     """
     Class that runs the websocket server and dispatches incoming messages to
     the installed apps
     """
 
-    def __init__(self, host, port, apps):
+    def __init__(self, host, port, apps, log):
+        super().__init__("socket", log)
         self.host = host
         self.port = port
         self.apps = apps
@@ -64,11 +66,11 @@ class WebsocketServer:
                         yield app, data
                         continue
 
-                print("Unknown Message", client.id, message)
+                self.log("Unknown Message", client.id, message)
                 await client.send(type="error", msg="Missing App ID")
             except Exception:
-                print("Socket Error", client.id, message)
-                traceback.print_exc()
+                self.log_exeption("Socket Error", client.id, message)
+
                 await client.send(type="error", msg="Internal server error")
 
     async def socket_handler(self, socket):
@@ -78,7 +80,7 @@ class WebsocketServer:
 
         # Create the client object for this socket
         client = Client(socket)
-        print("#%s connected from %s" % (client.id, socket.host))
+        self.log("#%s connected from %s" % (client.id, socket.host))
         await client.send(type="connect")
 
         # Wait for a login message
@@ -116,5 +118,5 @@ class WebsocketServer:
             app.on_server_start()
 
         async with websockets.serve(self.socket_handler, self.host, self.port):
-            print("Connected as %s:%s" % (self.host, self.port))
+            self.log("Connected as %s:%s" % (self.host, self.port))
             await asyncio.Future()  # run forever
