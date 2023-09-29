@@ -20,7 +20,7 @@ class App(LogSource):
     """
 
     def __init__(self, settings, name=None):
-        super().__init__(name or self.__class__.__name__, settings.log)
+        super().__init__(name or self.__class__.__name__)
         self.clients = {}
         self.settings = settings
         self.telegram = None
@@ -58,6 +58,7 @@ class App(LogSource):
         Disconnects the given client
         """
         self.clients.pop(client.id)
+        self.log.debug("#%s Disconnected", client.id)
         await self.on_client_disconnected(client)
 
     async def run_bot(self):
@@ -83,11 +84,11 @@ class App(LogSource):
                     await self.telegram.start(bot_token=bot_token)
                     break
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
-                    self.log("Wating for %ss (Flood Wait)")
+                    self.log.warn("Wating for %ss (Flood Wait)", e.seconds)
                     await asyncio.sleep(e.seconds)
 
             self.telegram_me = await self.telegram.get_me()
-            self.log("Telegram bot @%s" % self.telegram_me.username)
+            self.log.info("Telegram bot @%s", self.telegram_me.username)
             await self.on_telegram_connected()
         except Exception as e:
             await self.on_telegram_exception(e)

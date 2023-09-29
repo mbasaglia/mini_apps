@@ -1,37 +1,22 @@
 import sys
 import importlib
 import json
+import logging
 import pathlib
 import traceback
 
 
-# TODO use python logging module
 class LogSource:
-    def __init__(self, name, backend):
+    level = logging.WARN
+
+    def __init__(self, name):
         self.name = name
-        self.backend = backend
+        self.log = logging.getLogger(name)
+        self.log.setLevel(self.level)
 
-    def log(self, message):
-        self.backend.log(self.name, message)
-
-    def log_exception(self, *message):
-        self.backend.log_exception(self.name, message)
-
-
-class StreamLog:
-    def __init__(self, stream=sys.stdout):
-        self.stream = stream
-
-    def log(self, *message):
-        self.stream.write(" ".join(map(str, message)))
-        self.stream.write("\n")
-        self.stream.flush()
-
-    def log_exception(self, *message):
-        self.log(*message)
-        traceback.print_exc()
-
-
+    def log_exception(self, message, *args):
+        self.log.critical(message, *args, level=logging.CRITICAL)
+        self.log.critical(traceback.format_exc())
 
 
 class SettingsValue:
@@ -91,9 +76,10 @@ class Settings(SettingsValue):
     def __init__(self, data: dict):
         database = data.pop("database")
         apps = data.pop("apps")
+        log = data.pop("log", {})
         super().__init__(data)
 
-        self.log = StreamLog()
+        self.init_logging(log)
         self.database = self.load_database(database)
         self.apps = SettingsValue()
         self.app_list = []
@@ -104,6 +90,23 @@ class Settings(SettingsValue):
                 app = self.load_app(app_settings, name)
                 setattr(self.apps, name, app)
                 self.app_list.append(app)
+
+    def log_level(self, conf_value):
+        if isinstance(conf_value, int):
+            return conf_value
+        return getattr(logging, conf_value.upper())
+
+    def init_logging(self, log_config):
+        log = {
+            "level": logging.INFO,
+            "global-level": logging.WARN,
+            "format": "%(asctime)s %(name)-10s %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        }
+        log.update(log_config)
+        LogSource.level = self.log_level(log.pop("level"))
+        log["level"] = self.log_level(log.pop("global-level"))
+        logging.basicConfig(**log)
 
     @classmethod
     def get_paths(cls):
@@ -179,7 +182,6 @@ class Settings(SettingsValue):
         self.server = WebsocketServer(
             host or self.websocket.hostname,
             port or self.websocket.port,
-            self.apps,
-            self.log
+            self.apps
         )
         return self.server

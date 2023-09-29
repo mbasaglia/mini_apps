@@ -87,8 +87,6 @@ class MiniEventApp(App):
         """
         Called when a client has been authenticated
         """
-        self.log("%s is %s" % (client.id, client.user.name))
-
         for event in self.sorted_events:
             await client.send(type="event", **self.event_data(event, client.user))
 
@@ -96,12 +94,6 @@ class MiniEventApp(App):
             type="events-loaded",
             selected=client.user.telegram_data.get("start_param", None)
         )
-
-    async def on_client_disconnected(self, client: Client):
-        """
-        Called when a client disconnects from the server
-        """
-        self.log("Disconnected %s" % client.id)
 
     async def _on_attend(self, client: Client, data: dict):
         """
@@ -171,7 +163,7 @@ class MiniEventApp(App):
             await self.broadcast_event_change(event)
 
         except Exception as exception:
-            self.log(exception)
+            self.log_exception("Create event")
             await client.send(type="error", msg="Invalid data")
 
     async def _on_delete_event(self, client: Client, data: dict):
@@ -207,11 +199,6 @@ class MiniEventApp(App):
         """
         Handles messages received from the client
         """
-        if type != "create-event":
-            self.log(client.id, data)
-        else:
-            self.log(client.id, {**data, "image": "..."})
-
         # User attends an event
         if type == "attend":
             await self._on_attend(client, data)
@@ -392,5 +379,5 @@ class MiniEventApp(App):
                         )
 
                     except Exception as exception:
-                        self.log("Notification error %s %s" % (exception.__clas__, exception))
+                        self.log_exception("Notification error")
                         pass

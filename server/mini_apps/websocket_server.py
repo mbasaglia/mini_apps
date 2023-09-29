@@ -45,8 +45,8 @@ class WebsocketServer(LogSource):
     the installed apps
     """
 
-    def __init__(self, host, port, apps, log):
-        super().__init__("socket", log)
+    def __init__(self, host, port, apps):
+        super().__init__("socket")
         self.host = host
         self.port = port
         self.apps = apps
@@ -67,7 +67,7 @@ class WebsocketServer(LogSource):
                         yield app, data
                         continue
 
-                self.log("Unknown Message", client.id, message)
+                self.log.warn("Unknown Message", client.id, message)
                 await client.send(type="error", msg="Missing App ID")
             except Exception:
                 self.log_exeption("Socket Error", client.id, message)
@@ -81,11 +81,12 @@ class WebsocketServer(LogSource):
 
         # Create the client object for this socket
         client = Client(socket)
-        self.log("#%s connected from %s" % (client.id, socket.host))
+        self.log.debug("#%s connected from %s", client.id, socket.host)
         await client.send(type="connect")
 
         # Wait for a login message
         async for app, message in self.socket_messages(client):
+            self.log.debug("#%s setup %s", client.id, message[:80])
             if message["type"] != "login":
                 await client.send(type="error", msg="You need to login first")
             else:
@@ -99,11 +100,13 @@ class WebsocketServer(LogSource):
             return
 
         try:
+            self.log.debug("#%s logged in as %s on %s", client.id, client.to_json(), app.name)
             await client.send(type="welcome", **client.to_json())
             await client.app.on_client_authenticated(client)
 
             # Process messages from the client
             async for app, message in self.socket_messages(client):
+                self.log.debug("#%s %s msg %s", client.id, app.name, message[:80])
                 type = message.get("type", "")
                 await app.handle_message(client, type, message)
 
@@ -122,9 +125,9 @@ class WebsocketServer(LogSource):
             app.on_server_start()
 
         async with websockets.serve(self.socket_handler, self.host, self.port):
-            self.log("Connected as %s:%s" % (self.host, self.port))
+            self.log.info("Connected as %s:%s" % (self.host, self.port))
             await self.stop_future # run forever (or until stop)
-            self.log("Stopped")
+            self.log.info("Stopped")
 
     def stop(self):
         self.stop_future.set_result(None)

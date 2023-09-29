@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
+import logging
 import traceback
 import subprocess
 import sys
@@ -32,7 +33,7 @@ async def run_server(settings, host, port, reload):
 
     database = settings.connect_database()
     tasks = []
-    reloader = Reloader(settings.log, settings.paths.server)
+    reloader = Reloader(settings.paths.server)
 
     websocket_server = settings.websocket_server(host, port)
     tasks.append(asyncio.create_task(coro_wrapper(websocket_server.run()), name="websocket"))
@@ -40,6 +41,8 @@ async def run_server(settings, host, port, reload):
     for app in settings.app_list:
         tasks.append(asyncio.create_task(coro_wrapper(app.run_bot()), name=app.name))
         tasks += app.server_tasks()
+
+    logger = logging.getLogger("server")
 
     reload = False
     try:
@@ -49,19 +52,19 @@ async def run_server(settings, host, port, reload):
         pass
 
     finally:
-        print("Shutting down")
+        logger.info("Shutting down")
         database.close()
         websocket_server.stop()
 
         for task in tasks:
-            print("Stopping", task.get_name())
+            logger.debug("Stopping", task.get_name())
             task.cancel()
 
         await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-        print("All stopped")
+        logger.debug("All stopped")
 
         if reload:
-            print("\nReloading\n")
+            logging.info("\nReloading\n")
             p = subprocess.run(sys.argv)
             sys.exit(p.returncode)
 

@@ -7,8 +7,8 @@ class Reloader(LogSource):
     """
     Utility to reload scripts when the sources change
     """
-    def __init__(self, log, path: pathlib.Path, globs=["**/*.py", "*/*.json"]):
-        super().__init__("reloader", log)
+    def __init__(self, path: pathlib.Path, globs=["**/*.py", "*/*.json"]):
+        super().__init__("reloader")
         self.path = path
         self.globs = globs
         self.task = None
@@ -30,14 +30,14 @@ class Reloader(LogSource):
         return most_recent, most_recent_file
 
     async def watch(self):
-        self.log("Watching %s" % self.path)
+        self.log.info("Watching %s", self.path)
         last_known_modification = self.most_recent()[0]
 
         while True:
             try:
                 most_recent, file = self.most_recent()
                 if last_known_modification < most_recent:
-                    self.log("%s was modified" % file)
+                    self.log.debug("%s was modified", file)
                     return True
                 await asyncio.sleep(1)
             except KeyboardInterrupt:
