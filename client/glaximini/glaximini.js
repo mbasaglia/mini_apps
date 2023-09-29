@@ -1,6 +1,7 @@
 import { App } from "../src/app.js";
 import { Editor } from "./editor.js";
 import { Playback } from "./playback.js";
+import { ShapeDeleteCommand } from "./command.js";
 
 
 export class GlaximiniApp extends App
@@ -8,7 +9,8 @@ export class GlaximiniApp extends App
     constructor(telegram)
     {
         super("glaximini", telegram);
-        this.connection.addEventListener("sticker-id", this.send_sticker_ask.bind(this));
+        this.connection.addEventListener("document.open", this.on_document_open.bind(this));
+        this.connection.addEventListener("document.loaded", this.on_document_loaded.bind(this));
 
         this.canvas = document.getElementById("canvas");
         this.editor = new Editor(this.connection, this.canvas);
@@ -36,7 +38,6 @@ export class GlaximiniApp extends App
     _on_welcome(ev)
     {
         super._on_welcome(ev);
-        this.editor.loading = false;
     }
 
     /**
@@ -49,7 +50,8 @@ export class GlaximiniApp extends App
         document.getElementById("action-keyframe").addEventListener("click", this.add_keyframe.bind(this));
         document.getElementById("action-play").addEventListener("click", this.playback.start.bind(this.playback));
         document.getElementById("action-pause").addEventListener("click", this.playback.stop.bind(this.playback));
-        document.getElementById("action-telegram").addEventListener("click", this.send_sticker_prepare.bind(this));
+        document.getElementById("action-telegram").addEventListener("click", this.send_sticker.bind(this));
+        document.getElementById("action-delete").addEventListener("click", this.delete_shape.bind(this));
 
         this.inputs = {
             frame_slider: document.getElementById("frame"),
@@ -159,13 +161,37 @@ export class GlaximiniApp extends App
         return this.editor.to_lottie(this.playback.min, this.playback.max, this.playback.fps);
     }
 
-    send_sticker_prepare()
+    send_sticker()
     {
-        this.connection.send({type: "sticker", lottie: this.to_lottie()});
+        this.webapp.switchInlineQuery(this.editor.document_id, ["users", "groups", "channels", "bots"]);
     }
 
-    send_sticker_ask(ev)
+    delete_shape()
     {
-        this.webapp.switchInlineQuery(ev.detail.id, ["users", "groups", "channels", "bots"]);
+        if ( this.editor.current_shape )
+        {
+            this.editor.stack.push(new ShapeDeleteCommand(this.editor.current_shape.id));
+            this.editor.draw();
+        }
+    }
+
+    on_document_open(ev)
+    {
+        this.editor.document_id = ev.detail.id;
+
+        this.editor.root.frame = ev.detail.start - 1;
+        this.playback.fps = ev.detail.fps;
+        this.playback.set_range(ev.detail.start, ev.detail.duration);
+        this.editor.canvas.width = ev.detail.width;
+        this.editor.canvas.height = ev.detail.width;
+        this.editor.draw();
+
+        this.inputs.frame_slider.min = this.inputs.frame_edit.min = ev.detail.start;
+        this.inputs.frame_slider.max = this.inputs.frame_edit.max = ev.detail.duration;
+    }
+
+    on_document_loaded(ev)
+    {
+        this.editor.loading = false;
     }
 }

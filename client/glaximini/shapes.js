@@ -2,6 +2,7 @@ import { Point, Matrix, BoundingBox, Polygon } from "./math.js";
 import { Bezier } from "./bezier.js";
 import { lerp_hex, hex_to_rgb } from "./color.js"
 
+
 function value_to_lottie(value, make_array = false)
 {
     if ( typeof value == "number" )
@@ -59,6 +60,7 @@ function value_to_lottie(value, make_array = false)
         return value;
     }
 }
+
 
 class LottieConverterProperty
 {
@@ -205,6 +207,19 @@ export class EditorObject
         let objects = [];
         this.gather_styled_objects(objects);
         return objects;
+    }
+
+    insert()
+    {
+        this.parent.insert_child(this);
+        this.enter_frame(this.parent.frame);
+    }
+
+    remove()
+    {
+        if ( this === this.editor.current_shape )
+            this.editor.select_shape(null);
+        this.parent.remove_child(this);
     }
 
     gather_styled_objects(objects)
