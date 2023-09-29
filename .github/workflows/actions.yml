@@ -1,5 +1,5 @@
 name: "Actions"
-
+on: [push, workflow_dispatch, pull_request]
 jobs:
     lint:
         runs-on: ubuntu-latest
