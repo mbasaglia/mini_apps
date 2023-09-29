@@ -190,6 +190,8 @@ Create a new site on apache as `/etc/apache2/sites-available/minievent.evample.c
 Enable the new site and restart Apache
 
 ```bash
+a2enmod proxy
+a2enmod proxy_http
 a2ensite minievent.evample.com
 apache2ctl restart
 ```
