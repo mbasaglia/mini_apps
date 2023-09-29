@@ -1,0 +1,29 @@
+name: "Actions"
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            -
+                uses: actions/setup-python@v1
+                with:
+                    python-version: 3.10
+            - uses: actions/checkout@master
+            -
+                run:
+                    - pip install flake8
+                    - cd server
+                    - flake8
+    docs:
+        if: false
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        permissions:
+            pages: write
+            id-token: write
+        steps:
+            -
+                uses: sphinx-notes/pages@v3
+                requirements_path: docs/requirements.txt
