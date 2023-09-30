@@ -562,6 +562,7 @@ export class SelectTool extends DragTool
 
     on_mouse_up(ev)
     {
+        this.maybe_drag = false;
         if ( !this.dragging )
             this.editor.select_shape(this.under_mouse);
         super.on_mouse_up(ev);
