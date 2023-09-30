@@ -3,7 +3,8 @@ Advanced Installation
 
 This page shows the steps to install the mini apps directly, without using docker.
 
-This assumes you have followed the other installation steps as from the main Readme.
+This assumes you have followed the initial installation steps as from
+the [installation page](./index.md).
 
 ## System Dependencies
 
@@ -97,7 +98,7 @@ a2ensite minievent.evample.com
 apache2ctl restart
 ```
 
-Follow the installation instructions for `certbot` at https://certbot.eff.org/instructions?ws=apache&os=ubuntufocal
+Follow the installation instructions for `certbot` at <https://certbot.eff.org/instructions?ws=apache&os=ubuntufocal>
 
 To generate the certificates you can use the following command:
 

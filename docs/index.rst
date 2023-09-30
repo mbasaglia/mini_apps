@@ -6,7 +6,8 @@ Mini Apps
    :maxdepth: 2
    :caption: Contents:
 
-   advanced-installation
+   installation/index
+   installation/advanced
    custom-app
    mini_apps/index
    
