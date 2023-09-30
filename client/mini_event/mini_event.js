@@ -100,7 +100,7 @@ export class MiniEventApp extends App
         duration.innerText = ev.detail.duration + " hours";
         attendees.innerText = ev.detail.attendees;
 
-        preview_image.setAttribute("src", "/" + ev.detail.image);
+        preview_image.setAttribute("src", ev.detail.image);
         preview_image.setAttribute("alt", ev.detail.title);
 
         // Button to share an event within telegram using inline mode

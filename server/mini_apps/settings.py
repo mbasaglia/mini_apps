@@ -151,6 +151,8 @@ class Settings(SettingsValue):
             database_path.parent.mkdir(parents=True, exist_ok=True)
             db_settings["database"] = str(database_path)
 
+        LogSource.get_logger("database").info("Database %s with %s" % (db_settings.get("database"), cls.__name__))
+
         return cls(**db_settings)
 
     def load_app(self, app_settings: dict, name: str):

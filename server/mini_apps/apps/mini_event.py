@@ -236,6 +236,7 @@ class MiniEventApp(App):
         """
         data = event.to_json()
 
+        data["image"] = self.settings.media_url + event.image
         data["attending"] = bool(event.attendees.filter(UserEvent.user_id == user.id).first())
 
         # This allows passing the attendee count so we don't have to calculate it

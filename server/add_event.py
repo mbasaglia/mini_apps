@@ -31,5 +31,5 @@ with settings.connect_database():
     event.description = args.description
     event.start = args.start
     event.duration = args.duration
-    event.image = "media/" + image_source.name
+    event.image = image_source.name
     event.save()
