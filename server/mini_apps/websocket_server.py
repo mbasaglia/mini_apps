@@ -103,7 +103,7 @@ class WebsocketServer(LogSource):
 
         # Disconnect if there is no correct login
         if not client.app or not client.user:
-            self.log.debug("#%s failed login")
+            self.log.debug("#%s failed login", client.id)
             if client.socket.open:
                 await client.send(type="disconnect")
             return

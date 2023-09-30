@@ -67,9 +67,8 @@ class Glaximini(App):
 
     def save_document(self, client: Client):
         if client.document:
-            client.document.cached_lottie()
-            # with self.settings.database.atomic():
-                # client.document.save()
+            with self.settings.database.atomic():
+                client.document.save()
 
     async def handle_message(self, client: Client, type: str, data: dict):
         """
@@ -98,6 +97,7 @@ class Glaximini(App):
                 return []
             lottie_data = doc.lottie
 
+        print(lottie_data)
         file = io.BytesIO()
         with gzip.open(file, "wb") as gzfile:
             lottie_data["tgs"] = 1

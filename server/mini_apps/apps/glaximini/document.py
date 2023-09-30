@@ -4,7 +4,7 @@ import time
 
 import hashids
 import lottie
-
+import lottie.utils.stripper
 
 from . import models
 
@@ -186,6 +186,9 @@ class Document:
         to_delete = []
         processed = set()
 
+        self.cached_lottie()
+        self.model.save()
+
         # Update existing
         for db_shape in self.model.shapes:
             processed.add(db_shape.public_id)
@@ -233,7 +236,9 @@ class Document:
 
     def cached_lottie(self):
         if self.model.lottie is None:
-            self.model.lottie = self.to_lottie()
+            anim = self.to_lottie()
+            lottie.utils.stripper.heavy_strip(anim)
+            self.model.lottie = anim.to_dict()
         return self.model.lottie
 
     def to_lottie(self):

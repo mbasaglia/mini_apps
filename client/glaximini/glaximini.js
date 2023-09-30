@@ -19,14 +19,14 @@ export class GlaximiniApp extends App
         this.playback.set_range(0, 180);
 
         // Debug mode when accessing from browser that disables server side stuff
-        if ( !this.webapp.initData )
+        /*if ( !this.webapp.initData )
         {
             this.connection.reconnect = false;
             this.connection.socket = {
                 send: console.log
             };
             this.editor.loading = false;
-        }
+        }*/
 
         this.connect_ui();
     }
@@ -163,6 +163,7 @@ export class GlaximiniApp extends App
 
     send_sticker()
     {
+        this.connection.send({type: "document.save"});
         this.webapp.switchInlineQuery(this.editor.document_id, ["users", "groups", "channels", "bots"]);
     }
 
