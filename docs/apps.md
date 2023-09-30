@@ -18,8 +18,8 @@ The events
         "mini_event": {
             "class": "mini_apps.apps.mini_event.MiniEventApp",
             "bot-token": "(your bot token)",
-            "media-url": "http://miniapps.example.com/media/",
-            "url": "http://miniapps.example.com/mini_event/"
+            "media-url": "https://miniapps.example.com/media/",
+            "url": "https://miniapps.example.com/mini_event/"
         }
     }
 }
@@ -57,7 +57,7 @@ This is a very basic animated sticker editor.
         "mini_event": {
             "class": "mini_apps.apps.glaximini.app.Glaximini",
             "bot-token": "(your bot token)",
-            "url": "http://miniapps.example.com/glaximini/"
+            "url": "https://miniapps.example.com/glaximini/"
         }
     }
 }

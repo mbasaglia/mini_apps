@@ -10,6 +10,7 @@ Mini Apps
    installation/advanced
    apps
    custom-app
+   websocket
    mini_apps/index
    
 
