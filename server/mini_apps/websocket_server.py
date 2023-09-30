@@ -64,13 +64,13 @@ class WebsocketServer(LogSource):
                 if app_name:
                     app = getattr(self.apps, app_name, None)
                     if app:
-                        yield app, data
+                        yield app, data, message
                         continue
 
-                self.log.warn("Unknown Message", client.id, message)
+                self.log.warn("#%s unknown %s", client.id, message)
                 await client.send(type="error", msg="Missing App ID")
             except Exception:
-                self.log_exeption("Socket Error", client.id, message)
+                self.log_exception("Socket Error", client.id, message)
 
                 await client.send(type="error", msg="Internal server error")
 
@@ -85,13 +85,17 @@ class WebsocketServer(LogSource):
         await client.send(type="connect")
 
         # Wait for a login message
-        async for app, message in self.socket_messages(client):
-            self.log.debug("#%s setup %s", client.id, message[:80])
+        async for app, message, raw in self.socket_messages(client):
+            self.log.debug("#%s setup %s", client.id, raw[:80])
             if message["type"] != "login":
                 await client.send(type="error", msg="You need to login first")
             else:
                 client.app = app
-                await app.login(client, message)
+                try:
+                    await app.login(client, message)
+                except Exception:
+                    app.log_exception()
+                    pass
                 break
 
         # Disconnect if there is no correct login
@@ -105,8 +109,8 @@ class WebsocketServer(LogSource):
             await client.app.on_client_authenticated(client)
 
             # Process messages from the client
-            async for app, message in self.socket_messages(client):
-                self.log.debug("#%s %s msg %s", client.id, app.name, message[:80])
+            async for app, message, raw in self.socket_messages(client):
+                self.log.debug("#%s %s msg %s", client.id, app.name, raw[:80])
                 type = message.get("type", "")
                 await app.handle_message(client, type, message)
 

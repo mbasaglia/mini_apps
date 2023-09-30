@@ -37,7 +37,6 @@ async def run_server(settings, host, port, reload):
 
     database = settings.connect_database()
     tasks = []
-    reloader = Reloader(settings.paths.server)
 
     websocket_server = settings.websocket_server(host, port)
     tasks.append(create_task(websocket_server.run))
@@ -48,9 +47,12 @@ async def run_server(settings, host, port, reload):
 
     logger = LogSource.get_logger("server")
 
-    reload = False
     try:
-        reload = await reloader.watch()
+        if not reload:
+            await asyncio.Future()
+        else:
+            reloader = Reloader(settings.paths.server)
+            reload = await reloader.watch()
 
     except KeyboardInterrupt:
         pass
@@ -97,6 +99,12 @@ if __name__ == "__main__":
         action="store_true",
         help="If present, auto-reloads the server when sources change"
     )
+    parser.add_argument(
+        "--no-reload", "-nr",
+        action="store_true",
+        help="If present disables auto-reloading"
+    )
     args = parser.parse_args()
 
-    asyncio.run(run_server(settings, args.host, args.port, args.reload or settings.get("reload")))
+    reload = not args.no_reload and (args.reload or settings.get("reload"))
+    asyncio.run(run_server(settings, args.host, args.port, reload))
