@@ -13,12 +13,17 @@ class LogSource:
 
     def __init__(self, name):
         self.name = name
-        self.log = logging.getLogger(name)
-        self.log.setLevel(self.level)
+        self.log = self.get_logger(name)
 
     def log_exception(self, message, *args):
         self.log.critical(message, *args, level=logging.CRITICAL)
         self.log.critical(traceback.format_exc())
+
+    @classmethod
+    def get_logger(cls, name):
+        log = logging.getLogger(name)
+        log.setLevel(cls.level)
+        return log
 
 
 class SettingsValue:

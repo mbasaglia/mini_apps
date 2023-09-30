@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
-import logging
 import traceback
 import subprocess
 import sys
 
-from mini_apps.settings import Settings
+from mini_apps.settings import Settings, LogSource
 from mini_apps.reloader import Reloader
 
 
-async def coro_wrapper(coro):
+async def coro_wrapper(coro, logger: LogSource):
     """
     Awaits a coroutine and prints exceptions (if any)
     """
@@ -21,9 +20,14 @@ async def coro_wrapper(coro):
     except asyncio.exceptions.CancelledError:
         pass
     except Exception:
-        traceback.print_exc()
-        sys.stdout.flush()
+        logger.log_exception()
         raise
+
+
+def create_task(method, *args):
+    coro = method(*args)
+    wrapped = coro_wrapper(coro, method.__self__)
+    return asyncio.create_task(wrapped, name=method.__self__.name)
 
 
 async def run_server(settings, host, port, reload):
@@ -36,13 +40,13 @@ async def run_server(settings, host, port, reload):
     reloader = Reloader(settings.paths.server)
 
     websocket_server = settings.websocket_server(host, port)
-    tasks.append(asyncio.create_task(coro_wrapper(websocket_server.run()), name="websocket"))
+    tasks.append(create_task(websocket_server.run))
 
     for app in settings.app_list:
-        tasks.append(asyncio.create_task(coro_wrapper(app.run_bot()), name=app.name))
+        tasks.append(create_task(app.run_bot))
         tasks += app.server_tasks()
 
-    logger = logging.getLogger("server")
+    logger = LogSource.get_logger("server")
 
     reload = False
     try:
@@ -57,22 +61,25 @@ async def run_server(settings, host, port, reload):
         websocket_server.stop()
 
         for task in tasks:
-            logger.debug("Stopping", task.get_name())
+            logger.debug("Stopping %s", task.get_name())
             task.cancel()
 
         await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
         logger.debug("All stopped")
 
         if reload:
-            logging.info("\nReloading\n")
-            p = subprocess.run(sys.argv)
-            sys.exit(p.returncode)
+            logger.info("\nReloading\n")
+            try:
+                p = subprocess.run(sys.argv)
+                sys.exit(p.returncode)
+            except KeyboardInterrupt:
+                return
 
 
 if __name__ == "__main__":
     settings = Settings.load_global()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Runs the server")
     parser.add_argument(
         "--host",
         type=str,
