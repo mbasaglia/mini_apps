@@ -34,8 +34,7 @@ Also, do keep track of the bot token as it's needed in the server
 configuration file.
 
 
-## Installing the Codebase
-
+## Installing the Code
 
 This guide will install the mini app in `/var/www/miniapps.example.com`,
 you might want to use a different directory.
@@ -70,6 +69,9 @@ with the following:
         "class": "SqliteDatabase",
         "database": "db/db.sqlite"
     },
+    "log": {
+        "level": "INFO",
+    },
     "websocket": {
         "hostname": "localhost",
         "port": 2536
@@ -78,12 +80,12 @@ with the following:
         "mini_event": {
             "class": "mini_apps.apps.mini_event.MiniEventApp",
             "bot-token": "(your bot token)",
-            "api-id": "(your api id)",
-            "api-hash": "(your api hash)",
             "url": "https://miniapps.example.com/mini_event/",
-            "media-url": "https://miniapps.example.com/"
+            "media-url": "https://miniapps.example.com/media/"
         }
-    }
+    },
+    "api-id": "(your api id)",
+    "api-hash": "(your api hash)"
 }
 ```
 
@@ -92,23 +94,24 @@ Explanation of the settings fields:
 * `database`: This configures the database connection
     * `class`: One of the [Peewee database classes](https://docs.peewee-orm.com/en/latest/peewee/database.html)
     * The rest of the properties here are passed as class constructor arguments
+* `log`: Configures app logging, everything here corresponds to Python's [logging.basicConfig](https://docs.python.org/3/library/logging.html#logging.basicConfig)
 * `websocket`: Web socket settings
     * `hostname`: Socket bind host name or address
     * `port`: Socket port
 * `apps`: Map of app short name to app settings. App settings contain the following:
     * `class`: Python class that runs the bot / app
-    * `api-id`: MTProto API ID, you can get its value from <https://my.telegram.org/apps>
-    * `api-hash`: MTProto API hash, you can get its value from <https://my.telegram.org/apps>
     * `session`: (Optional) [session name](https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.telegrambaseclient.TelegramBaseClient) for Telethon
     * `bot-token`: Bot API token as kiven by BotFather
     * `url`: URL of the mini app main page
     * `media-url`: Base URL for images
+* `api-id`: MTProto API ID, you can get its value from <https://my.telegram.org/apps>
+* `api-hash`: MTProto API hash, you can get its value from <https://my.telegram.org/apps>
 
-If you want to run on the Telegram test server, add the following to `apps.mini_event` in the JSON,
+If you want to run on the Telegram test server, add the following to the JSON,
 with the values from <https://my.telegram.org/apps>.
 
 ```js
-"server": {
+"telegram-server": {
     "dc": 2,
     "address": "127.0.0.1",
     "port": 443

@@ -14,26 +14,12 @@ See the [installation page](./docs/installation/index.md) for the installation a
 setup guide.
 
 
-Known Limitations
------------------
-
-The events app is a technical demo, for a fully functional app some changes are needed.
-
-For one the events are only specified as a time (not a date), this allows the bot
-to always show events without having to set up many events throughout the course
-of several days.
-
-The bot notifies users that registered as attendding an event, this is done
-based on the server time (which is in Germany).
-
-The live database might get wiped and recreated periodically so some data will
-be deleted.
-
-
-More Apps
+Mini Apps
 ---------
 
-This guide installs the `mini_event` app, which serves as a demo of the mini apps system.
+The installation guide above shows the configuration for the "Mini Events" app, which serves as a demo for the system.
+
+You can find detailed description, configuration options, and limitations of all the availble apps in the [Available Apps](./docs/apps.md) page.
 
 To make your own mini app, see [Making Your Own App](./docs/custom-app.md) page.
 
@@ -68,13 +54,6 @@ and the pip requirements from `server/requirements.txt` installed.
 
 Please note that this demo uses SQLite to minimize set up, you might need to restart the server after changing data
 from the database.
-
-Admin Interface
----------------
-
-If you created admin users (with `server/make_admin.py`), when those users
-access the mini app, they will see additional options, which allows them to manage
-the events.
 
 
 Web Socket Messages

@@ -8,6 +8,7 @@ Mini Apps
 
    installation/index
    installation/advanced
+   apps
    custom-app
    mini_apps/index
    
