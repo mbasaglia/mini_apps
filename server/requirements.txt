@@ -9,3 +9,6 @@ aiocron
 #lottie
 git+https://gitlab.com/mattbas/python-lottie.git@master
 hashids
+
+# PyPI
+twine

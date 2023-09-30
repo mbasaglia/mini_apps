@@ -4,3 +4,5 @@ settings.json
 client/media/
 *.rst
 docs-build
+dist/
+*.egg-info/
