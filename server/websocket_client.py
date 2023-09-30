@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
-import pathlib
-import json
 import sys
 
 import websockets
@@ -70,4 +68,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(run_client(args.url))
-

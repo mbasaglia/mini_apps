@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import pathlib
 import setuptools
-from functools import reduce
 
 here = pathlib.Path(__file__).absolute().parent
 root = here.parent
@@ -60,4 +59,3 @@ setuptools.setup(
     # test_suite="test",
     # project_urls={},
 )
-

@@ -1,5 +1,4 @@
 import asyncio
-import pathlib
 import logging
 from .settings import LogSource
 
