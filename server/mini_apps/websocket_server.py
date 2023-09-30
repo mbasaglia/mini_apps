@@ -56,23 +56,26 @@ class WebsocketServer(LogSource):
         """
         Generator that yields messages from the socket
         """
-        async for message in client.socket:
-            try:
-                data = json.loads(message)
-                # Find the app this message is for
-                app_name = data.pop("app", None)
-                if app_name:
-                    app = getattr(self.apps, app_name, None)
-                    if app:
-                        yield app, data, message
-                        continue
+        try:
+            async for message in client.socket:
+                try:
+                    data = json.loads(message)
+                    # Find the app this message is for
+                    app_name = data.pop("app", None)
+                    if app_name:
+                        app = getattr(self.apps, app_name, None)
+                        if app:
+                            yield app, data, message
+                            continue
 
-                self.log.warn("#%s unknown %s", client.id, message)
-                await client.send(type="error", msg="Missing App ID")
-            except Exception:
-                self.log_exception("Socket Error", client.id, message)
+                    self.log.warn("#%s unknown %s", client.id, message)
+                    await client.send(type="error", msg="Missing App ID")
+                except Exception:
+                    self.log_exception("Socket Error", client.id, message)
 
-                await client.send(type="error", msg="Internal server error")
+                    await client.send(type="error", msg="Internal server error")
+        except (asyncio.exceptions.IncompleteReadError, websockets.exceptions.ConnectionClosedError):
+            return
 
     async def socket_handler(self, socket):
         """
@@ -100,7 +103,9 @@ class WebsocketServer(LogSource):
 
         # Disconnect if there is no correct login
         if not client.app or not client.user:
-            await client.send(type="disconnect")
+            self.log.debug("#%s failed login")
+            if client.socket.open:
+                await client.send(type="disconnect")
             return
 
         try:
@@ -113,6 +118,9 @@ class WebsocketServer(LogSource):
                 self.log.debug("#%s %s msg %s", client.id, app.name, raw[:80])
                 type = message.get("type", "")
                 await app.handle_message(client, type, message)
+
+        except Exception:
+            client.app.log_exception()
 
         finally:
             # Disconnect when the client has finished

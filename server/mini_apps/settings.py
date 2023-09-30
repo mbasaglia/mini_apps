@@ -17,7 +17,7 @@ class LogSource:
 
     def log_exception(self, message=None, *args):
         if message:
-            self.log.critical(message, *args, level=logging.CRITICAL)
+            self.log.critical(message, *args)
         self.log.critical(traceback.format_exc())
 
     @classmethod
