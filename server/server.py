@@ -24,9 +24,10 @@ async def coro_wrapper(coro, logger: LogSource):
         raise
 
 
-def create_task(method, *args):
+def create_task(logger, method, *args):
     coro = method(*args)
     wrapped = coro_wrapper(coro, method.__self__)
+    logger.debug("Starting %s", method.__self__.name)
     return asyncio.create_task(wrapped, name=method.__self__.name)
 
 
@@ -38,14 +39,13 @@ async def run_server(settings, host, port, reload):
     database = settings.connect_database()
     tasks = []
 
+    logger = LogSource.get_logger("server")
     websocket_server = settings.websocket_server(host, port)
-    tasks.append(create_task(websocket_server.run))
+    tasks.append(create_task(logger, websocket_server.run))
 
     for app in settings.app_list:
-        tasks.append(create_task(app.run_bot))
+        tasks.append(create_task(logger, app.run_bot))
         tasks += app.server_tasks()
-
-    logger = LogSource.get_logger("server")
 
     try:
         if not reload:
@@ -113,4 +113,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     reload = not args.no_reload and (args.reload or settings.get("reload"))
-    asyncio.run(run_server(settings, args.host, args.port, reload))
+    try:
+        asyncio.run(run_server(settings, args.host, args.port, reload))
+    except KeyboardInterrupt:
+        pass

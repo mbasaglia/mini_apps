@@ -130,8 +130,10 @@ class WebsocketServer(LogSource):
 
         async with websockets.serve(self.socket_handler, self.host, self.port):
             self.log.info("Connected as %s:%s" % (self.host, self.port))
-            await self.stop_future # run forever (or until stop)
+            # run until task is cancelled or until self.stop()
+            await self.stop_future
             self.log.info("Stopped")
 
     def stop(self):
-        self.stop_future.set_result(None)
+        if not self.stop_future.cancelled:
+            self.stop_future.set_result(None)
