@@ -10,7 +10,7 @@ update information to the client.
 Set Up
 ------
 
-See [advanced installation](./docs/installation/index.md) for the installation and
+See the [installation page](./docs/installation/index.md) for the installation and
 setup guide.
 
 
