@@ -15,7 +15,6 @@ jobs:
                     cd server
                     flake8
     docs:
-        if: false
         runs-on: ubuntu-latest
         # environment:
             # name: github-pages
