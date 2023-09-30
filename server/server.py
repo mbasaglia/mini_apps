@@ -51,7 +51,13 @@ async def run_server(settings, host, port, reload):
         if not reload:
             await asyncio.Future()
         else:
-            reloader = Reloader(settings.paths.server)
+            server_path = settings.paths.server
+            paths = [
+                server_path / "mini_apps",
+                server_path / "server.py",
+                server_path / "settings.json"
+            ]
+            reloader = Reloader(paths)
             reload = await reloader.watch()
 
     except KeyboardInterrupt:
@@ -70,7 +76,7 @@ async def run_server(settings, host, port, reload):
         logger.debug("All stopped")
 
         if reload:
-            logger.info("\nReloading\n")
+            logger.info("Reloading\n")
             try:
                 p = subprocess.run(sys.argv)
                 sys.exit(p.returncode)
