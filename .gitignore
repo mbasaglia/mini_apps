@@ -2,7 +2,7 @@
 settings.json
 *.session*
 client/media/
-*.rst
-docs-build
 dist/
 *.egg-info/
+*.rst
+!index.rst

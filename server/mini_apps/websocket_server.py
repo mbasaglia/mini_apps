@@ -135,5 +135,8 @@ class WebsocketServer(LogSource):
             self.log.info("Stopped")
 
     def stop(self):
+        """
+        Stops self.run()
+        """
         if not self.stop_future.cancelled:
             self.stop_future.set_result(None)

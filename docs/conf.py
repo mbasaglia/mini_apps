@@ -14,7 +14,7 @@ author = 'Mattia "Glax" Basaglia'
 
 
 here = pathlib.Path(__file__).absolute().parent
-auto_path = here.parent.parent / "server"
+auto_path = here.parent / "server"
 sys.path.append(str(auto_path))
 
 def make_doc_files(module, src_path: pathlib.Path, dst_path: pathlib.Path, all_modules):
@@ -32,14 +32,10 @@ def make_doc_files(module, src_path: pathlib.Path, dst_path: pathlib.Path, all_m
             f.write(".. automodule:: %s\n" % module)
             f.write("  :members:\n")
 
+
 all_modules = []
 make_doc_files("mini_apps", auto_path / "mini_apps", here / "mini_apps", all_modules)
 
-with open(here / "index.rst.in") as f:
-    index = f.read()
-
-with open(here / "index.rst", "w") as f:
-    f.write(index.format(toc="\n   ".join(mod.replace(".", "/") for mod in sorted(all_modules))))
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
