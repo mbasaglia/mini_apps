@@ -97,7 +97,6 @@ class Glaximini(App):
                 return []
             lottie_data = doc.lottie
 
-        print(lottie_data)
         file = io.BytesIO()
         with gzip.open(file, "wb") as gzfile:
             lottie_data["tgs"] = 1
