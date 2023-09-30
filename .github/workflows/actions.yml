@@ -28,6 +28,6 @@ jobs:
                 with:
                     python-version: "3.10"
             - uses: actions/checkout@master
-            - run: pip install -r docs/requirement.txt
+            - run: pip install -r docs/requirements.txt
             - run: cd docs
             - run: make html
