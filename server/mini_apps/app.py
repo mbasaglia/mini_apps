@@ -67,13 +67,13 @@ class App(LogSource):
         Runs the telegram bot
         """
         try:
-            session = getattr(self.settings, "session", MemorySession())
+            session = self.settings.get("session", MemorySession())
             api_id = self.settings.api_id
             api_hash = self.settings.api_hash
             bot_token = self.settings.bot_token
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
-            dc = getattr(self.settings, "telegram_server")
+            dc = self.settings.get("telegram_server")
             if dc:
                 self.telegram.session.set_dc(dc.dc, dc.address, dc.port)
             self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)

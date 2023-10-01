@@ -66,11 +66,11 @@ with the following:
 ```json
 {
     "database": {
-        "class": "SqliteDatabase",
+        "class": "peewee.SqliteDatabase",
         "database": "db/db.sqlite"
     },
     "log": {
-        "level": "INFO",
+        "level": "INFO"
     },
     "websocket": {
         "hostname": "localhost",

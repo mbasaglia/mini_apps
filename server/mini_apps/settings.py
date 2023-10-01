@@ -45,8 +45,11 @@ class SettingsValue:
         delattr(self, key)
         return value
 
-    def get(self, key):
-        return getattr(self, key.replace("-", "_"), None)
+    def get(self, key: str, default=None):
+        """
+        Get an item or the default value if not present
+        """
+        return getattr(self, key.replace("-", "_"), default)
 
     def dict(self):
         return vars(self)
