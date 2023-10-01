@@ -362,9 +362,9 @@ export class GroupObject extends EditorObject
     {
         const local_pos = this._parent_to_local(pos);
 
-        for ( let child of this.children )
-            if ( child.contains(local_pos) )
-                return child;
+        for ( let i = this.children.length - 1; i >= 0; i-- )
+            if ( this.children[i].contains(local_pos) )
+                return this.children[i];
 
         return null;
     }

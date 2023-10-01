@@ -363,7 +363,7 @@ export class CommandStack
         if ( command === undefined )
             command = this.last();
 
-        if ( !command.committed )
+        if ( command && !command.committed )
         {
             command.committed = true;
             this.connection.send({type: "document.edit", ...command.to_remote_command_redo()});
