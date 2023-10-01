@@ -89,6 +89,7 @@ class Glaximini(App):
             raw_id = document.decode_id(document_id)
         except Exception:
             document_id = None
+            raw_id = None
 
         if not document_id:
             ud = (
