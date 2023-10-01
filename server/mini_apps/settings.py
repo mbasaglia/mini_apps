@@ -158,7 +158,7 @@ class Settings(SettingsValue):
                     "hostname": "localhost",
                     "port": 2536
                 },
-                "app": {},
+                "apps": {},
                 "paths": paths,
             })
 
