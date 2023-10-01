@@ -99,6 +99,7 @@ class Glaximini(App):
             if not ud:
                 return []
             document_id = document.encode_id(ud.document_id)
+            raw_id = ud.document_id
 
         doc = self.documents.get(document_id)
         if doc:
