@@ -6,6 +6,8 @@ This is a demo of telegram mini apps.
 It shows a list of events the user can attend and uses websockets to dynamically
 update information to the client.
 
+Full documentation is available on [Read the Docs](https://mini-apps.readthedocs.io/en/latest/).
+
 
 Set Up
 ------
