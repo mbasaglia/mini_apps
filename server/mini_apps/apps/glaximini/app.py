@@ -100,7 +100,6 @@ class Glaximini(App):
                 return []
             document_id = document.encode_id(ud.document_id)
 
-
         doc = self.documents.get(document_id)
         if doc:
             lottie_data = doc.cached_lottie()
