@@ -83,32 +83,34 @@ async def run_server(settings, host, port, reload):
                 return
 
 
-if __name__ == "__main__":
-    settings = Settings.load_global()
+settings = Settings.load_global(__name__ != "__main__")
 
-    parser = argparse.ArgumentParser(description="Runs the server")
-    parser.add_argument(
-        "--host",
-        type=str,
-        default=settings.websocket.hostname,
-        help="Websocket bind address"
-    )
-    parser.add_argument(
-        "--port", "-p", "-P",
-        type=str,
-        default=settings.websocket.port,
-        help="Websocket port"
-    )
-    parser.add_argument(
-        "--reload", "-r",
-        action="store_true",
-        help="If present, auto-reloads the server when sources change"
-    )
-    parser.add_argument(
-        "--no-reload", "-nr",
-        action="store_true",
-        help="If present disables auto-reloading"
-    )
+parser = argparse.ArgumentParser(description="Runs the server")
+parser.add_argument(
+    "--host",
+    type=str,
+    default=settings.websocket.hostname,
+    help="Websocket bind address"
+)
+parser.add_argument(
+    "--port", "-p", "-P",
+    type=str,
+    default=settings.websocket.port,
+    help="Websocket port"
+)
+parser.add_argument(
+    "--reload", "-r",
+    action="store_true",
+    help="If present, auto-reloads the server when sources change"
+)
+parser.add_argument(
+    "--no-reload", "-nr",
+    action="store_true",
+    help="If present disables auto-reloading"
+)
+
+
+if __name__ == "__main__":
     args = parser.parse_args()
 
     reload = not args.no_reload and (args.reload or settings.get("reload"))

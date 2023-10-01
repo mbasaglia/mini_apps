@@ -5,12 +5,14 @@ from mini_apps.settings import Settings
 from mini_apps.models import User
 
 
-parser = argparse.ArgumentParser(description="Lists registered users")
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description="Shows a list of users, with their telegram ID, admin status and name")
 
-settings = Settings.load_global()
+if __name__ == "__main__":
+    args = parser.parse_args()
 
-with settings.connect_database():
-    print("    Telegram ID | Admin | Name")
-    for user in User.select():
-        print("%15s | %5s | %s" % (user.telegram_id, user.is_admin, user.name))
+    settings = Settings.load_global()
+
+    with settings.connect_database():
+        print("    Telegram ID | Admin | Name")
+        for user in User.select():
+            print("%15s | %5s | %s" % (user.telegram_id, user.is_admin, user.name))

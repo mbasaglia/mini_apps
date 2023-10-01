@@ -43,7 +43,8 @@ make_doc_files("mini_apps", auto_path / "mini_apps", here / "mini_apps", all_mod
 
 extensions = [
     "myst_parser",
-    "sphinx.ext.autodoc"
+    "sphinx.ext.autodoc",
+    "sphinxarg.ext",
 ]
 
 templates_path = ['_templates']

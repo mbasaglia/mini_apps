@@ -54,17 +54,18 @@ async def run_client(url):
             task.cancel()
 
 
-if __name__ == "__main__":
-    settings = Settings.load_global()
+settings = Settings.load_global(True)
 
-    parser = argparse.ArgumentParser(description="Manually send websocket data")
-    parser.add_argument(
-        "url",
-        type=str,
-        default="ws://localhost:%s/" % settings.websocket.port,
-        nargs="?",
-        help="Websocket URL"
-    )
+parser = argparse.ArgumentParser(description="Manually send websocket data")
+parser.add_argument(
+    "url",
+    type=str,
+    default="ws://localhost:%s/" % settings.websocket.port,
+    nargs="?",
+    help="Websocket URL"
+)
+
+if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(run_client(args.url))

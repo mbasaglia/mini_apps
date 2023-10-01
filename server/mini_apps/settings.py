@@ -132,11 +132,27 @@ class Settings(SettingsValue):
         }
 
     @classmethod
-    def load_global(cls):
+    def load_global(cls, fallback=False):
         """
         Loads the global settings file
+
+        :param fallback: If True, it will load a minimal default configuration without raising errors
         """
         paths = cls.get_paths()
+
+        if fallback and not paths["settings"].exists():
+            return cls({
+                "database": {
+                    "class": "peewee.SqliteDatabase",
+                    "database": ":memory:"
+                },
+                "websocket": {
+                    "hostname": "localhost",
+                    "port": 2536
+                },
+                "app": {},
+                "paths": paths,
+            })
 
         return cls.load(
             paths["settings"],
@@ -149,7 +165,7 @@ class Settings(SettingsValue):
         """
         cls = self.import_class(db_settings.pop("class"))
 
-        if cls.__name__ == "SqliteDatabase":
+        if cls.__name__ == "SqliteDatabase" and db_settings["database"] != ":memory:":
             database_path = self.paths.root / db_settings["database"]
             database_path.parent.mkdir(parents=True, exist_ok=True)
             db_settings["database"] = str(database_path)
