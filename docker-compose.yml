@@ -3,7 +3,7 @@ services:
     miniapp:
         image: python:3.10
         ports:
-            - 2536
+            - 2536:2536
         volumes:
             - .:/var/miniapp/
         working_dir: /var/miniapp/

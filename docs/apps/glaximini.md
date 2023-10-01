@@ -1,60 +1,14 @@
-Available Apps
-==============
-
-Mini Events
------------
-
-### Overview
-
-This is a demo app, it shows an interface that allows users to mark events they plan to attend.
-
-The events
-
-### Configuration
-
-```json
-{
-    "apps": {
-        "mini_event": {
-            "class": "mini_apps.apps.mini_event.MiniEventApp",
-            "bot-token": "(your bot token)",
-            "media-url": "https://miniapps.example.com/media/",
-            "url": "https://miniapps.example.com/mini_event/"
-        }
-    }
-}
-```
-
-### Admin Interface
-
-If you created admin users (with `server/make_admin.py`), when those users
-access the mini app, they will see additional options, which allows them to manage
-the events.
-
-
-### Limitations
-
-The events app is a technical demo, for a fully functional app some changes are needed.
-
-For one, the events are only specified as a time (not a date), this allows the bot
-to always show events without having to set up many events throughout the course
-of several days.
-
-For the live instance, the server is in Germany, the bot will send notifications based on the server time.
-The live database might get wiped and recreated periodically so some data will be deleted.
-
-
 Glaximini
----------
+=========
 
 This is a very basic animated sticker editor.
 
-### Configuration
+## Configuration
 
 ```json
 {
     "apps": {
-        "mini_event": {
+        "glaximini": {
             "class": "mini_apps.apps.glaximini.app.Glaximini",
             "bot-token": "(your bot token)",
             "url": "https://miniapps.example.com/glaximini/"
@@ -63,7 +17,18 @@ This is a very basic animated sticker editor.
 }
 ```
 
-### UI
+## Bot Setup
+
+On [BotFather](https://t.me/BotFather), you'll need the following:
+
+The menu button (`/mybots` > _@YourBotUsername_ > _Bot Settings_ > _Menu Button_), setting to the URL
+to where you expose the mini events app (same as `url` in the settings json).
+
+The app (`/newapp`), for "web app URL" use the URL as before.
+
+And enable inline mode (`/setinline`).
+
+## UI
 
 It has 3 tools: _Select_, _Rectangle_, _Ellipse_, and _Bezier_.
 
@@ -83,7 +48,7 @@ Below the canvas you have _Play_ / _Pause_ buttons as well as the _Keyframe_ but
 Below these buttons is the timeline slider.
 
 
-### Animating
+## Animating
 
 To add animations to the selected shape, scroll on the timeline to the initial frame, then press the _Keyframe_ button.
 
@@ -95,6 +60,6 @@ press the _Keyframe_ button again.
 After that, pressing _Play_ should show your shape animating between those keyframes.
 
 
-### Limitations
+## Limitations
 
 Currently it's limited to one animation per user, and the feature support is rather limited.

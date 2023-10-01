@@ -1,5 +1,5 @@
-Installation
-============
+Basic Installation
+==================
 
 ## Overview
 
@@ -22,17 +22,12 @@ This guide will install the mini app in `/var/www/miniapps.example.com`,
 you might want to use a different directory.
 
 
+There are [multiple apps](../apps/index.md) available, this guide will set up
+the [mini events](../apps/mini_event.md) app, but you can easily add more apps.
+
 ## Bot Setup
 
-You need to have a bot for mini apps to work. Talk to [BotFather](https://t.me/BotFather)
-to create the bot. Make sure you enable inline mode and the menu button in the
-bot settings.
-
-Use `/newapp` to create a web app on the bot and give it `events` as short name.
-
-Also, do keep track of the bot token as it's needed in the server
-configuration file.
-
+Please refer to the [Mini Event setup guide](../apps/mini_event.md#bot-setup).
 
 ## Installing the Code
 
@@ -152,4 +147,5 @@ docker-compose up -d
 ```
 
 This will make the app accessible from `http://localhost:2537/`. You might want to add a web server on top of it
-to expose it to the public with your domain name and set up TLS certificates for a secure connection.
+to expose it to the public with your domain name and set up SSL certificates for a secure connection.
+You can follow the [advanced front-end instructions] (./advanced.md#front-end-apache) for details.

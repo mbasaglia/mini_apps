@@ -18,8 +18,9 @@ Set up a virtual environment and install dependencies:
 
 ```
 cd /var/www/miniapps.example.com
-virtualenv env
-pip install -r server/requirements
+virtualenv --prompt "(miniapps) " env
+. env/bin/activate
+pip install -r server/requirements.txt
 ```
 
 ## Supervisor
@@ -89,6 +90,15 @@ Create a new site on apache as `/etc/apache2/sites-available/miniapps.example.co
 </VirtualHost>
 ```
 
+The above assumes you set up SSL certificates with [certbot](https://certbot.eff.org/instructions).
+
+Here is an example `certbot` invocation:
+
+```bash
+certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
+```
+
+
 Enable the new site and restart Apache
 
 ```bash
@@ -96,12 +106,4 @@ a2enmod proxy
 a2enmod proxy_http
 a2ensite miniapps.example.com
 apache2ctl restart
-```
-
-Follow the installation instructions for `certbot` at <https://certbot.eff.org/instructions?ws=apache&os=ubuntufocal>
-
-To generate the certificates you can use the following command:
-
-```bash
-certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
 ```

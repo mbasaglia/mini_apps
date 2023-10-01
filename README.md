@@ -19,9 +19,10 @@ Mini Apps
 
 The installation guide above shows the configuration for the "Mini Events" app, which serves as a demo for the system.
 
-You can find detailed description, configuration options, and limitations of all the availble apps in the [Available Apps](./docs/apps.md) page.
+You can find detailed description, configuration options, and limitations of all the availble apps in the
+[Available Apps](./docs/apps/index.md) page.
 
-To make your own mini app, see [Making Your Own App](./docs/custom-app.md) page.
+To make your own mini app, see [Making Your Own App](./docs/apps/custom.md) page.
 
 
 Initial Data
@@ -46,7 +47,7 @@ All these scripts support the `--help` command that gives more details on how th
 If you want to run these on the docker instance, they should be invoked like this:
 
 ```bash
-docker exec -ti mini_apps_miniapp_1  server/list_users.py
+docker-compose exec miniapp server/list_users.py
 ```
 
 If you want to run them directly, you need to ensure you have Python

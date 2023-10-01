@@ -18,8 +18,10 @@ Mini Apps
    :caption: Apps
    :maxdepth: 2
 
-   apps
-   custom-app
+   apps/index
+   apps/mini_event
+   apps/glaximini
+   apps/custom
 
 .. toctree::
    :caption: Advanced
