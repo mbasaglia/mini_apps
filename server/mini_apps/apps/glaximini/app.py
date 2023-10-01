@@ -84,14 +84,27 @@ class Glaximini(App):
 
     def telegram_inline_results(self, query: telethon.events.InlineQuery):
         document_id = query.text.split(" ")[0]
+
+        try:
+            raw_id = document.decode_id(document_id)
+        except Exception:
+            document_id = None
+
         if not document_id:
-            return []
+            ud = (
+                models.UserDoc.select(models.UserDoc.document_id)
+                .join(models.User)
+                .where(models.User.telegram_id == query.query.user_id)
+            ).first()
+            if not ud:
+                return []
+            document_id = document.encode_id(ud.document_id)
+
 
         doc = self.documents.get(document_id)
         if doc:
             lottie_data = doc.cached_lottie()
         else:
-            raw_id = document.decode_id(document_id)
             doc = models.Document.select(models.Document.lottie).where(models.Document.id == raw_id).first()
             if not doc:
                 return []
