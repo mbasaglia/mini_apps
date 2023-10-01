@@ -4,7 +4,7 @@ Advanced Installation
 This page shows the steps to install the mini apps directly, without using docker.
 
 This assumes you have followed the initial installation steps as from
-the [installation page](./index.md).
+the [installation page](./basic.md).
 
 ## System Dependencies
 

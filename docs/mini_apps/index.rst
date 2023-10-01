@@ -1,7 +1,8 @@
+Python Reference
+================
 
-Python Package Reference
-========================
 
+:ref:`modindex`
 
 .. toctree::
    :maxdepth: 2

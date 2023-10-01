@@ -26,8 +26,10 @@ class App(LogSource):
         self.telegram_me = None
 
     async def login(self, client: Client, message: dict):
-        """
-        Login logic
+        """Login logic
+
+        :param client: Client requesting to log in
+        :param message: Data as sent from the client
         """
         client.user = self.get_user(message)
         if client.user:

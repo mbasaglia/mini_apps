@@ -30,6 +30,7 @@ def make_doc_files(module, src_path: pathlib.Path, dst_path: pathlib.Path, all_m
             title = "``%s``" % module
             f.write("%s\n%s\n\n" % (title, "=" * len(title)))
             f.write(".. automodule:: %s\n" % module)
+            f.write("  :show-inheritance:\n")
             f.write("  :members:\n")
 
 
@@ -40,7 +41,10 @@ make_doc_files("mini_apps", auto_path / "mini_apps", here / "mini_apps", all_mod
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "sphinx.ext.autodoc"]
+extensions = [
+    "myst_parser",
+    "sphinx.ext.autodoc"
+]
 
 templates_path = ['_templates']
 exclude_patterns = []
