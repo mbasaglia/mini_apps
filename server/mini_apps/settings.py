@@ -90,8 +90,10 @@ class Settings(SettingsValue):
         log = data.pop("log", {})
         super().__init__(data)
 
+        self._database_settings = database
+        self._database = None
+
         self.init_logging(log)
-        self.database = self.load_database(database)
         self.apps = SettingsValue()
         self.app_list = []
         self.database_models = []
@@ -101,6 +103,12 @@ class Settings(SettingsValue):
                 app = self.load_app(app_settings, name)
                 setattr(self.apps, name, app)
                 self.app_list.append(app)
+
+    @property
+    def database(self):
+        if not self._database and self._database_settings:
+            self._database = self.load_database(self._database_settings)
+        return self._database
 
     def log_level(self, conf_value):
         if isinstance(conf_value, int):
@@ -170,7 +178,7 @@ class Settings(SettingsValue):
             database_path.parent.mkdir(parents=True, exist_ok=True)
             db_settings["database"] = str(database_path)
 
-        LogSource.get_logger("database").info("Database %s with %s" % (db_settings.get("database"), cls.__name__))
+        LogSource.get_logger("database").debug("Database %s with %s" % (db_settings.get("database"), cls.__name__))
 
         return cls(**db_settings)
 
