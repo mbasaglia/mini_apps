@@ -37,7 +37,7 @@ class Glaximini(App):
             ])
         ])
 
-    @App.bot_command("start", description="")
+    @App.bot_command("start", description="Shows the start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
