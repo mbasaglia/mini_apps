@@ -133,10 +133,10 @@ class App(LogSource, metaclass=MetaBot):
             self.telegram_me = await self.telegram.get_me()
             self.log.info("Telegram bot @%s", self.telegram_me.username)
 
-            await self.send_telegram_commands()
-
             self.status = BotStatus.Running
             await self.on_telegram_connected()
+
+            await self.send_telegram_commands()
 
             await self.telegram.disconnected
             self.status = BotStatus.Disconnected
@@ -165,18 +165,29 @@ class App(LogSource, metaclass=MetaBot):
         try:
             match = self.command_trigger.match(event.text)
             if match:
-                trigger = match.group("trigger")
                 username = match.group("username")
-                args = match.group("args")
                 if not username or username == self.telegram_me.username:
-                    cmd = self.bot_commands.get(trigger)
-                    if cmd:
-                        await cmd.function(self, args, event)
+                    trigger = match.group("trigger")
+                    args = match.group("args")
+                    if await self.on_telegram_command(trigger, args, event):
                         return
 
             await self.on_telegram_message(event)
         except Exception as e:
             await self.on_telegram_exception(e)
+
+    async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage):
+        """
+        Called on a telegram /command
+
+        :return: True if the command has been handled
+        """
+        cmd = self.bot_commands.get(trigger)
+        if cmd:
+            await cmd.function(self, args, event)
+            return True
+
+        return False
 
     async def on_telegram_callback_raw(self, event: telethon.events.CallbackQuery):
         """

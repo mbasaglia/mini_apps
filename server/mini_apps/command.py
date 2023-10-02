@@ -7,10 +7,10 @@ class BotCommand:
     """
     Class bot command
     """
-    def __init__(self, trigger, description, function, hidden):
+    def __init__(self, function, trigger, description, hidden):
+        self.function = function
         self.trigger = trigger
         self.description = description
-        self.function = function
         self.hidden = hidden
 
     def __repr__(self):
@@ -27,6 +27,19 @@ class BotCommand:
             self.description or self.trigger
         )
 
+    @classmethod
+    def from_function(cls, func, trigger, description, hidden):
+        """
+        Constructs an instance, filling missing data based on function introspection
+        """
+        if trigger is None:
+            trigger = func.__name__
+
+        if description is None:
+            description = inspect.getdoc(func) or ""
+
+        return cls(func, trigger, description, hidden)
+
 
 def bot_command(*args, **kwargs):
     """
@@ -37,21 +50,17 @@ def bot_command(*args, **kwargs):
     """
     if len(args) == 1 and callable(args[0]):
         func = args[0]
-        trigger = func.__name__
-        description = inspect.getdoc(func) or ""
-        func.bot_command = BotCommand(trigger, description, func, False)
+        func.bot_command = BotCommand.from_function(func, None, None, False)
         return func
 
-    trigger = kwargs.pop("trigger", None) or args[0]
+    trigger = kwargs.pop("trigger", None)
+    if not trigger and len(args) > 0:
+        trigger = args[0]
     description = kwargs.pop("description", None)
     hidden = kwargs.pop("description", False)
 
     def decorator(func):
-        desc = description
-        if desc is None:
-            desc = inspect.getdoc(func) or ""
-
-        func.bot_command = BotCommand(trigger, desc, func, hidden)
+        func.bot_command = BotCommand.from_function(func, trigger, description, hidden)
         return func
 
     return decorator
