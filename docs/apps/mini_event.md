@@ -48,7 +48,7 @@ For one, the events are only specified as a time (not a date), this allows the b
 to always show events without having to set up many events throughout the course
 of several days.
 
-For the live instance, the server is in Germany, the bot will send notifications based on the server time.
+For the live instance, the bot will send notifications based on the server time.
 The live database might get wiped and recreated periodically so some data will be deleted.
 
 
