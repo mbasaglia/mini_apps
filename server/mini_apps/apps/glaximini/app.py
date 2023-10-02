@@ -16,8 +16,6 @@ class Glaximini(App):
         super().__init__(*args)
         self.documents = {}
         self.help_pic = None
-        for cmd in self.bot_commands.values():
-            print(cmd)
 
     def register_models(self):
         """

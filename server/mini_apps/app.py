@@ -202,7 +202,7 @@ class App(LogSource, metaclass=MetaBot):
                     if cmd:
                         await cmd.function(self, args, event)
                         return
-                    elif self.trigger == "start":
+                    elif trigger == "start":
                         await self.on_telegram_start(event)
                         return
 
