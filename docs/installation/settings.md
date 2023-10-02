@@ -6,7 +6,7 @@ This page describes in detail all the available settings in the `settings.json` 
 Client
 ------
 
-The client-side `settings.json` only has a single property that specifies the websockets apps connect to.
+The client-side `settings.json` only has a single property that specifies the websocket apps connect to.
 
 Example:
 
@@ -25,8 +25,8 @@ Server-side configuration is more involved, everything will be described in the 
 |-----------|-----------|-------|-----------------------------------|
 |`database` | `object`  |       | Database settings                 |
 |`log`      | `object`  | `{}`  | Logging configuration             |
-|`websocket`| `object`  |       | Websocet settings                 |
-|`apps`     | `apps`    |       | Available apps and their settings |
+|`websocket`| `object`  |       | Websocket settings                |
+|`apps`     | `object`  |       | Available apps and their settings |
 |`reload`   | `boolean` |`false`| If `true`, [server/server.py](../scripts.md#server-server-py) will reload when the sources change |
 
 
@@ -62,10 +62,10 @@ Example:
 
 ### `database`
 
-Database settings, `class` is one of the One of the [Peewee database classes](https://docs.peewee-orm.com/en/latest/peewee/database.html).
+Database settings, `class` is one of the [Peewee database classes](https://docs.peewee-orm.com/en/latest/peewee/database.html).
 The rest of the properties here are passed as class constructor arguments.
 
-For `peewee.SqliteDatabase`, `database` can be a path (if relative, it will be considered relative from the root of the project).
+For `peewee.SqliteDatabase`, `database` can be a path (if relative, it will be considered relative from the root of the project)
 or the string `:memory:`.
 
 Example:
@@ -79,7 +79,8 @@ Example:
 
 ### `log`
 
-Logging configuration most entries here correspond to Python's [logging.basicConfig](https://docs.python.org/3/library/logging.html#logging.basicConfig).
+Logging configuration.
+Most entries here correspond to Python's [logging.basicConfig](https://docs.python.org/3/library/logging.html#logging.basicConfig).
 
 * `level`: Log level for mini-app-specific loggers.
 * `global-level`: Logging level for all other loggers registered in Python's logging.
@@ -101,7 +102,7 @@ Web socket server settings.
 
 * `hostname`: Socket bind host name or address, to accept remote connections use `0.0.0.0`,
 otherwise `localhost` should work in most cases.
-* `port`: Socket TCP port
+* `port`: Socket TCP port.
 
 Example:
 
@@ -117,10 +118,10 @@ Example:
 
 An object where the keys serve as App identifiers, and the values are app-specific settings.
 
-This section will describe all the common app settigs, but some apps might require additional
-settings, refer to each [app documentation](../apps/index.md) for details.
+This section will describe all the common app settings.
+Some apps might require additional settings, refer to each [app documentation](../apps/index.md) for details.
 
-Follows a table with all the available settings, anything without a _Default_ is required.
+All the available settings are listed below, anything without a _Default_ is required.
 
 | Property          | Type      |Default| Description                                                                   |
 |-------------------|-----------|-------|-------------------------------------------------------------------------------|

@@ -5,8 +5,6 @@ Mini Events
 
 This is a demo app, it shows an interface that allows users to mark events they plan to attend.
 
-The events
-
 ## Configuration
 
 ```json
@@ -45,10 +43,8 @@ the events.
 The events app is a technical demo, for a fully functional app some changes are needed.
 
 For one, the events are only specified as a time (not a date), this allows the bot
-to always show events without having to set up many events throughout the course
-of several days.
+to always show some data regardless of the current date.
 
-For the live instance, the bot will send notifications based on the server time.
-The live database might get wiped and recreated periodically so some data will be deleted.
+The bot will send notifications based on the server time, which might be different from the time shown to the users.
 
-
+The live database might get wiped and recreated periodically so some data might be deleted.
