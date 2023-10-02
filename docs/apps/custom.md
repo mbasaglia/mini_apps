@@ -178,7 +178,8 @@ class MyApp(App):
             ])
         ])
 
-    async def on_telegram_start(self, event: telethon.events.NewMessage):
+    @App.bot_command("start", description="Start message")
+    async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
         """
@@ -357,7 +358,8 @@ class MyApp(App):
             ])
         ])
 
-    async def on_telegram_start(self, event: telethon.events.NewMessage):
+    @App.bot_command("start", description="Start message")
+    async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
         """
@@ -459,4 +461,32 @@ class MyApp(App):
         ))
 
         await query.answer(results)
+```
+
+### More bot commands
+
+You can easily add `/commands` by using the `@App.bot_command` decorator.
+
+The App class will configure them so they'll show up in the bot menu,
+
+
+```python
+import telethon
+
+from mini_apps.app import App
+
+class MyApp(App):
+    # Automatic settings, it will be available as /mycommand
+    # and it will use the docstring "Command description" as description in the command menu
+    @App.bot_command
+    async def mycommand(self, args: str,  event: telethon.events.NewMessage):
+        """
+        Command description
+        """
+        pass
+
+    # Manual settings, it will be available as /command1 and will have the given description
+    @App.bot_command("command1", description="Command description")
+    async def my_other_command(self, args: str,  event: telethon.events.NewMessage):
+        pass
 ```

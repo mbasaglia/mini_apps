@@ -202,9 +202,6 @@ class App(LogSource, metaclass=MetaBot):
                     if cmd:
                         await cmd.function(self, args, event)
                         return
-                    elif trigger == "start":
-                        await self.on_telegram_start(event)
-                        return
 
             await self.on_telegram_message(event)
         except Exception as e:
@@ -303,12 +300,6 @@ class App(LogSource, metaclass=MetaBot):
     async def on_telegram_connected(self):
         """
         Called when the connection to the telegram bot is established
-        """
-        pass
-
-    async def on_telegram_start(self, event: telethon.events.NewMessage):
-        """
-        Called when a user sends /start to the bot
         """
         pass
 

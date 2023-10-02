@@ -256,7 +256,8 @@ class MiniEventApp(App):
         for client in self.clients.values():
             await client.send(type="event", **self.event_data(event, client.user, attendees))
 
-    async def on_telegram_start(self, event: telethon.events.NewMessage):
+    @App.bot_command("start", description="")
+    async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
         """

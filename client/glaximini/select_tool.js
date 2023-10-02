@@ -629,5 +629,3 @@ export class SelectTool extends DragTool
         this.refresh_handles();
     }
 }
-
-
