@@ -1,6 +1,5 @@
 import asyncio
 import enum
-import inspect
 import json
 import hmac
 import hashlib
@@ -13,32 +12,7 @@ from telethon.sessions import MemorySession
 from .models import User
 from .websocket_server import Client
 from .settings import LogSource
-
-
-class BotCommand:
-    """
-    Class bot command
-    """
-    def __init__(self, trigger, description, function):
-        self.trigger = trigger
-        self.description = description
-        self.function = function
-
-    def __repr__(self):
-        return "BotCommand(%r, %r, %s)" % (
-            self.trigger,
-            self.description,
-            self.function
-        )
-
-    def to_data(self):
-        """
-        Returns the telegram data for the command
-        """
-        return telethon.tl.types.BotCommand(
-            self.trigger,
-            self.description or self.trigger
-        )
+from .command import bot_command
 
 
 class MetaBot(type):
@@ -59,34 +33,6 @@ class MetaBot(type):
         attrs["bot_commands"] = bot_commands
 
         return super().__new__(cls, name, bases, attrs)
-
-
-def bot_command(*args, **kwargs):
-    """
-    Decorator that automatically registers methods as commands
-
-    :param trigger: Command trigger
-    :param description: Command description as shown in the bot menu
-    """
-    if len(args) == 1 and callable(args[0]):
-        func = args[0]
-        trigger = func.__name__
-        description = inspect.getdoc(func) or ""
-        func.bot_command = BotCommand(trigger, description, func)
-        return func
-
-    trigger = kwargs.pop("trigger", None) or args[0]
-    description = kwargs.pop("description", None)
-
-    def decorator(func):
-        desc = description
-        if desc is None:
-            desc = inspect.getdoc(func) or ""
-
-        func.bot_command = BotCommand(trigger, desc, func)
-        return func
-
-    return decorator
 
 
 class BotStatus(enum.Enum):
@@ -204,7 +150,9 @@ class App(LogSource, metaclass=MetaBot):
         """
         commands = []
         for command in self.bot_commands.values():
-            commands.append(command.to_data())
+            if not command.hidden:
+                commands.append(command.to_data())
+
         await self.telegram(telethon.functions.bots.SetBotCommandsRequest(
             telethon.tl.types.BotCommandScopeDefault(), "en", commands
         ))
