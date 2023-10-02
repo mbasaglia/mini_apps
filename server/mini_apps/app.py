@@ -1,7 +1,9 @@
 import asyncio
+import inspect
 import json
 import hmac
 import hashlib
+import re
 import urllib.parse
 
 import telethon
@@ -12,11 +14,87 @@ from .websocket_server import Client
 from .settings import LogSource
 
 
-class App(LogSource):
+class BotCommand:
+    """
+    Class bot command
+    """
+    def __init__(self, trigger, description, function):
+        self.trigger = trigger
+        self.description = description
+        self.function = function
+
+    def __repr__(self):
+        return "BotCommand(%r, %r, %s)" % (
+            self.trigger,
+            self.description,
+            self.function
+        )
+
+    def to_data(self):
+        """
+        Returns the telegram data for the command
+        """
+        return telethon.tl.types.BotCommand(
+            self.trigger,
+            self.description or self.trigger
+        )
+
+
+class MetaBot(type):
+    """
+    Metaclass for telegram bot to allow automatic registration of commands from methods
+    """
+    def __new__(cls, name, bases, attrs):
+        bot_commands = {}
+        for base in bases:
+            base_commands = getattr(base, "bot_commands", {})
+            bot_commands.update(base_commands)
+
+        for attr in attrs.values():
+            command = getattr(attr, "bot_command", None)
+            if command:
+                bot_commands[command.trigger] = command
+
+        attrs["bot_commands"] = bot_commands
+
+        return super().__new__(cls, name, bases, attrs)
+
+
+def bot_command(*args, **kwargs):
+    """
+    Decorator that automatically registers methods as commands
+
+    :param trigger: Command trigger
+    :param description: Command description as shown in the bot menu
+    """
+    if len(args) == 1 and callable(args[0]):
+        func = args[0]
+        trigger = func.__name__
+        description = inspect.getdoc(func) or ""
+        func.bot_command = BotCommand(trigger, description, func)
+        return func
+
+    trigger = kwargs.pop("trigger", None) or args[0]
+    description = kwargs.pop("description", None)
+
+    def decorator(func):
+        desc = description
+        if desc is None:
+            desc = inspect.getdoc(func) or ""
+
+        func.bot_command = BotCommand(trigger, desc, func)
+        return func
+
+    return decorator
+
+
+class App(LogSource, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app
     """
+    bot_commands = {}
+    command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)")
 
     def __init__(self, settings, name=None):
         super().__init__(name or self.__class__.__name__)
@@ -90,20 +168,45 @@ class App(LogSource):
 
             self.telegram_me = await self.telegram.get_me()
             self.log.info("Telegram bot @%s", self.telegram_me.username)
+
+            await self.send_telegram_commands()
+
             await self.on_telegram_connected()
         except Exception as e:
             await self.on_telegram_exception(e)
 
+    async def send_telegram_commands(self):
+        """
+        Automatically sends the registered commands
+        """
+        commands = []
+        for command in self.bot_commands.values():
+            commands.append(command.to_data())
+        await self.telegram(telethon.functions.bots.SetBotCommandsRequest(
+            telethon.tl.types.BotCommandScopeDefault(), "en", commands
+        ))
+
     async def on_telegram_message_raw(self, event: telethon.events.NewMessage):
         """
         Called on messages sent to the telegram bot
-        wraps on_telegram_message() for convenience and detects the /start message
+        wraps on_telegram_message() for convenience and detects bot /commands
         """
         try:
-            if event.text.startswith("/start"):
-                await self.on_telegram_start(event)
-            else:
-                await self.on_telegram_message(event)
+            match = self.command_trigger.match(event.text)
+            if match:
+                trigger = match.group("trigger")
+                username = match.group("username")
+                args = match.group("args")
+                if not username or username == self.telegram_me.username:
+                    cmd = self.bot_commands.get(trigger)
+                    if cmd:
+                        await cmd.function(self, args, event)
+                        return
+                    elif self.trigger == "start":
+                        await self.on_telegram_start(event)
+                        return
+
+            await self.on_telegram_message(event)
         except Exception as e:
             await self.on_telegram_exception(e)
 
@@ -226,3 +329,13 @@ class App(LogSource):
         Called on telegram bot inline queries
         """
         pass
+
+    @staticmethod
+    def bot_command(*args, **kwargs):
+        """
+        Decorator that automatically registers methods as commands
+
+        :param trigger: Command trigger
+        :param description: Command description as shown in the bot menu
+        """
+        return bot_command(*args, **kwargs)

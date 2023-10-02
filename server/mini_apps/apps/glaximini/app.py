@@ -15,6 +15,9 @@ class Glaximini(App):
     def __init__(self, *args):
         super().__init__(*args)
         self.documents = {}
+        self.help_pic = None
+        for cmd in self.bot_commands.values():
+            print(cmd)
 
     def register_models(self):
         """
@@ -41,7 +44,8 @@ class Glaximini(App):
         Called when a user sends /start to the bot
         """
         await self.telegram.send_message(event.chat, inspect.cleandoc("""
-        This bot allows you to make simple animated stickers
+        This bot allows you to make simple animated stickers.
+        If you need help with the user interface, use /help
         """), buttons=self.inline_buttons())
 
     async def on_client_authenticated(self, client: Client):
@@ -131,3 +135,43 @@ class Glaximini(App):
         Called on telegram bot inline queries
         """
         await query.answer(self.telegram_inline_results(query))
+
+    @App.bot_command
+    async def help(self, text: str, event: telethon.events.NewMessage):
+        """
+        Shows a description of the Mini App user interface
+        """
+        if self.help_pic is None:
+            with open(self.settings.paths.root / "docs" / "apps" / "glaximini-ui.png", "rb") as f:
+                self.help_pic = io.BytesIO(f.read())
+                self.help_pic.name = "glaximini.png"
+
+        self.help_pic.seek(0)
+
+        await self.telegram.send_message(
+            event.chat,
+            inspect.cleandoc("""
+            **Select**: This tool allows you to move and edit the shapes, just click on a shape to select it, drag a shape to move it,
+            or drag on the handles of the selected shape to edit its properties.
+
+            **Rectangle** and **Ellipse**: These tools are very similar, you drag on the canvas to create the corresponding shape.
+
+            **Bezier**: This tools can create more complex shapes. Just click on the canvas to add vertices,
+            if you click on the starting point the shape will be closed. You can also click and drag to make the edges more curved.
+
+            **Undo**, **Redo**: Self explanatory.
+
+            **Send Sticker**: Selects a chat and sends the current animation as sticker there.
+
+            **Delete**: Delete the selected shape.
+
+            **Fill** and **Stroke** color: They show a color selector and that will change the style of the current shape.
+
+            **Canvas**: Here is where you see and edit the animation.
+
+            **Play** and **Pause**: They start and stop playback.
+
+            **Add Keyframe**: Adds a keyframe at the current frame for all the properties of the selected shape.
+            """),
+            file=self.help_pic
+        )
