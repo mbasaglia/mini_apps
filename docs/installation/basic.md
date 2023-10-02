@@ -25,9 +25,17 @@ you might want to use a different directory.
 There are [multiple apps](../apps/index.md) available, this guide will set up
 the [mini events](../apps/mini_event.md) app, but you can easily add more apps.
 
+
 ## Bot Setup
 
-Please refer to the [Mini Event setup guide](../apps/mini_event.md#bot-setup).
+Talk to [BotFather](https://t.me/BotFather) and create a bot, keep note of the token it gives you as it's needed later.
+
+On that bot enable the _Menu Button_ under _Bot Settings_, and give it `https://miniapps.example.com/mini_event/` as URL.
+
+You need to create a new app on that bot (`/newapp`) with the same URL as the button, and `events` short name.
+
+Finally, enable inline mode with `/setinline`.
+
 
 ## Installing the Code
 
@@ -83,24 +91,13 @@ with the following:
     "api-hash": "(your api hash)"
 }
 ```
+The value for `bot-token` is the bot API token kiven by BotFather.
 
-Explanation of the settings fields:
+The values for `api-id` and `api-hash` can be obtained from <https://my.telegram.org/apps>.
 
-* `database`: This configures the database connection
-    * `class`: One of the [Peewee database classes](https://docs.peewee-orm.com/en/latest/peewee/database.html)
-    * The rest of the properties here are passed as class constructor arguments
-* `log`: Configures app logging, everything here corresponds to Python's [logging.basicConfig](https://docs.python.org/3/library/logging.html#logging.basicConfig)
-* `websocket`: Web socket settings
-    * `hostname`: Socket bind host name or address
-    * `port`: Socket port
-* `apps`: Map of app short name to app settings. App settings contain the following:
-    * `class`: Python class that runs the bot / app
-    * `session`: (Optional) [session name](https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.telegrambaseclient.TelegramBaseClient) for Telethon
-    * `bot-token`: Bot API token as kiven by BotFather
-    * `url`: URL of the mini app main page
-    * `media-url`: Base URL for images
-* `api-id`: MTProto API ID, you can get its value from <https://my.telegram.org/apps>
-* `api-hash`: MTProto API hash, you can get its value from <https://my.telegram.org/apps>
+`url` should be the public URL of your mini app, the same you specified on BotFather.
+
+`media-url` is the URL that serves images for MiniEvent.
 
 If you want to run on the Telegram test server, add the following to the JSON,
 with the values from <https://my.telegram.org/apps>.
@@ -112,6 +109,8 @@ with the values from <https://my.telegram.org/apps>.
     "port": 443
 }
 ```
+
+For more detailed documentation on all the available settings see [Settings](./settings.md).
 
 
 ## Permissions

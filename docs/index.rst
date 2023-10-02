@@ -14,6 +14,7 @@ Mini Apps
    installation/basic
    installation/advanced
    scripts
+   installation/settings
 
 .. toctree::
    :caption: Apps

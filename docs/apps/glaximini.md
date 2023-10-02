@@ -28,7 +28,7 @@ The app (`/newapp`), for "web app URL" use the URL as before.
 
 And enable inline mode (`/setinline`).
 
-## UI
+## User Interface
 
 ![Glaximini UI](glaximini-ui.png)
 
