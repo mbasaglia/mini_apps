@@ -1,4 +1,5 @@
 import asyncio
+import enum
 import inspect
 import json
 import hmac
@@ -88,6 +89,18 @@ def bot_command(*args, **kwargs):
     return decorator
 
 
+class BotStatus(enum.Enum):
+    """
+    Enumeration that describe the status of a telegram bot
+    """
+    Disconnected = enum.auto()
+    Crashed = enum.auto()
+    Offline = enum.auto()
+    Starting = enum.auto()
+    StartFlood = enum.auto()
+    Running = enum.auto()
+
+
 class App(LogSource, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
@@ -102,6 +115,7 @@ class App(LogSource, metaclass=MetaBot):
         self.settings = settings
         self.telegram = None
         self.telegram_me = None
+        self.status = BotStatus.Disconnected
 
     async def login(self, client: Client, message: dict):
         """Login logic
@@ -145,6 +159,7 @@ class App(LogSource, metaclass=MetaBot):
         Runs the telegram bot
         """
         try:
+            self.status = BotStatus.Starting
             session = self.settings.get("session", MemorySession())
             api_id = self.settings.api_id
             api_hash = self.settings.api_hash
@@ -163,16 +178,24 @@ class App(LogSource, metaclass=MetaBot):
                     await self.telegram.start(bot_token=bot_token)
                     break
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
+                    self.status = BotStatus.StartFlood
                     self.log.warn("Wating for %ss (Flood Wait)", e.seconds)
                     await asyncio.sleep(e.seconds)
+
+            self.status = BotStatus.Starting
 
             self.telegram_me = await self.telegram.get_me()
             self.log.info("Telegram bot @%s", self.telegram_me.username)
 
             await self.send_telegram_commands()
 
+            self.status = BotStatus.Running
             await self.on_telegram_connected()
+
+            await self.telegram.disconnected
+            self.status = BotStatus.Disconnected
         except Exception as e:
+            self.status = BotStatus.Crashed
             await self.on_telegram_exception(e)
 
     async def send_telegram_commands(self):
