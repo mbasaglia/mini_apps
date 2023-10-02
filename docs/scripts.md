@@ -5,6 +5,8 @@ There are several server-side scripts that allow you to manage the app and add i
 
 All these scripts support the `--help` command that gives more details on how they work.
 
+The paths mentioned here are relative to the project root (`/opt/miniapps.example.com` on the [installation guide](./basic.md)).
+
 If you want to run these on the docker instance, they should be invoked like this:
 
 ```bash

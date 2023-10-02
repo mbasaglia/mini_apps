@@ -14,12 +14,11 @@ on a Ubuntu server.
 This guide assumes the domain is `miniapps.example.com`, replace with the
 appropriate value in the various config files.
 
-Most steps require to have root access on a default configuration, if you are
-not logged in as `root`, you can try `sudo`.
+Some require to have root access, if you are not logged in as `root`, you can try `sudo`.
 
 
-This guide will install the mini app in `/var/www/miniapps.example.com`,
-you might want to use a different directory.
+This guide will install the mini app in `/opt/miniapps.example.com`, you might want to use a different directory.
+If you are planning to run from docker, somewhere in your home directory will also work.
 
 
 There are [multiple apps](../apps/index.md) available, this guide will set up
@@ -39,7 +38,7 @@ Finally, enable inline mode with `/setinline`.
 
 ## Installing the Code
 
-This guide will install the mini app in `/var/www/miniapps.example.com`,
+This guide will install the mini app in `/opt/miniapps.example.com`,
 you might want to use a different directory.
 
 
@@ -47,14 +46,14 @@ Ensure the project is installed in a directory that apache can serve,
 
 If you want to use git to install the project, use the following commands:
 ```bash
-cd /var/www/
+cd /opt/
 git clone https://github.com/mbasaglia/mini_apps.git miniapps.example.com
 ```
 
 
 ## Configuration
 
-Add the settings file for the client `/var/www/miniapps.example.com/client/settings.json`
+Add the settings file for the client `/opt/miniapps.example.com/client/settings.json`
 with the following content:
 
 ```json
@@ -63,7 +62,7 @@ with the following content:
 }
 ```
 
-And the server-side settings file `/var/www/miniapps.example.com/server/settings.json`
+And the server-side settings file `/opt/miniapps.example.com/server/settings.json`
 with the following:
 
 ```json
@@ -91,7 +90,7 @@ with the following:
     "api-hash": "(your api hash)"
 }
 ```
-The value for `bot-token` is the bot API token kiven by BotFather.
+The value for `bot-token` is the bot API token given by BotFather.
 
 The values for `api-id` and `api-hash` can be obtained from <https://my.telegram.org/apps>.
 
@@ -118,33 +117,39 @@ For more detailed documentation on all the available settings see [Settings](./s
 The media directory in the client needs to be writable by the web server:
 
 ```bash
-chgrp www-data /var/www/miniapps.example.com/client/media/
-chmod g+w /var/www/miniapps.example.com/client/media/
+chgrp www-data /opt/miniapps.example.com/client/media/
+chmod g+w /opt/miniapps.example.com/client/media/
 ```
 
 
 ## Running Docker
 
 This section shows how to run containers to run the mini apps.
-If you instead want to run the apps your machine directly (without docker)
+If you instead want to run the apps directly on your machine (without docker)
 you can follow the instructions for an [advanced installation](./advanced.md).
 
 
 You need to have `docker-compose` installed on the system:
 
 ```bash
-apt install -y docker-compose git
+apt install -y docker.io docker-compose git
 ```
+
+Instead of `apt` you can also follow the official installation instructions for docker
+[engine](https://docs.docker.com/engine/install/) and [compose](https://docs.docker.com/compose/install/).
+
+Your user might need to be in the `docker` group, for more details see the
+[docker documentation](https://docs.docker.com/engine/install/linux-postinstall/).
 
 There is a docker-compose file that wraps the all services as containers.
 
 To start the container simply run the following:
 
 ```bash
-cd /var/www/var/www/miniapps.example.com
+cd /opt/miniapps.example.com
 docker-compose up -d
 ```
 
 This will make the app accessible from `http://localhost:2537/`. You might want to add a web server on top of it
 to expose it to the public with your domain name and set up SSL certificates for a secure connection.
-You can follow the [advanced front-end instructions] (./advanced.md#front-end-apache) for details.
+You can follow the [advanced front-end instructions](./advanced.md#front-end-apache) for details.

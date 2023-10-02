@@ -56,7 +56,7 @@ async def run_client(url):
 
 settings = Settings.load_global(True)
 
-parser = argparse.ArgumentParser(description="Manually send websocket data")
+parser = argparse.ArgumentParser(description="Manually sends websocket data")
 parser.add_argument(
     "url",
     type=str,

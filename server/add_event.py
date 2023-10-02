@@ -25,7 +25,7 @@ parser.add_argument(
     help="""
     Image path.
     It will be copied over to the media directory.
-    Note that images should be less that 512 KB in size, have a 16:9 aspect ratio and should be at least 400 pixels wide.
+    Note that images should be less than 512 KB in size, have a 16:9 aspect ratio and should be at least 400 pixels wide.
     """
 )
 parser.add_argument(

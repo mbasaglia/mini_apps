@@ -3,8 +3,7 @@ Advanced Installation
 
 This page shows the steps to install the mini apps directly, without using docker.
 
-This assumes you have followed the initial installation steps as from
-the [installation page](./basic.md).
+This assumes you have followed the initial installation steps from the [basic installation page](./basic.md).
 
 ## System Dependencies
 
@@ -17,7 +16,7 @@ apt install -y python3 python3-virtualenv supervisor apache2
 Set up a virtual environment and install dependencies:
 
 ```
-cd /var/www/miniapps.example.com
+cd /opt/miniapps.example.com
 virtualenv --prompt "(miniapps) " env
 . env/bin/activate
 pip install -r server/requirements.txt
@@ -39,8 +38,8 @@ group=www-data
 stderr_logfile=/var/log/apache2/miniapps.example.com/supervisor-err.log
 redirect_stderr=true
 stdout_logfile=/var/log/apache2/miniapps.example.com/supervisor.log
-directory=/var/www/miniapps.example.com/
-command=/var/www/miniapps.example.com/env/bin/python server/server.py
+directory=/opt/miniapps.example.com/
+command=/opt/miniapps.example.com/env/bin/python server/server.py
 ```
 
 Then run `supervisorctl reload` to load the new job, you can see whether it's running
@@ -50,16 +49,20 @@ with `supervisor status`.
 ## Front-End (Apache)
 
 This step is what makes the app accessible from outside the server machine.
+
+You will have to ensure apache has read access to the `client` directory, if `/opt/miniapps.example.com` doesn't work,
+you can move over client-side files to something like `/var/www/miniapps.example.com` and change the apache config accordingly.
+
 To ensure everything is secured, we'll use `certbot` to generate certificates.
 
 Create a new site on apache as `/etc/apache2/sites-available/miniapps.example.com.conf`:
 
 ```apache
-# This sets up the SSL (ecrypted) virtual host, which actually hosts the website
+# This sets up the SSL (encrypted) virtual host, which actually hosts the website
 <VirtualHost *:443>
     # Basic Setup (domain and directory)
     ServerName miniapps.example.com
-    DocumentRoot /var/www/miniapps.example.com/client
+    DocumentRoot /opt/miniapps.example.com/client
 
     # Makes the local websocket available as wss://miniapps.example.com/wss/
     ProxyRequests Off
@@ -82,8 +85,8 @@ Create a new site on apache as `/etc/apache2/sites-available/miniapps.example.co
         Redirect permanent / "https://miniapps.example.com/"
     </Location>
 
-    Alias "/.well-known" "/var/www/miniapps.example.com/.well-known"
-    <Directory /var/www/miniapps.example.com/.well-known>
+    Alias "/.well-known" "/opt/miniapps.example.com/.well-known"
+    <Directory /opt/miniapps.example.com/.well-known>
         Allow from all
         Options -Indexes
     </Directory>
@@ -95,7 +98,7 @@ The above assumes you set up SSL certificates with [certbot](https://certbot.eff
 Here is an example `certbot` invocation:
 
 ```bash
-certbot --authenticator webroot --installer apache certonly -w /var/www/miniapps.example.com --domains miniapps.example.com
+certbot --authenticator webroot --installer apache certonly -w /opt/miniapps.example.com --domains miniapps.example.com
 ```
 
 
