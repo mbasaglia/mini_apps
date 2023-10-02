@@ -482,11 +482,11 @@ export class SelectTool extends DragTool
     on_drag_start(ev)
     {
         this.active_handle = null;
-        for ( let handle of this.handles )
+        for ( let i = this.handles.length - 1; i >= 0; i-- )
         {
-            if ( handle.under(ev.pos) )
+            if ( this.handles[i].under(ev.pos) )
             {
-                this.active_handle = handle;
+                this.active_handle = this.handles[i];
                 this.active_handle.drag_start();
                 break;
             }
