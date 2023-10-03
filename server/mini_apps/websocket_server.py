@@ -3,7 +3,7 @@ import json
 
 import websockets
 
-from .settings import LogSource
+from .service import Service
 
 
 class AutoId:
@@ -39,7 +39,7 @@ class Client(AutoId):
         return self.user.to_json()
 
 
-class WebsocketServer(LogSource):
+class WebsocketServer(Service):
     """
     Class that runs the websocket server and dispatches incoming messages to
     the installed apps

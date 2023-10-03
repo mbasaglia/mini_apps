@@ -11,7 +11,7 @@ from telethon.sessions import MemorySession
 
 from .models import User
 from .websocket_server import Client
-from .settings import LogSource
+from .service import Service
 from .command import bot_command, BotCommand
 
 
@@ -47,7 +47,7 @@ class BotStatus(enum.Enum):
     Running = enum.auto()
 
 
-class App(LogSource, metaclass=MetaBot):
+class App(Service, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app
@@ -100,7 +100,7 @@ class App(LogSource, metaclass=MetaBot):
         self.log.debug("#%s Disconnected", client.id)
         await self.on_client_disconnected(client)
 
-    async def run_bot(self):
+    async def run(self):
         """
         Runs the telegram bot
         """
@@ -236,12 +236,6 @@ class App(LogSource, metaclass=MetaBot):
             return None
 
         return clean
-
-    def server_tasks(self):
-        """
-        Returns any extra async tasks needed to run the app
-        """
-        return []
 
     def register_models(self):
         """

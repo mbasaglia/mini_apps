@@ -4,30 +4,8 @@ import asyncio
 import subprocess
 import sys
 
-from mini_apps.settings import Settings, LogSource
-from mini_apps.reloader import Reloader
-
-
-async def coro_wrapper(coro, logger: LogSource):
-    """
-    Awaits a coroutine and prints exceptions (if any)
-    """
-    try:
-        await coro
-    except KeyboardInterrupt:
-        pass
-    except asyncio.exceptions.CancelledError:
-        pass
-    except Exception:
-        logger.log_exception()
-        raise
-
-
-def create_task(logger, method, *args):
-    coro = method(*args)
-    wrapped = coro_wrapper(coro, method.__self__)
-    logger.debug("Starting %s", method.__self__.name)
-    return asyncio.create_task(wrapped, name=method.__self__.name)
+from mini_apps.settings import Settings
+from mini_apps.server import Server
 
 
 async def run_server(settings, host, port, reload):
@@ -35,52 +13,14 @@ async def run_server(settings, host, port, reload):
     Runs the telegram bot and socket server
     """
 
-    database = settings.connect_database()
-    tasks = []
-
-    logger = LogSource.get_logger("server")
-    websocket_server = settings.websocket_server(host, port)
-    tasks.append(create_task(logger, websocket_server.run))
-
-    for app in settings.app_list:
-        tasks.append(create_task(logger, app.run_bot))
-        tasks += app.server_tasks()
-
-    try:
-        if not reload:
-            await asyncio.Future()
-        else:
-            server_path = settings.paths.server
-            paths = [
-                server_path / "mini_apps",
-                server_path / "server.py",
-                server_path / "settings.json"
-            ]
-            reloader = Reloader(paths)
-            reload = await reloader.watch()
-
-    except KeyboardInterrupt:
-        pass
-
-    finally:
-        logger.info("Shutting down")
-        database.close()
-        websocket_server.stop()
-
-        for task in tasks:
-            logger.debug("Stopping %s", task.get_name())
-            task.cancel()
-
-        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-        logger.debug("All stopped")
-
-        if reload:
-            logger.info("Reloading\n")
-            try:
-                p = subprocess.run(sys.argv)
-                sys.exit(p.returncode)
-            except KeyboardInterrupt:
-                return
+    server = Server(settings)
+    reload = await server.run(host, port, reload)
+    if reload:
+        try:
+            p = subprocess.run(sys.argv)
+            sys.exit(p.returncode)
+        except KeyboardInterrupt:
+            return
 
 
 settings = Settings.load_global(__name__ != "__main__")
