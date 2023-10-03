@@ -12,7 +12,7 @@ from telethon.sessions import MemorySession
 from .models import User
 from .websocket_server import Client
 from .settings import LogSource
-from .command import bot_command
+from .command import bot_command, BotCommand
 
 
 class MetaBot(type):
@@ -27,7 +27,7 @@ class MetaBot(type):
 
         for attr in attrs.values():
             command = getattr(attr, "bot_command", None)
-            if command:
+            if command and isinstance(command, BotCommand):
                 bot_commands[command.trigger] = command
 
         attrs["bot_commands"] = bot_commands

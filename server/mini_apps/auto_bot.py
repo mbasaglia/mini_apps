@@ -8,6 +8,8 @@ import sys
 import pathlib
 import importlib.util
 
+import telethon
+
 from .app import App
 from .command import BotCommand
 

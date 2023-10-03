@@ -5,6 +5,9 @@ import { SocketConnection } from "./socket_connection.js";
  */
 export class App
 {
+    /**
+     * \brief Constructor
+     */
     constructor(app_id, telegram)
     {
         this.webapp = telegram.WebApp;

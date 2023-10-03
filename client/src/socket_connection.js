@@ -3,6 +3,9 @@
  */
 export class SocketConnection extends EventTarget
 {
+    /**
+     * \brief Constructor
+     */
     constructor(app_id)
     {
         super();

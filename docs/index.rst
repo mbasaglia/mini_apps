@@ -31,6 +31,7 @@ Mini Apps
 
    websocket
    mini_apps/index
+   js/index
    
 
 
