@@ -2,3 +2,5 @@ sphinx
 myst-parser
 sphinx-rtd-theme
 sphinx-argparse
+
+esprima
