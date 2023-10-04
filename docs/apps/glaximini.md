@@ -1,7 +1,7 @@
 Glaximini
 =========
 
-This is a very basic animated sticker editor.
+This app allows the user to create animated stickers and share them on Telegram.
 
 ## Configuration
 

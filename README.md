@@ -1,10 +1,14 @@
 Event Telegram Mini-App Demo
 ============================
 
-This is a demo of telegram mini apps.
+Mini Apps is a Python framework to create [Telegram Mini Apps](https://core.telegram.org/bots/webapps).
 
-It shows a list of events the user can attend and uses websockets to dynamically
+There are some built-in apps that showcase the features of both this framework and the mini apps feature on Telegram:
+
+_Mini Events_ is a demo app, it shows a list of events the user can attend and uses websockets to dynamically
 update information to the client.
+
+_Glaximini_ is a more complex app that allows the user to create animated stickers and share them on Telegram.
 
 Full documentation is available on [Read the Docs](https://mini-apps.readthedocs.io/en/latest/).
 
