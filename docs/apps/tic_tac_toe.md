@@ -10,7 +10,7 @@ This app allows you to play tic tac toe (also known as naughts and crosses) agai
 ```json
 {
     "apps": {
-        "mini_event": {
+        "tic_tac_toe": {
             "class": "mini_apps.apps.tic_tac_toe.TicTacToe",
             "bot-token": "(your bot token)",
             "url": "https://miniapps.example.com/tic_tac_toe/"
