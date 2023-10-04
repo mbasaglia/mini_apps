@@ -71,3 +71,10 @@ After that, pressing _Play_ should show your shape animating between those keyfr
 ## Limitations
 
 Currently it's limited to one animation per user, and the feature support is rather limited.
+
+
+## Live Instance
+
+You can access a live instance of this bot at [@GlaximiniBot](https://t.me/GlaximiniBot).
+
+The live database might get wiped and recreated periodically so some data might be deleted.

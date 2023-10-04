@@ -47,4 +47,9 @@ to always show some data regardless of the current date.
 
 The bot will send notifications based on the server time, which might be different from the time shown to the users.
 
+
+## Live Instance
+
+You can access a live instance of this bot at [@GlaxMiniEventBot](https://t.me/GlaxMiniEventBot).
+
 The live database might get wiped and recreated periodically so some data might be deleted.
