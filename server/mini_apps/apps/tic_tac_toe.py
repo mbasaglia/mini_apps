@@ -56,6 +56,9 @@ class Game:
         self.free = 9
 
     def turn_name(self):
+        """
+        Name of the player whose turn it is
+        """
         if self.turn == 0:
             return self.host.user.name
         elif self.turn == 1:
@@ -63,9 +66,15 @@ class Game:
         return ""
 
     def is_host(self, player: Player):
+        """
+        Whether a player is the host
+        """
         return player.id == self.host.id
 
     async def send_state(self, player: Player):
+        """
+        Sends the game state to a player
+        """
         await player.send(
             type="game.state",
             turn=self.turn,
@@ -77,6 +86,9 @@ class Game:
         )
 
     async def send_to_player(self, player: Player):
+        """
+        Sends the right message to a player
+        """
         if self.winner is not None:
             await self.send_state(player)
         elif self.is_host(player):

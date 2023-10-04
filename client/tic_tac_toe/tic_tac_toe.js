@@ -51,7 +51,7 @@ export class TicTacToe extends App
     }
 
     /**
-     * Called when the server sends user details
+     * \brief Called when the server sends user details
      */
     _on_welcome(ev)
     {
@@ -60,6 +60,9 @@ export class TicTacToe extends App
         this.player.name = ev.detail.name;
     }
 
+    /**
+     * \brief Changes the current screen to the one indicated by \p name
+     */
     switch_screen(name)
     {
         if ( name == this.screen )
@@ -69,6 +72,9 @@ export class TicTacToe extends App
         this.screens[this.screen].style.display = "block";
     }
 
+    /**
+     * \brief Event handler for button clicks
+     */
     button_click(ev)
     {
         switch ( ev.target.id.replace("button-", "") )
@@ -231,6 +237,9 @@ export class TicTacToe extends App
         this.switch_screen("request-received");
     }
 
+    /**
+     * \brief Sends moves to the server when a game cell is clicked
+     */
     on_cell_clicked(ev)
     {
         this.connection.send({type: "game.move", cell: Number(ev.target.dataset.index)});
