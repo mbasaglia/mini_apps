@@ -8,6 +8,8 @@ There are some built-in apps that showcase the features of both this framework a
 _Mini Events_ is a demo app, it shows a list of events the user can attend and uses websockets to dynamically
 update information to the client.
 
+_Tic Tac Toe_ allows you to play tic tac toe (also known as naughts and crosses) against another player on Telegram.
+
 _Glaximini_ is a more complex app that allows the user to create animated stickers and share them on Telegram.
 
 Full documentation is available on [Read the Docs](https://mini-apps.readthedocs.io/en/latest/).

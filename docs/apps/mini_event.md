@@ -20,6 +20,8 @@ This is a demo app, it shows an interface that allows users to mark events they 
 }
 ```
 
+`media-url` is the URL that serves images for the events.
+
 ## Bot Setup
 
 On [BotFather](https://t.me/BotFather), you'll need the following:

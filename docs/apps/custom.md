@@ -333,11 +333,10 @@ export class MyApp extends App
 Finally, we update the server-side code:
 
 ```py
-
 import inspect
 import telethon
 
-from mini_apps.app import App
+from mini_apps.app import App, Client
 
 
 class MyApp(App):

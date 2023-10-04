@@ -96,7 +96,7 @@ The values for `api-id` and `api-hash` can be obtained from <https://my.telegram
 
 `url` should be the public URL of your mini app, the same you specified on BotFather.
 
-`media-url` is the URL that serves images for MiniEvent.
+`media-url` is the URL that serves images for the events.
 
 If you want to run on the Telegram test server, add the following to the JSON,
 with the values from <https://my.telegram.org/apps>.
