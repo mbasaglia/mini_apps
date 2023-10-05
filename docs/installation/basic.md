@@ -22,7 +22,7 @@ If you are planning to run from docker, somewhere in your home directory will al
 
 
 There are [multiple apps](../apps/index.md) available, this guide will set up
-the [mini tic_tac_toe](../apps/tic_tac_toe.md) app, but you can easily add more apps.
+the [Tic Tac Toe](../apps/tic_tac_toe.md) app, but you can easily add more apps.
 
 
 ## Bot Setup
