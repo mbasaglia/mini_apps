@@ -97,7 +97,7 @@ export class TicTacToe extends App
                 if ( value === "" )
                 {
                     this.elements.request_error.style.display = "block";
-                    this.elements.request_error.style.innerText = "You must enter a code";
+                    this.elements.request_error.innerText = "You must enter a code";
                 }
                 else
                 {
@@ -200,8 +200,10 @@ export class TicTacToe extends App
 
         if ( this.game.finished )
         {
-
-            this.elements.turn.innerText = ev.detail.winner + " won!";
+            if ( this.game.turn == this.player.order )
+                this.elements.turn.innerText = "You won!";
+            else
+                this.elements.turn.innerText = ev.detail.winner + " won!";
             this.elements.opponent_text.style.display = "none";
             this.elements.button_restart.style.display = "block";
 
@@ -227,7 +229,7 @@ export class TicTacToe extends App
     on_join_fail(ev)
     {
         this.elements.request_error.style.display = "block";
-        this.elements.request_error.style.innerText = "Could not join game, try a different code";
+        this.elements.request_error.innerText = "Could not join game, try a different code";
         this.switch_screen("request-start");
 
     }
