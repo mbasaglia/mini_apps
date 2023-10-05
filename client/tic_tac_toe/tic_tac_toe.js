@@ -42,6 +42,7 @@ export class TicTacToe extends App
             "game.created",
             "game.leave",
             "game.state",
+            "join.sent",
             "join.fail",
             "join.request",
             "socket.disconnected",
@@ -239,6 +240,14 @@ export class TicTacToe extends App
         this.friend = ev.detail;
         this.elements.request_name.innerText = ev.detail.name;
         this.switch_screen("request-received");
+    }
+
+    /**
+     * \brief Server acknowledges a game.join request
+     */
+    on_join_sent(ev)
+    {
+        this.switch_screen("request-sent");
     }
 
     /**

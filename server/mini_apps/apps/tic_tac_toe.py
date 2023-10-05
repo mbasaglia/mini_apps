@@ -202,20 +202,21 @@ class TicTacToe(App):
         try:
             host_id = id_encoder.decode(game_id)[0]
         except Exception:
-            await player.client.send(type="join.fail")
+            await player.send(type="join.fail")
             return
 
         host = self.players.get(host_id)
         if not host:
-            await player.client.send(type="join.fail")
+            await player.send(type="join.fail")
             return
 
         game = host.game
         if not game or game.guest or game.is_host(player) or game.winner is not None:
-            await player.client.send(type="join.fail")
+            await player.send(type="join.fail")
             return
 
         player.requested = game.id
+        await player.send(type="join.sent")
         await game.host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
 
     @App.bot_command("start", description="Start message")
@@ -251,14 +252,15 @@ class TicTacToe(App):
 
         # A user leaves / cancels the game
         elif type == "game.leave":
-            if game.is_host(client.player):
-                if game.guest:
-                    game.guest.game = None
-                    await game.guest.send(type="game.leave")
-            else:
-                game.guest = None
+            if game:
+                if game.is_host(client.player):
+                    if game.guest:
+                        game.guest.game = None
+                        await game.guest.send(type="game.leave")
+                else:
+                    game.guest = None
 
-            client.player.game = None
+                client.player.game = None
 
         # A user wants to join an existing game
         elif type == "game.join":
