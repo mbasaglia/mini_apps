@@ -210,8 +210,10 @@ class TicTacToe(App):
         Sends a request from a player to join a specified game
         """
         if player.game:
-            await player.game.send_to_player(player)
-            return
+            # Player is already playing the game
+            if player.game.host or player.game.id == game_id:
+                await player.game.send_to_player(player)
+                return
 
         try:
             host_id = id_encoder.decode(game_id)[0]

@@ -52,11 +52,18 @@
         }
         .winning.cell {
             border: 6px solid var(--tg-theme-text-color);
+            margin: 2px;
         }
-
         .waiting {
             opacity: 50%;
             cursor: wait;
+        }
+        /* Ensure people with crazy long names don't break the UI */
+        header#turn {
+            height: 1.2em;
+            white-space: pre;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
