@@ -25,9 +25,24 @@ An custom app needs at least 3 files:
 `client/my_app/index.html`: This is an html file that will have the HTML structure
 `client/my_app/my_app.js`: This is a javascript file that will have the client-side code
 
+### Server Side Code
+
+At minimum you need a Python class that inherits `mini_apps.app.App`.
+
+Add the following to `my_app.py`:
+
+```py
+from mini_apps.app import App
+
+
+class MyApp(App):
+    pass
+```
+
+This will contain all the server-side logic for your app.
+
 
 ### Configuration
-
 
 Ass something like the following to `server/settings.json`:
 
@@ -45,30 +60,18 @@ Ass something like the following to `server/settings.json`:
 }
 ```
 
+Note that the `class` setting refers to the python module and class just created.
+
 The settings will need to be tweaked to include your actual bot token.
 
 For more details about settings, refer to the [settings page](../installation/settings.md).
 
 
-### Server Side Code
+### Restart the Server
 
-At minimum you need a Python class that inherits `mini_apps.app.App`.
+Every time you make changes to the server-side settings or code, you need to restart `server.py`.
 
-Add the following to `my_app.py`:
-
-```py
-from mini_apps.app import App
-
-
-class MyApp(App):
-    pass
-```
-
-This will contain all the server-side logic for your app.
-Note that the python module and class name is the one specified in the `class` setting.
-
-
-Restart the server script. If you're using docker-compose, run
+If you're using docker-compose, run
 
 ```bash
 docker-compose restart miniapp
