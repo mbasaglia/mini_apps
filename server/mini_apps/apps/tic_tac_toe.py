@@ -200,7 +200,7 @@ class TicTacToe(App):
             return
 
         try:
-            host_id = id_encoder.decode(data.get("game"))[0]
+            host_id = id_encoder.decode(game_id)[0]
         except Exception:
             await player.client.send(type="join.fail")
             return
@@ -217,7 +217,6 @@ class TicTacToe(App):
 
         player.requested = game.id
         await game.host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
-
 
     @App.bot_command("start", description="Start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
