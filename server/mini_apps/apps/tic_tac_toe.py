@@ -186,6 +186,38 @@ class TicTacToe(App):
         client.player = player
         if player.game:
             await player.game.send_to_player(player)
+        else:
+            join_request = client.user.telegram_data.get("start_param", None)
+            if join_request:
+                await self.send_join_request(player, join_request)
+
+    async def send_join_request(self, player: Player, game_id: str):
+        """
+        Sends a request from a player to join a specified game
+        """
+        if player.game:
+            await player.game.send_to_player(player)
+            return
+
+        try:
+            host_id = id_encoder.decode(data.get("game"))[0]
+        except Exception:
+            await player.client.send(type="join.fail")
+            return
+
+        host = self.players.get(host_id)
+        if not host:
+            await player.client.send(type="join.fail")
+            return
+
+        game = host.game
+        if not game or game.guest or game.is_host(player) or game.winner is not None:
+            await player.client.send(type="join.fail")
+            return
+
+        player.requested = game.id
+        await game.host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
+
 
     @App.bot_command("start", description="Start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
@@ -231,27 +263,7 @@ class TicTacToe(App):
 
         # A user wants to join an existing game
         elif type == "game.join":
-            if game:
-                await game.send_to_player(client.player)
-                return
-            try:
-                host_id = id_encoder.decode(data.get("game"))[0]
-            except Exception:
-                await client.send(type="join.fail")
-                return
-
-            host = self.players.get(host_id)
-            if not host:
-                await client.send(type="join.fail")
-                return
-
-            game = host.game
-            if not game or game.guest or game.is_host(client.player) or game.winner is not None:
-                await client.send(type="join.fail")
-                return
-
-            client.player.requested = game.id
-            await game.host.send(type="join.request", id=client.user.telegram_id, name=client.user.name)
+            await self.send_join_request(client.player, data.get("game"))
 
         # Join request accepted
         elif type == "join.accept":
@@ -285,3 +297,23 @@ class TicTacToe(App):
                 if game.winner is not None:
                     game.guest.game = None
                     game.host.game = None
+
+    async def on_telegram_inline(self, query: telethon.events.InlineQuery):
+        """
+        Called on telegram bot inline queries
+        """
+        results = []
+
+        player = self.players.get(query.query.user_id)
+        if player and player.game and player.game.is_host(player) and not player.game.guest:
+            results.append(query.builder.article(
+                title="Send Code",
+                description=player.game.id,
+                text="[Play Tic Tac Toe with me!](https://t.me/{me}/{shortname}?startapp={id})".format(
+                    me=self.telegram_me.username,
+                    shortname=self.settings.short_name,
+                    id=player.game.id
+                )
+            ))
+
+        await query.answer(results)

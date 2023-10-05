@@ -323,10 +323,11 @@ class MiniEventApp(App):
             **Starts at** {event.start}
             **Duration** {event.duration:g} hours
 
-            [View Events]({url}?startapp={event.id})
+            [View Events](https://t.me/{me}/{shortname}?startapp={event.id})
             """).format(
                 event=event,
-                url="https://t.me/%s/events" % self.telegram_me.username,
+                me=self.telegram_me.username,
+                shortname=self.settings.short_name,
                 image_url=image_url
             )
 

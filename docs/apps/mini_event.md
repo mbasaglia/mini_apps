@@ -13,6 +13,7 @@ This is a demo app, it shows an interface that allows users to mark events they 
         "mini_event": {
             "class": "mini_apps.apps.mini_event.MiniEventApp",
             "bot-token": "(your bot token)",
+            "short-name": "events",
             "media-url": "https://miniapps.example.com/media/",
             "url": "https://miniapps.example.com/mini_event/"
         }
@@ -21,6 +22,7 @@ This is a demo app, it shows an interface that allows users to mark events they 
 ```
 
 `media-url` is the URL that serves images for the events.
+`short-name` is the short name of the app on BotFather.
 
 ## Bot Setup
 
@@ -29,7 +31,7 @@ On [BotFather](https://t.me/BotFather), you'll need the following:
 The menu button (`/mybots` > _@YourBotUsername_ > _Bot Settings_ > _Menu Button_), setting to the URL
 to where you expose the mini events app (same as `url` in the settings json).
 
-The app (`/newapp`), for "web app URL" use the URL as before, `events` as short name.
+The app (`/newapp`), for "web app URL" use the URL as before, `events` as short name (or the value you have for `short-name`).
 
 And enable inline mode (`/setinline`).
 

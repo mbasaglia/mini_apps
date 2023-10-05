@@ -122,6 +122,10 @@ export class TicTacToe extends App
             case "copy-code":
                 navigator.clipboard.writeText(this.elements.new_game_id.innerText);
                 return;
+            case "send-code":
+                // Random query to ensure Telegram doesn't cache the result
+                this.webapp.switchInlineQuery(String(Math.random()).replace("0.", ""), ["users"]);
+                return;
         }
     }
 
