@@ -1,5 +1,6 @@
 import inspect
 import random
+import time
 
 import hashids
 import telethon
@@ -48,11 +49,12 @@ class Game:
     def __init__(self, host: Player):
         self.host: Player = host
         self.guest: Player = None
+        self.requests = {}
         self.table = [""] * 9
         self.winner = None
         self.id = id_encoder.encode(host.user.telegram_id)
         self.turn = -1
-        self.winning_triplet = None
+        self.winning_cells = None
         self.free = 9
 
     def turn_name(self):
@@ -82,8 +84,17 @@ class Game:
             turn_name=self.turn_name(),
             finished=self.winner is not None,
             winner=self.winner,
-            triplet=self.winning_triplet
+            triplet=self.winning_cells
         )
+
+    async def send_queued_request(self):
+        """
+        Sends the next queued request
+        """
+        if self.requests:
+            player = next(iter(self.requests.values()))
+            self.requests.pop(player.user.telegram_id)
+            await self.host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
 
     async def send_to_player(self, player: Player):
         """
@@ -98,6 +109,7 @@ class Game:
                 await self.send_state(player)
             else:
                 await player.send(type="game.created", id=self.id)
+                await self.send_queued_request()
         elif player.id == self.guest.id:
             player.player_order = 1
             await player.send(type="game.join", id=self.id, other_player=self.host.user.name, player_order=1)
@@ -117,16 +129,19 @@ class Game:
         self.table[cell] = "XO"[player.player_order]
         self.turn = (self.turn + 1) % 2
 
+        winners = set()
         for triplet in self.triplets:
             if self.check_same(triplet):
-                self.winning_triplet = triplet
-                self.winner = player.user.name
-                self.turn = player.player_order
-                break
+                winners |= set(triplet)
 
-        if self.winner is None and self.free <= 0:
+        if winners:
+            self.winner = player.user.name
+            self.turn = player.player_order
+            self.winning_cells = list(winners)
+
+        elif self.winner is None and self.free <= 0:
             self.winner = "No one"
-            self.winning_triplet = []
+            self.winning_cells = []
 
         await self.send_state(self.host)
         await self.send_state(self.guest)
@@ -210,14 +225,27 @@ class TicTacToe(App):
             await player.send(type="join.fail")
             return
 
-        game = host.game
+        game: Game = host.game
         if not game or game.guest or game.is_host(player) or game.winner is not None:
             await player.send(type="join.fail")
             return
 
         player.requested = game.id
         await player.send(type="join.sent")
-        await game.host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
+
+        if host.client:
+            await host.send(type="join.request", id=player.user.telegram_id, name=player.user.name)
+
+        elif player.user.telegram_id not in game.requests:
+            game.requests[player.user.telegram_id] = player
+            try:
+                await self.telegram.send_message(
+                    host.user.telegram_id,
+                    "**{name}** wants to play Tic Tac Toe with you".format(name=player.user.name),
+                    buttons=self.inline_buttons()
+                )
+            except Exception:
+                self.log_exception()
 
     @App.bot_command("start", description="Start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
@@ -284,6 +312,8 @@ class TicTacToe(App):
             if not game or not guest or guest.game or guest.requested != game.id:
                 return
             await guest.send(type="join.fail")
+            # Show next request (if any)
+            await game.send_queued_request()
 
         # A user makes a move
         elif type == "game.move":

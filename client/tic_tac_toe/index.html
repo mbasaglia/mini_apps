@@ -27,6 +27,9 @@
             width: 80%;
             margin: 0 auto;
         }
+        #opponent-text {
+            text-align: center;
+        }
         .cell {
             background: var(--tg-theme-bg-color);
             padding: 6px;
@@ -38,16 +41,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid var(--tg-theme-button-color);
         }
-        .cell.empty {
+        #board:not(.waiting) .cell.empty {
             cursor: pointer;
         }
-        .cell.empty:hover {
+        #board:not(.waiting) .cell.empty:hover {
             background: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
         }
         .winning.cell {
             border: 6px solid var(--tg-theme-text-color);
+        }
+
+        .waiting {
+            opacity: 50%;
+            cursor: wait;
         }
     </style>
 </head>
@@ -58,9 +67,11 @@
         </article>
         <article class="screen" id="start">
             <p>Play a game of Tic Tac Toe against a friend on Telegram!</p>
-            <p>Press <em>Join Game</em> if a friend gave you a code, otherwise create a new game.</p>
+            <p>Enter a code and press <em>Join Game</em> or create a new game.</p>
+            <input type="text" autocomplete="off" id="request-input" />
+            <p id="request-error" style="display: none;"></p>
             <p class="buttons">
-                <button id="button-join">Join Game</button>
+                <button id="button-send-request">Join Game</button>
                 <button id="button-create">Create New Game</button>
             </p>
         </article>
@@ -71,15 +82,6 @@
                 <button id="button-copy-code">Copy Code</button>
                 <button id="button-send-code">Send Code</button>
                 <button id="button-cancel-new-game">Go Back</button>
-            </p>
-        </article>
-        <article class="screen" id="request-start">
-            <p>Get an invite code from a friend, enter it below and press <em>Join Game</em>.</p>
-            <input type="text" autocomplete="off" id="request-input" />
-            <p id="request-error" style="display: none;"></p>
-            <p class="buttons">
-                <button id="button-send-request">Join Game</button>
-                <button id="button-request-cancel">Go Back</button>
             </p>
         </article>
         <article class="screen" id="request-sent">
@@ -93,8 +95,7 @@
             </p>
         </article>
         <article class="screen" id="game">
-            <p id="opponent-text">Playing against <strong id="opponent-name"></strong></p>
-            <p id="turn"></p>
+            <header id="turn"></header>
             <div id="board">
                 <div class="cell" data-index="0"></div>
                 <div class="cell" data-index="1"></div>
@@ -108,6 +109,7 @@
                 <div class="cell" data-index="7"></div>
                 <div class="cell" data-index="8"></div>
             </div>
+            <p id="opponent-text">Playing against <strong id="opponent-name"></strong></p>
             <p class="buttons">
                 <button id="button-restart">Back to Start</button>
             </p>

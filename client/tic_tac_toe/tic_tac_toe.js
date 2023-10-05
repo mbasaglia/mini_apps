@@ -11,6 +11,7 @@ export class TicTacToe extends App
         this.friend = null;
         this.player = {};
         this.game = null;
+        this.game_id = null;
 
         for ( let screen of document.querySelectorAll(".screen") )
             this.screens[screen.id] = screen;
@@ -30,6 +31,7 @@ export class TicTacToe extends App
             turn: document.getElementById("turn"),
             cells: Array.from(document.querySelectorAll(".cell")),
             new_game_id: document.getElementById("new-game-id"),
+            board: document.getElementById("board"),
         };
 
         for ( let cell of this.elements.cells )
@@ -57,6 +59,7 @@ export class TicTacToe extends App
     _on_welcome(ev)
     {
         super._on_welcome(ev);
+        this.elements.request_error.style.display = "none";
         this.switch_screen("start");
         this.player.name = ev.detail.name;
     }
@@ -80,10 +83,6 @@ export class TicTacToe extends App
     {
         switch ( ev.target.id.replace("button-", "") )
         {
-            case "join":
-                this.switch_screen("request-start");
-                this.elements.request_error.style.display = "none";
-                return;
             case "create":
                 this.connection.send({type: "game.new"});
                 return;
@@ -105,9 +104,6 @@ export class TicTacToe extends App
                     this.switch_screen("request-sent");
                 }
                 return;
-            case "request-cancel":
-                this.switch_screen("start");
-                return;
             case "request-accept":
                 if ( !this.friend )
                     return;
@@ -125,7 +121,7 @@ export class TicTacToe extends App
                 return;
             case "send-code":
                 // Random query to ensure Telegram doesn't cache the result
-                this.webapp.switchInlineQuery(String(Math.random()).replace("0.", ""), ["users"]);
+                this.webapp.switchInlineQuery(String(this.game_id), ["users"]);
                 return;
         }
     }
@@ -163,6 +159,7 @@ export class TicTacToe extends App
      */
     on_game_created(ev)
     {
+        this.game_id = ev.detail.id;
         this.elements.new_game_id.innerText = ev.detail.id;
         this.switch_screen("new-game");
     }
@@ -184,9 +181,15 @@ export class TicTacToe extends App
         this.game = ev.detail;
 
         if ( this.game.turn == this.player.order )
+        {
+            this.elements.board.classList.remove("waiting");
             this.elements.turn.innerText = "Your turn!";
+        }
         else
+        {
+            this.elements.board.classList.add("waiting");
             this.elements.turn.innerText = this.game.turn_name + "'s turn";
+        }
 
         for ( let i = 0; i < 9; i++ )
         {
@@ -200,6 +203,8 @@ export class TicTacToe extends App
 
         if ( this.game.finished )
         {
+            this.elements.board.classList.remove("waiting");
+
             if ( this.game.turn == this.player.order )
                 this.elements.turn.innerText = "You won!";
             else
@@ -230,7 +235,7 @@ export class TicTacToe extends App
     {
         this.elements.request_error.style.display = "block";
         this.elements.request_error.innerText = "Could not join game, try a different code";
-        this.switch_screen("request-start");
+        this.switch_screen("start");
 
     }
 
