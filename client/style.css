@@ -53,6 +53,7 @@ article {
     padding: 12px;
     width: 100%;
     max-width: 430px;
+    box-sizing: border-box;
 }
 
 article header {
