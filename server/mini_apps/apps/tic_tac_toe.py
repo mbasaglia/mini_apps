@@ -1,6 +1,5 @@
 import inspect
 import random
-import time
 
 import hashids
 import telethon
