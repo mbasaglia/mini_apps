@@ -12,3 +12,6 @@ hashids
 
 # PyPI
 twine
+
+# place
+Pillow

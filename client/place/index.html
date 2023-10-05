@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Telegram Place</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+</head>
+<body>
+    <p>You can draw the next pixel <span id="when"></span>
+    <div id="palette"></div>
+    <div id="place"></div>
+
+    <script type="module">
+        import { Place } from "./place.js";
+
+        const place = new Place(window.Telegram);
+
+        place.connect_from_settings();
+
+        // This makes it easier to debug on the browser console
+        window.place = place;
+    </script>
+</body>
+</html>
