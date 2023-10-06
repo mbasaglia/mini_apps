@@ -47,6 +47,57 @@ class BotStatus(enum.Enum):
     Running = enum.auto()
 
 
+class UserFilter:
+    """
+    Class that filters logged in users for websocket and telegram input
+    """
+    def filter_user(self, user):
+        """
+        Filter users
+
+        Override in derived classes
+        """
+        return user
+
+    def filter_telegram_id(self, telegram_id):
+        """
+        Filters a user from a telegram message
+        """
+        return self.filter_user(User(telegram_id=telegram_id))
+
+    @staticmethod
+    def from_settings(settings):
+        if "banned" in settings or "admins" in settings:
+            return SettingsListUserFilter(set(settings.get("banned", [])), set(settings.get("admins", [])))
+        return UserFilter()
+
+
+class SettingsListUserFilter(UserFilter):
+    """
+    Ban/admin list filter
+    """
+    def __init__(self, banned, admins):
+        self.banned = banned
+        self.admins = admins
+
+    def filter_user(self, user):
+        """
+        Filter users
+
+        Users in the ban list will not be connected, users in the admin list will be marked as admins
+        """
+        if not user:
+            return None
+
+        if user.telegram_id in self.banned:
+            return None
+
+        if user.telegram_id in self.admins:
+            user.is_admin = True
+
+        return user
+
+
 class App(LogSource, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
@@ -62,6 +113,7 @@ class App(LogSource, metaclass=MetaBot):
         self.telegram = None
         self.telegram_me = None
         self.status = BotStatus.Disconnected
+        self.filter = UserFilter.from_settings(settings)
 
     async def login(self, client: Client, message: dict):
         """Login logic
@@ -90,7 +142,7 @@ class App(LogSource, metaclass=MetaBot):
             user = User.get_user(data["user"])
             user.telegram_data = data
 
-        return user
+        return self.filter.filter_user(user)
 
     async def disconnect(self, client: Client):
         """
@@ -163,6 +215,10 @@ class App(LogSource, metaclass=MetaBot):
         wraps on_telegram_message() for convenience and detects bot /commands
         """
         try:
+            self.log.debug("%s NewMessage %s", event.sender_id, event.text[:80])
+            if not self.filter.filter_telegram_id(event.sender_id):
+                self.log.debug("%s is banned", event.sender_id)
+                return
             match = self.command_trigger.match(event.text)
             if match:
                 username = match.group("username")
@@ -195,6 +251,9 @@ class App(LogSource, metaclass=MetaBot):
         just wraps on_telegram_callback() with exception handling for convenience
         """
         try:
+            if not self.filter.filter_telegram_id(event.sender_id):
+                self.log.debug("%s is banned", event.sender_id)
+                return
             await self.on_telegram_callback(event)
         except Exception as e:
             await self.on_telegram_exception(e)
@@ -205,6 +264,9 @@ class App(LogSource, metaclass=MetaBot):
         just wraps on_telegram_inline() with exception handling for convenience
         """
         try:
+            if not self.filter.filter_telegram_id(event.sender_id):
+                self.log.debug("%s is banned", event.sender_id)
+                return
             await self.on_telegram_inline(event)
         except Exception as e:
             await self.on_telegram_exception(e)
