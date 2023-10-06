@@ -37,6 +37,9 @@ class SettingsValue:
                 value = SettingsValue(value)
             setattr(self, key.replace("-", "_"), value)
 
+    def __contains__(self, item):
+        return item in self.dict()
+
     def pop(self, key: str):
         """
         Removes a setting and returns its value
@@ -78,6 +81,9 @@ class AppSettings(SettingsValue):
             return getattr(self._global, name)
 
         raise AttributeError(name)
+
+    def __contains__(self, item):
+        return item in self.dict() or item in self._global
 
 
 class Settings(SettingsValue):

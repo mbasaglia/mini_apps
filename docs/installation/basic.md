@@ -22,16 +22,16 @@ If you are planning to run from docker, somewhere in your home directory will al
 
 
 There are [multiple apps](../apps/index.md) available, this guide will set up
-the [mini events](../apps/mini_event.md) app, but you can easily add more apps.
+the [Tic Tac Toe](../apps/tic_tac_toe.md) app, but you can easily add more apps.
 
 
 ## Bot Setup
 
 Talk to [BotFather](https://t.me/BotFather) and create a bot, keep note of the token it gives you as it's needed later.
 
-On that bot enable the _Menu Button_ under _Bot Settings_, and give it `https://miniapps.example.com/mini_event/` as URL.
+On that bot enable the _Menu Button_ under _Bot Settings_, and give it `https://miniapps.example.com/tic_tac_toe/` as URL.
 
-You need to create a new app on that bot (`/newapp`) with the same URL as the button, and `events` short name.
+You need to create a new app on that bot (`/newapp`) with the same URL as the button, and `tic_tac_toe` short name.
 
 Finally, enable inline mode with `/setinline`.
 
@@ -79,11 +79,11 @@ with the following:
         "port": 2536
     },
     "apps": {
-        "mini_event": {
-            "class": "mini_apps.apps.mini_event.MiniEventApp",
+        "tic_tac_toe": {
+            "class": "mini_apps.apps.tic_tac_toe.TicTacToe",
             "bot-token": "(your bot token)",
-            "url": "https://miniapps.example.com/mini_event/",
-            "media-url": "https://miniapps.example.com/media/"
+            "short-name": "tic_tac_toe",
+            "url": "https://miniapps.example.com/tic_tac_toe/"
         }
     },
     "api-id": "(your api id)",
@@ -96,7 +96,7 @@ The values for `api-id` and `api-hash` can be obtained from <https://my.telegram
 
 `url` should be the public URL of your mini app, the same you specified on BotFather.
 
-`media-url` is the URL that serves images for MiniEvent.
+`short-name` is the app short name that you set on BotFather with `/newapp`.
 
 If you want to run on the Telegram test server, add the following to the JSON,
 with the values from <https://my.telegram.org/apps>.

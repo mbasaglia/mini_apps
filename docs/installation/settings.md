@@ -133,6 +133,8 @@ All the available settings are listed below, anything without a _Default_ is req
 |`session`          | `string`  | `null`| [session name](https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.telegrambaseclient.TelegramBaseClient) for Telethon |
 |`url`              | `string`  | `""`  | Public URL for the app, used to generate webview buttons                      |
 |`fake-user`        | `object`  | `null`| For debugging purposes, allows login from a browser without Telegram webview  |
+|`admins`           | `array`   | `[]`  | List of telegram ids for users that should always be treated as admins        |
+|`banned`           | `array`   | `[]`  | List of telegram ids for users that should be ignored in any request          |
 
 Example:
 

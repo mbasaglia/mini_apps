@@ -73,6 +73,7 @@ export class SocketConnection extends EventTarget
     {
         this.socket.close();
         console.error("Disconnected!");
+        this.dispatchEvent(new CustomEvent("socket.disconnected", {}));
         setTimeout(this.connect.bind(this), 1000, this.url);
     }
 }
