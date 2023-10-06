@@ -160,9 +160,10 @@ class Settings(SettingsValue):
                     "class": "peewee.SqliteDatabase",
                     "database": ":memory:"
                 },
-                "websocket": {
+                "server": {
                     "hostname": "localhost",
-                    "port": 2536
+                    "port": 2536,
+                    "websocket": "/wss",
                 },
                 "apps": {},
                 "paths": paths,
@@ -216,15 +217,15 @@ class Settings(SettingsValue):
         database.create_tables(self.database_models)
         return database
 
-    def websocket_server(self, host=None, port=None):
+    def http_server(self, host=None, port=None):
         """
         Returns a WebsocketServer instance based on settings
         """
-        from .websocket_server import WebsocketServer
+        from .http import HttpServer
 
-        self.server = WebsocketServer(
-            host or self.websocket.hostname,
-            port or self.websocket.port,
-            self.apps
+        self.server = HttpServer(
+            host or self.server.hostname,
+            port or self.server.port,
+            self,
         )
         return self.server

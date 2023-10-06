@@ -10,7 +10,7 @@ import telethon
 from telethon.sessions import MemorySession
 
 from .models import User
-from .websocket_server import Client
+from .http import Client
 from .service import Service
 from .command import bot_command, BotCommand
 
@@ -143,6 +143,12 @@ class App(Service, metaclass=MetaBot):
             user.telegram_data = data
 
         return self.filter.filter_user(user)
+
+    def add_routes(self, http):
+        """
+        Registers routes to the web server
+        """
+        pass
 
     async def disconnect(self, client: Client):
         """

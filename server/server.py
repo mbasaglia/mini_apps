@@ -29,13 +29,13 @@ parser = argparse.ArgumentParser(description="Runs the server")
 parser.add_argument(
     "--host",
     type=str,
-    default=settings.websocket.hostname,
+    default=settings.server.hostname,
     help="Websocket bind address"
 )
 parser.add_argument(
     "--port", "-p", "-P",
     type=str,
-    default=settings.websocket.port,
+    default=settings.server.port,
     help="Websocket port"
 )
 parser.add_argument(

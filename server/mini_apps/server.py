@@ -62,9 +62,13 @@ class Server(LogSource):
         """
         database = self.settings.connect_database()
 
-        self.add_service(self.settings.websocket_server(host, port))
+        http = self.settings.http_server(host, port)
+        http.app.router.add_static("/foo", self.settings.paths.client)
+        self.add_service(http)
+
         for app in self.settings.app_list:
             self.add_service(app)
+            http.register_bot(app)
 
         self.tasks = []
         for task in self.services.values():

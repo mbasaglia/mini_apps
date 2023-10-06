@@ -1,6 +1,6 @@
 peewee
 telethon
-websockets
+aiohttp
 
 # Mini Events
 aiocron
