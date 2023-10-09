@@ -100,7 +100,7 @@ class SettingsListUserFilter(UserFilter):
         return user
 
 
-class App(Service, metaclass=MetaBot):
+class Bot(Service, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app

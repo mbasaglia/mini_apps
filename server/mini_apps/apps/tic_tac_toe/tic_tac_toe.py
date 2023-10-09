@@ -4,7 +4,7 @@ import random
 import hashids
 import telethon
 
-from mini_apps.app import App, Client
+from mini_apps.bot import Bot, Client
 
 
 id_encoder = hashids.Hashids("tictactoe", alphabet="abcdefhkmnpqrstuvwxy34578")
@@ -164,7 +164,7 @@ class Game:
         return True
 
 
-class TicTacToe(App):
+class TicTacToe(Bot):
     """
     Tic Tac Toe Game
     """
@@ -254,7 +254,7 @@ class TicTacToe(App):
             except Exception:
                 self.log_exception()
 
-    @App.bot_command("start", description="Start message")
+    @Bot.bot_command("start", description="Start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot

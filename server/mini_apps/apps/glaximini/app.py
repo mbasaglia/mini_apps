@@ -4,15 +4,14 @@ import inspect
 import io
 import json
 
-import aiohttp
 import telethon
 
-from mini_apps.app import App, Client
+from mini_apps.bot import Bot, Client
 from . import models
 from . import document
 
 
-class Glaximini(App):
+class Glaximini(Bot):
     def __init__(self, *args):
         super().__init__(*args)
         self.documents = {}
@@ -44,7 +43,7 @@ class Glaximini(App):
             ])
         ])
 
-    @App.bot_command("start", description="Shows the start message")
+    @Bot.bot_command("start", description="Shows the start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
@@ -142,7 +141,7 @@ class Glaximini(App):
         """
         await query.answer(self.telegram_inline_results(query))
 
-    @App.bot_command
+    @Bot.bot_command
     async def help(self, text: str, event: telethon.events.NewMessage):
         """
         Shows a description of the Mini App user interface
