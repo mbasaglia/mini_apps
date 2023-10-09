@@ -172,6 +172,12 @@ class TicTacToe(App):
         super().__init__(*args)
         self.players = {}
 
+    def add_routes(self, http):
+        """
+        Registers routes to the web server
+        """
+        http.add_static_web_app(self, self.get_server_path() / "client")
+
     def inline_buttons(self):
         """
         Returns the telegram inline button that opens the web app

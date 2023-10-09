@@ -4,6 +4,7 @@ import inspect
 import io
 import json
 
+import aiohttp
 import telethon
 
 from mini_apps.app import App, Client
@@ -22,6 +23,12 @@ class Glaximini(App):
         Registers the database models
         """
         self.settings.database_models += [models.User, models.Document, models.UserDoc, models.Shape, models.Keyframe]
+
+    def add_routes(self, http):
+        """
+        Registers routes to the web server
+        """
+        http.add_static_web_app(self, self.get_server_path() / "client")
 
     def inline_buttons(self):
         """

@@ -1,8 +1,10 @@
 import asyncio
 import enum
+import inspect
 import json
 import hmac
 import hashlib
+import pathlib
 import re
 import urllib.parse
 
@@ -114,6 +116,13 @@ class App(Service, metaclass=MetaBot):
         self.telegram_me = None
         self.status = BotStatus.Disconnected
         self.filter = UserFilter.from_settings(settings)
+
+    @classmethod
+    def get_server_path(cls):
+        """
+        Returns the path for containing the module that defines class
+        """
+        return pathlib.Path(inspect.getfile(cls)).absolute().parent
 
     async def login(self, client: Client, message: dict):
         """Login logic

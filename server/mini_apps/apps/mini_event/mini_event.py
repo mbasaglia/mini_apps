@@ -65,6 +65,12 @@ class MiniEventApp(App):
         """
         self.settings.database_models += [User, Event, UserEvent]
 
+    def add_routes(self, http):
+        """
+        Registers routes to the web server
+        """
+        http.add_static_web_app(self, self.get_server_path() / "client")
+
     def on_server_start(self):
         """
         Called when the server starts

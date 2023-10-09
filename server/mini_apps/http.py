@@ -37,10 +37,20 @@ class HttpServer(Service):
         self.apps = {}
         self.settings = settings
         self.stop_future = None
+        self.websocket_settings = settings.server.get("websocket")
+        self.client_path = settings.get("client-path", settings.paths.client)
 
-        if settings.server.get("websocket"):
-            self.app.add_routes([aiohttp.web.get(settings.server.websocket, self.socket_handler)])
+    def register_routes(self):
+        """
+        Registers built-in routes
+        """
+        if self.websocket_settings:
+            self.app.add_routes([aiohttp.web.get(self.websocket_settings, self.socket_handler)])
+
         self.app.add_routes([aiohttp.web.get("/settings.json", self.client_settings)])
+
+        if self.client_path:
+            self.app.router.add_static("/", self.client_path)
 
     def register_bot(self, bot):
         """
@@ -68,6 +78,24 @@ class HttpServer(Service):
         # run until task is cancelled or until self.stop()
         await self.stop_future
         self.log.info("Stopped")
+
+    def add_static_web_app(self, bot, path):
+        """
+        Shorthand for serving a directory and its index.html for a web app
+        """
+        app = aiohttp.web.Application()
+        app.router.add_get("/", self.file_handler(path / "index.html"))
+        app.router.add_static("/", path)
+        self.app.add_subapp("/%s" % bot.name, app)
+
+    @staticmethod
+    def file_handler(path):
+        """
+        Handler for the given file
+        """
+        async def handler(request):
+            return aiohttp.web.FileResponse(path)
+        return handler
 
     async def stop(self):
         """

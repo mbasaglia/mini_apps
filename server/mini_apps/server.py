@@ -54,25 +54,31 @@ class Server(LogSource):
         """
         self.services[service.name] = ServerTask(service)
 
+    def setup_run(self, host, port):
+        database = self.settings.connect_database()
+
+        http = self.settings.http_server(host, port)
+
+        for app in self.settings.app_list:
+            self.add_service(app)
+            http.register_bot(app)
+
+        http.register_routes()
+        self.add_service(http)
+
+        self.tasks = []
+        for task in self.services.values():
+            self.tasks.append(task.start())
+
+        return database
+
     async def run(self, host, port, reload):
         """
         Runs the server
 
         :return: True if the server needs to be reloaded
         """
-        database = self.settings.connect_database()
-
-        http = self.settings.http_server(host, port)
-        http.app.router.add_static("/foo", self.settings.paths.client)
-        self.add_service(http)
-
-        for app in self.settings.app_list:
-            self.add_service(app)
-            http.register_bot(app)
-
-        self.tasks = []
-        for task in self.services.values():
-            self.tasks.append(task.start())
+        database = self.setup_run(host, port)
 
         try:
             if not reload:
