@@ -147,6 +147,14 @@ Example:
 }
 ```
 
+Note that each app _should_ have unique values `bot-token`. If you repeat the bot token, it will still work as long as
+the selected apps respond to different commands on telegram. The [built-in apps](../apps/index.md) all answer to
+the `/start` command so that will not work properly if you use the same token for multiple apps.
+
+If you really want to use a single bot with features from multiple apps, you'll need to [create your own app](../apps/custom.md)
+and have the Python class inherit from the apps you want to use, and manually override the `/start` command (or any other
+conflicting functionality).
+
 #### `telegram-server`
 
 Mostly needed if you want to run on the Telegram test server, with the values from <https://my.telegram.org/apps>.
