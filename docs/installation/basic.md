@@ -112,16 +112,6 @@ with the values from <https://my.telegram.org/apps>.
 For more detailed documentation on all the available settings see [Settings](./settings.md).
 
 
-## Permissions
-
-The media directory in the client needs to be writable by the web server:
-
-```bash
-chgrp www-data /opt/miniapps.example.com/client/media/
-chmod g+w /opt/miniapps.example.com/client/media/
-```
-
-
 ## Running Docker
 
 This section shows how to run containers to run the mini apps.
