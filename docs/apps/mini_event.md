@@ -24,6 +24,18 @@ This is a demo app, it shows an interface that allows users to mark events they 
 `media-url` is the URL that serves images for the events.
 `short-name` is the short name of the app on BotFather.
 
+
+## Permissions
+
+The media directory in the client needs to be writable by the web server. If you are running apache as per
+[advanced installation](../installation/advanced.md), you'll need to adjust permissions:
+
+```bash
+chgrp www-data /opt/miniapps.example.com/client/media/
+chmod g+w /opt/miniapps.example.com/client/media/
+```
+
+
 ## Bot Setup
 
 On [BotFather](https://t.me/BotFather), you'll need the following:
