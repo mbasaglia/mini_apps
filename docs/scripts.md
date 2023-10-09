@@ -20,14 +20,6 @@ Please note that the installation guide uses SQLite to minimize set up,
 so you might need to restart the server after changing data on the database.
 
 
-## `server/add_event.py`
-
-```{argparse}
-   :filename: ../server/add_event.py
-   :func: parser
-   :prog: server/add_event.py
-```
-
 ## `server/list_users.py`
 
 ```{argparse}

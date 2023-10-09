@@ -60,7 +60,7 @@ parser = argparse.ArgumentParser(description="Manually sends websocket data")
 parser.add_argument(
     "url",
     type=str,
-    default="ws://localhost:%s/" % settings.websocket.port,
+    default="ws://localhost:%s/" % settings.server.port,
     nargs="?",
     help="Websocket URL"
 )

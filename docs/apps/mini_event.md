@@ -47,6 +47,18 @@ The app (`/newapp`), for "web app URL" use the URL as before, `events` as short 
 
 And enable inline mode (`/setinline`).
 
+## Scripts
+
+
+### `server/mini_apps/apps/mini_event/add_event.py`
+
+```{argparse}
+   :filename: ../server/mini_apps/apps/mini_event/add_event.py
+   :func: parser
+   :prog: add_event.py
+```
+
+
 ## Admin Interface
 
 If you created admin users (with `server/make_admin.py`), when those users
