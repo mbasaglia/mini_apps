@@ -62,6 +62,7 @@ class Server(LogSource):
         for app in self.settings.app_list:
             self.add_service(app)
             http.register_service(app)
+            app.server = self
 
         http.register_routes()
         self.add_service(http)

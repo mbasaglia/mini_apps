@@ -44,7 +44,7 @@ class Bot(SocketService, metaclass=MetaBot):
     command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)")
 
     def __init__(self, settings, name=None):
-        super().__init__(name or self.__class__.__name__, settings)
+        super().__init__(settings, name)
         self.telegram = None
         self.telegram_me = None
 

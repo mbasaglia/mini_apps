@@ -39,10 +39,11 @@ class BaseService(LogSource):
     """
     Abstract class for services that can run on the server
     """
-    def __init__(self, name, settings):
-        super().__init__(name)
+    def __init__(self, settings, name):
+        super().__init__(name or self.__class__.__name__)
         self.settings = settings
         self.status = ServiceStatus.Disconnected
+        self.server = None
 
     async def run(self):
         """
@@ -80,7 +81,6 @@ class Service(BaseService):
         Returns the path for containing the module that defines class
         """
         return pathlib.Path(inspect.getfile(cls)).absolute().parent
-
 
 
 class UserFilter:
@@ -138,8 +138,8 @@ class SocketService(Service):
     """
     Service that can handle socket connections
     """
-    def __init__(self, name, settings):
-        super().__init__(name, settings)
+    def __init__(self, settings, name):
+        super().__init__(settings, name)
         self.clients = {}
         self.filter = UserFilter.from_settings(settings)
 

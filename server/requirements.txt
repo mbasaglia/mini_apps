@@ -12,3 +12,6 @@ hashids
 
 # PyPI
 twine
+
+# Web controller
+aiohttp-jinja2
