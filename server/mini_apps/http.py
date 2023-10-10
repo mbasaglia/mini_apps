@@ -4,38 +4,21 @@ import json
 import aiohttp
 import aiohttp.web
 
-from .service import Service
+from .service import BaseService, ServiceStatus, Client
 
 
-class Client:
-    """
-    Client object, contains a socket for the connection and a user for data
-    """
-    def __init__(self, socket):
-        self.id = id(self)
-        self.socket = socket
-        self.user = None
-        self.app = None
 
-    async def send(self, **data):
-        await self.socket.send_str(json.dumps(data))
-
-    def to_json(self):
-        return self.user.to_json()
-
-
-class HttpServer(Service):
+class HttpServer(BaseService):
     """
     Class that runs the https server and dispatches incoming messages to the installed apps / routes
     """
 
     def __init__(self, host, port, settings):
-        super().__init__("http")
+        super().__init__("http", settings)
         self.app = aiohttp.web.Application()
         self.host = host
         self.port = port
         self.apps = {}
-        self.settings = settings
         self.stop_future = None
         self.websocket_settings = settings.server.get("websocket")
         self.client_path = settings.get("client-path", settings.paths.client)
@@ -52,7 +35,7 @@ class HttpServer(Service):
         if self.client_path:
             self.app.router.add_static("/", self.client_path)
 
-    def register_bot(self, bot):
+    def register_service(self, bot):
         """
         Registeres a bot
         """
@@ -63,21 +46,29 @@ class HttpServer(Service):
         """
         Runs the websocket server
         """
-        loop = asyncio.get_running_loop()
-        self.stop_future = loop.create_future()
+        self.status = ServiceStatus.Starting
 
-        for app in self.apps.values():
-            app.on_server_start()
+        try:
+            loop = asyncio.get_running_loop()
+            self.stop_future = loop.create_future()
 
-        runner = aiohttp.web.AppRunner(self.app)
-        await runner.setup()
-        self.site = aiohttp.web.TCPSite(runner, self.host, self.port)
-        await self.site.start()
+            for app in self.apps.values():
+                app.on_server_start()
 
-        self.log.info("Connected as %s:%s" % (self.host, self.port))
-        # run until task is cancelled or until self.stop()
-        await self.stop_future
-        self.log.info("Stopped")
+            runner = aiohttp.web.AppRunner(self.app)
+            await runner.setup()
+            self.site = aiohttp.web.TCPSite(runner, self.host, self.port)
+            await self.site.start()
+
+            self.status = ServiceStatus.Running
+            self.log.info("Connected as %s:%s" % (self.host, self.port))
+            # run until task is cancelled or until self.stop()
+            await self.stop_future
+            self.log.info("Stopped")
+            self.status = ServiceStatus.Disconnected
+        except Exception:
+            self.status = ServiceStatus.Crashed
+            self.log_exception()
 
     def add_static_web_app(self, bot, path):
         """

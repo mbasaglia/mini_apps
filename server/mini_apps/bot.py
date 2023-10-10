@@ -1,5 +1,4 @@
 import asyncio
-import enum
 import inspect
 import json
 import hmac
@@ -12,8 +11,7 @@ import telethon
 from telethon.sessions import MemorySession
 
 from .models import User
-from .http import Client
-from .service import Service
+from .service import SocketService, ServiceStatus, Client
 from .command import bot_command, BotCommand
 
 
@@ -37,70 +35,7 @@ class MetaBot(type):
         return super().__new__(cls, name, bases, attrs)
 
 
-class BotStatus(enum.Enum):
-    """
-    Enumeration that describe the status of a telegram bot
-    """
-    Disconnected = enum.auto()
-    Crashed = enum.auto()
-    Offline = enum.auto()
-    Starting = enum.auto()
-    StartFlood = enum.auto()
-    Running = enum.auto()
-
-
-class UserFilter:
-    """
-    Class that filters logged in users for websocket and telegram input
-    """
-    def filter_user(self, user):
-        """
-        Filter users
-
-        Override in derived classes
-        """
-        return user
-
-    def filter_telegram_id(self, telegram_id):
-        """
-        Filters a user from a telegram message
-        """
-        return self.filter_user(User(telegram_id=telegram_id))
-
-    @staticmethod
-    def from_settings(settings):
-        if "banned" in settings or "admins" in settings:
-            return SettingsListUserFilter(set(settings.get("banned", [])), set(settings.get("admins", [])))
-        return UserFilter()
-
-
-class SettingsListUserFilter(UserFilter):
-    """
-    Ban/admin list filter
-    """
-    def __init__(self, banned, admins):
-        self.banned = banned
-        self.admins = admins
-
-    def filter_user(self, user):
-        """
-        Filter users
-
-        Users in the ban list will not be connected, users in the admin list will be marked as admins
-        """
-        if not user:
-            return None
-
-        if user.telegram_id in self.banned:
-            return None
-
-        if user.telegram_id in self.admins:
-            user.is_admin = True
-
-        return user
-
-
-class Bot(Service, metaclass=MetaBot):
+class Bot(SocketService, metaclass=MetaBot):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app
@@ -109,30 +44,9 @@ class Bot(Service, metaclass=MetaBot):
     command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)")
 
     def __init__(self, settings, name=None):
-        super().__init__(name or self.__class__.__name__)
-        self.clients = {}
-        self.settings = settings
+        super().__init__(name or self.__class__.__name__, settings)
         self.telegram = None
         self.telegram_me = None
-        self.status = BotStatus.Disconnected
-        self.filter = UserFilter.from_settings(settings)
-
-    @classmethod
-    def get_server_path(cls):
-        """
-        Returns the path for containing the module that defines class
-        """
-        return pathlib.Path(inspect.getfile(cls)).absolute().parent
-
-    async def login(self, client: Client, message: dict):
-        """Login logic
-
-        :param client: Client requesting to log in
-        :param message: Data as sent from the client
-        """
-        client.user = self.get_user(message)
-        if client.user:
-            self.clients[client.id] = client
 
     def get_user(self, message: dict):
         """
@@ -151,28 +65,14 @@ class Bot(Service, metaclass=MetaBot):
             user = User.get_user(data["user"])
             user.telegram_data = data
 
-        return self.filter.filter_user(user)
-
-    def add_routes(self, http):
-        """
-        Registers routes to the web server
-        """
-        pass
-
-    async def disconnect(self, client: Client):
-        """
-        Disconnects the given client
-        """
-        self.clients.pop(client.id)
-        self.log.debug("#%s Disconnected", client.id)
-        await self.on_client_disconnected(client)
+        return user
 
     async def run(self):
         """
         Runs the telegram bot
         """
         try:
-            self.status = BotStatus.Starting
+            self.status = ServiceStatus.Starting
             session = self.settings.get("session", MemorySession())
             api_id = self.settings.api_id
             api_hash = self.settings.api_hash
@@ -191,24 +91,24 @@ class Bot(Service, metaclass=MetaBot):
                     await self.telegram.start(bot_token=bot_token)
                     break
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
-                    self.status = BotStatus.StartFlood
+                    self.status = ServiceStatus.StartFlood
                     self.log.warn("Wating for %ss (Flood Wait)", e.seconds)
                     await asyncio.sleep(e.seconds)
 
-            self.status = BotStatus.Starting
+            self.status = ServiceStatus.Starting
 
             self.telegram_me = await self.telegram.get_me()
             self.log.info("Telegram bot @%s", self.telegram_me.username)
 
-            self.status = BotStatus.Running
+            self.status = ServiceStatus.Running
             await self.on_telegram_connected()
 
             await self.send_telegram_commands()
 
             await self.telegram.disconnected
-            self.status = BotStatus.Disconnected
+            self.status = ServiceStatus.Disconnected
         except Exception as e:
-            self.status = BotStatus.Crashed
+            self.status = ServiceStatus.Crashed
             await self.on_telegram_exception(e)
 
     async def send_telegram_commands(self):
@@ -313,36 +213,6 @@ class Bot(Service, metaclass=MetaBot):
             return None
 
         return clean
-
-    def register_models(self):
-        """
-        Override in derived classes to register the models in self.settings.database_models
-        """
-        pass
-
-    def on_server_start(self):
-        """
-        Called when the server starts
-        """
-        pass
-
-    async def handle_message(self, client: Client, type: str, data: dict):
-        """
-        Override to handle socket messages
-        """
-        pass
-
-    async def on_client_authenticated(self, client: Client):
-        """
-        Called when a client has been authenticated
-        """
-        pass
-
-    async def on_client_disconnected(self, client: Client):
-        """
-        Called when a client disconnects from the server
-        """
-        pass
 
     async def on_telegram_exception(self, exception: Exception):
         """
