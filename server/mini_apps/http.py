@@ -3,6 +3,8 @@ import json
 
 import aiohttp
 import aiohttp.web
+import aiohttp_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
 from .service import BaseService, ServiceStatus, Client
 
@@ -16,6 +18,7 @@ class HttpServer(BaseService):
     def __init__(self, host, port, settings):
         super().__init__("http", settings)
         self.app = aiohttp.web.Application()
+        aiohttp_session.setup(self.app, settings.server.secret_key)
         self.host = host
         self.port = port
         self.apps = {}

@@ -1,6 +1,15 @@
 peewee
 telethon
+
+# HTTP server
 aiohttp
+aiohttp-session
+
+# PyPI
+twine
+
+# Web controller
+aiohttp-jinja2
 
 # Mini Events
 aiocron
@@ -9,9 +18,3 @@ aiocron
 #lottie
 git+https://gitlab.com/mattbas/python-lottie.git@master
 hashids
-
-# PyPI
-twine
-
-# Web controller
-aiohttp-jinja2
