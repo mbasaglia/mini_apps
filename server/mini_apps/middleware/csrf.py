@@ -8,6 +8,7 @@ import functools
 
 import aiohttp.web
 from aiohttp_session import get_session
+from .base import Middleware
 
 
 MIDDLEWARE_SKIP_PROPERTY = 'csrf_middleware_skip'
@@ -152,3 +153,15 @@ async def csrf_middleware(request, handler):
         handler = csrf_protect(handler=handler)
 
     return await handler(request)
+
+
+class CsrfMiddleware(Middleware):
+    async def on_process_request(self, request, handler):
+        return await csrf_middleware(request, handler)
+
+    async def on_process_context(self, request):
+        token = await storage.get_token(request)
+        return {
+            "csrf_token": token,
+            "csrf": "<input type='hidden' value='%s' name='%s' />" % (token, FORM_FIELD_NAME)
+        }

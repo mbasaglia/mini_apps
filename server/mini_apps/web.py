@@ -84,7 +84,7 @@ class WebApp(Service, metaclass=MetaWebApp):
     def add_routes(self, http):
         app = aiohttp.web.Application()
 
-        self.prepare_app(app)
+        self.prepare_app(http, app)
 
         for view in self.views:
             for methods in view.methods:
@@ -92,7 +92,7 @@ class WebApp(Service, metaclass=MetaWebApp):
 
         http.app.add_subapp("/%s" % self.name, app)
 
-    def prepare_app(self, app: aiohttp.web.Application):
+    def prepare_app(self, http, app: aiohttp.web.Application):
         """
         Prepares the http app
         """
@@ -104,7 +104,7 @@ class JinjaApp(WebApp):
     Web app that uses Jinja2 templates
     """
 
-    def prepare_app(self, app: aiohttp.web.Application):
+    def prepare_app(self, http, app: aiohttp.web.Application):
         paths = [
             self.get_server_path() / "templates"
         ]
@@ -113,4 +113,8 @@ class JinjaApp(WebApp):
         if extra:
             paths += list(map(pathlib.Path, extra))
 
-        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(paths))
+        aiohttp_jinja2.setup(
+            app,
+            loader=jinja2.FileSystemLoader(paths),
+            context_processors=[m.process_context for m in http.middleware]
+        )
