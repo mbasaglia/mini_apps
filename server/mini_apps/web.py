@@ -1,4 +1,9 @@
+import pathlib
+
 import aiohttp.web
+import aiohttp_jinja2
+
+import jinja2
 
 from .service import Service, ServiceStatus
 
@@ -34,7 +39,43 @@ class MetaWebApp(type):
         return super().__new__(cls, name, bases, attrs)
 
 
+def view_decorator(func, url, methods, name):
+    if url is None:
+        url = "/%s/" % func.__name__
+    func.view = View(url, methdods, name, func)
+    return func
+
+
+def view(url=None, methdods=["get"], name=None):
+    """
+    Decorator to register a method as URL handler
+    """
+    def deco(func):
+        return view_decorator(func, url, methdods, name, func)
+
+    if callable(url):
+        return view_decorator(url, None, methdods, name, func)
+
+    return deco
+
+
+def template_view(*args, template, **kwargs):
+    """
+    View rendered with a Jinja2 template
+    """
+    def deco(func):
+        def handler(self, request):
+            context = func(self, request)
+            response = aiohttp_jinja2.render_template(template, request, context)
+            return response
+
+    return deco
+
+
 class WebApp(Service, metaclass=MetaWebApp):
+    """
+    Web app
+    """
     views = []
 
     def __init__(self, settings, name):
@@ -52,14 +93,24 @@ class WebApp(Service, metaclass=MetaWebApp):
         http.app.add_subapp("/%s" % self.name, app)
 
     def prepare_app(self, app: aiohttp.web.Application):
+        """
+        Prepares the http app
+        """
         pass
 
-    @staticmethod
-    def view(url, methdods=["get"], name=None):
-        """
-        Decorator to register a method as URL handler
-        """
-        def deco(func):
-            func.view = View(url, methdods, name, func)
-            return func
-        return deco
+
+class JinjaApp(WebApp):
+    """
+    Web app that uses Jinja2 templates
+    """
+
+    def prepare_app(self, app: aiohttp.web.Application):
+        paths = [
+            self.get_server_path() / "templates"
+        ]
+
+        extra = self.settings.get("template_paths")
+        if extra:
+            paths += list(map(pathlib.Path, extra))
+
+        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(paths))

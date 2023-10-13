@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% block head %}{% endblock %}
+    <style>{% block style %}{% endblock %}</style>
+</head>
+<body>
+    {% block nav %}{% endblock %}
+    {% block body %}
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    {% endblock %}
+    {% block footer %}{% endblock %}
+</body>
+</html>
+
