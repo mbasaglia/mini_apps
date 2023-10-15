@@ -3,11 +3,30 @@ import json
 
 import aiohttp
 import aiohttp.web
+import aiohttp.web_urldispatcher
 import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
+from yarl import URL
 
 from .service import BaseService, ServiceStatus, Client
 from .middleware.csrf import CsrfMiddleware
+
+
+class FileResource(aiohttp.web_urldispatcher.PlainResource):
+    def __init__(self, prefix: str, file, name: str = None):
+        super().__init__(prefix, name=name)
+        self.file = file
+        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("GET", self._handle, self))
+        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("HEAD", self._handle, self))
+
+    def get_info(self):
+        return {
+            "file": self.file,
+            "prefix": self._path
+        }
+
+    async def _handle(self, request: aiohttp.web.Request):
+        return aiohttp.web.FileResponse(self.file)
 
 
 class HttpServer(BaseService):
@@ -83,18 +102,9 @@ class HttpServer(BaseService):
         Shorthand for serving a directory and its index.html for a web app
         """
         app = aiohttp.web.Application()
-        app.router.add_get("/", self.file_handler(path / "index.html"))
+        app.router.register_resource(FileResource("/", path / "index.html"))
         app.router.add_static("/", path)
         self.app.add_subapp("/%s" % bot.name, app)
-
-    @staticmethod
-    def file_handler(path):
-        """
-        Handler for the given file
-        """
-        async def handler(request):
-            return aiohttp.web.FileResponse(path)
-        return handler
 
     async def stop(self):
         """

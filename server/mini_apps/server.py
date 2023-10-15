@@ -74,10 +74,6 @@ class Server(LogSource):
         http.register_routes()
         self.add_service(http)
 
-        # Start the tasks
-        for task in self.services.values():
-            self.tasks.append(task.start())
-
         return database
 
     async def run(self, host, port, reload):
@@ -87,6 +83,10 @@ class Server(LogSource):
         :return: True if the server needs to be reloaded
         """
         database = self.setup_run(host, port)
+
+        # Start the tasks
+        for task in self.services.values():
+            self.tasks.append(task.start())
 
         try:
             if not reload:
