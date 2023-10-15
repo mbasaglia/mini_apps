@@ -116,5 +116,17 @@ class JinjaApp(WebApp):
         aiohttp_jinja2.setup(
             app,
             loader=jinja2.FileSystemLoader(paths),
-            context_processors=[m.process_context for m in http.middleware]
+            context_processors=[m.process_context for m in http.middleware] + [self.context_processor]
         )
+
+    def context_processor(self, request: aiohttp.web.Request):
+        """
+        Jinja context processor
+        """
+        return {
+            "app": self,
+            "settings": self.settings,
+            "request": request,
+            "url": self.server.url
+        }
+

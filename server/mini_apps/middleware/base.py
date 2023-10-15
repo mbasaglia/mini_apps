@@ -2,6 +2,9 @@ import aiohttp.web
 
 
 class Middleware:
+    def __init__(self, http):
+        self.http = http
+
     @aiohttp.web.middleware
     async def process_request(self, request: aiohttp.web.Request, handler):
         """

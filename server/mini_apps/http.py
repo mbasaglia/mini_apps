@@ -21,7 +21,7 @@ class HttpServer(BaseService):
         super().__init__("http", settings)
         self.app = aiohttp.web.Application()
         self.middleware = [
-            CsrfMiddleware()
+            CsrfMiddleware(settings)
         ]
         aiohttp_session.setup(self.app, settings.server.secret_key)
         for mid in self.middleware:
@@ -32,6 +32,10 @@ class HttpServer(BaseService):
         self.stop_future = None
         self.websocket_settings = settings.server.get("websocket")
         self.client_path = settings.get("client-path", settings.paths.client)
+        self.base_url = settings.server.url
+
+    def url(self, name, **kwargs):
+        return self.settings.url(name, **kwargs)
 
     def register_routes(self):
         """

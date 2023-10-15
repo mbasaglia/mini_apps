@@ -44,6 +44,8 @@ class BaseService(LogSource):
         self.settings = settings
         self.status = ServiceStatus.Disconnected
         self.server = None
+        if not self.settings.get("url"):
+            self.settings.url = "%s/%s/" % (self.settings.server.url.rstrip("/"), self.name)
 
     async def run(self):
         """
