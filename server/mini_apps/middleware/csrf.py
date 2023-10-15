@@ -3,7 +3,6 @@ Simplified version of https://github.com/bitnom/aiohttp-csrf which is currently 
 """
 import hmac
 import uuid
-import hashlib
 import functools
 
 import aiohttp.web

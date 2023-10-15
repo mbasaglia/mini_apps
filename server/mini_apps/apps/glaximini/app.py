@@ -6,7 +6,8 @@ import json
 
 import telethon
 
-from mini_apps.bot import Bot, Client
+from mini_apps.bot import Bot
+from mini_apps.service import Client
 from . import models
 from . import document
 

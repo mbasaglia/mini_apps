@@ -51,6 +51,8 @@ class BaseService(LogSource):
         """
         Should run the service until disconnected
         """
+        print(self)
+        breakpoint()
         raise NotImplementedError()
 
 

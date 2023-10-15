@@ -1,5 +1,3 @@
-import functools
-
 import aiohttp
 import aiohttp_session
 
@@ -36,6 +34,7 @@ class AuthMiddleware(Middleware):
 
     def redirect(self, redirect):
         raise aiohttp.web.HTTPSeeOther(self.http.url("login").with_query("redirect", redirect))
+
 
 class AuthApp(JinjaApp):
     @template_view(template="login.html", name="login")

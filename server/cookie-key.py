@@ -9,4 +9,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print(cryptography.fernet.Fernet.generate_key().decode("ascii"))
-

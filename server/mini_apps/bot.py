@@ -1,9 +1,7 @@
 import asyncio
-import inspect
 import json
 import hmac
 import hashlib
-import pathlib
 import re
 import urllib.parse
 
@@ -11,7 +9,7 @@ import telethon
 from telethon.sessions import MemorySession
 
 from .models import User
-from .service import SocketService, ServiceStatus, Client
+from .service import SocketService, ServiceStatus
 from .command import bot_command, BotCommand
 
 

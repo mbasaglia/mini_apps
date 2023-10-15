@@ -24,7 +24,6 @@ class Middleware:
         """
         return await self.on_process_context(request)
 
-
     async def on_process_context(self, request: aiohttp.web.Request):
         """
         Jinja2 context processing implementation

@@ -26,15 +26,15 @@ class MetaWebApp(type):
     def __new__(cls, name, bases, attrs):
         views = []
         for base in bases:
-            base_views = getattr(base, "views", {})
-            views.update(base_views)
+            base_views = getattr(base, "views", [])
+            views += base_views
 
         for attr in attrs.values():
             view = getattr(attr, "view", None)
             if view and isinstance(view, View):
                 views.append(view)
 
-        attrs["views"] = view
+        attrs["views"] = views
 
         return super().__new__(cls, name, bases, attrs)
 
@@ -42,7 +42,7 @@ class MetaWebApp(type):
 def view_decorator(func, url, methods, name):
     if url is None:
         url = "/%s/" % func.__name__
-    func.view = View(url, methdods, name, func)
+    func.view = View(url, methods, name, func)
     return func
 
 
@@ -51,10 +51,10 @@ def view(url=None, methdods=["get"], name=None):
     Decorator to register a method as URL handler
     """
     def deco(func):
-        return view_decorator(func, url, methdods, name, func)
+        return view_decorator(func, url, methdods, name)
 
     if callable(url):
-        return view_decorator(url, None, methdods, name, func)
+        return view_decorator(url, None, methdods, name)
 
     return deco
 
@@ -87,8 +87,8 @@ class WebApp(Service, metaclass=MetaWebApp):
         self.prepare_app(http, app)
 
         for view in self.views:
-            for methods in view.methods:
-                app.router.add_route(method, view.url, view.bound_handler(self), view.name)
+            for method in view.methods:
+                app.router.add_route(method, view.url, view.bound_handler(self), name=view.name)
 
         http.app.add_subapp("/%s" % self.name, app)
 
@@ -97,6 +97,9 @@ class WebApp(Service, metaclass=MetaWebApp):
         Prepares the http app
         """
         pass
+
+    async def run(self):
+        self.status = ServiceStatus.Running
 
 
 class JinjaApp(WebApp):
@@ -129,4 +132,3 @@ class JinjaApp(WebApp):
             "request": request,
             "url": self.server.url
         }
-

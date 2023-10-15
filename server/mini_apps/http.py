@@ -7,9 +7,7 @@ import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
 from .service import BaseService, ServiceStatus, Client
-from .middleware import Middleware
 from .middleware.csrf import CsrfMiddleware
-
 
 
 class HttpServer(BaseService):
@@ -18,12 +16,12 @@ class HttpServer(BaseService):
     """
 
     def __init__(self, host, port, settings):
-        super().__init__("http", settings)
+        super().__init__(settings, "http")
         self.app = aiohttp.web.Application()
         self.middleware = [
-            CsrfMiddleware(settings)
+            CsrfMiddleware(self)
         ]
-        aiohttp_session.setup(self.app, settings.server.secret_key)
+        aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.server.secret_key))
         for mid in self.middleware:
             self.app.middlewares.append(mid.process_request)
         self.host = host
