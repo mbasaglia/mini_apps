@@ -109,6 +109,10 @@ class Bot(SocketService, metaclass=MetaBot):
             self.status = ServiceStatus.Crashed
             await self.on_telegram_exception(e)
 
+    async def stop(self):
+        if self.telegram and self.telegram.is_connected():
+            self.telegram.disconnect()
+
     async def send_telegram_commands(self):
         """
         Automatically sends the registered commands

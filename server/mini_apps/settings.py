@@ -116,7 +116,7 @@ class Settings(SettingsValue):
         self.app_list.append(app)
         return app
 
-    def app_by_class(self, cls, name_hint=None):
+    def ensure_app(self, cls, name_hint=None):
         if name_hint:
             existing = self.apps.get(name_hint)
             if isinstance(existing, cls):
@@ -128,7 +128,7 @@ class Settings(SettingsValue):
             if isinstance(app, cls):
                 return app
 
-        if existing:
+        if existing or not name_hint:
             name_hint = cls.__name__
 
         return self.add_app(name_hint, cls(name_hint, AppSettings({}, self)))
@@ -250,7 +250,7 @@ class Settings(SettingsValue):
             self.server = HttpServer(
                 host or self.server.hostname,
                 port or self.server.port,
-                self,
+                AppSettings(self.server.dict(), self),
             )
 
         return self.server

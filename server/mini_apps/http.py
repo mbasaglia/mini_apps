@@ -21,19 +21,18 @@ class HttpServer(BaseService):
         self.middleware = [
             CsrfMiddleware(self)
         ]
-        aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.server.secret_key))
+        aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.secret_key))
         for mid in self.middleware:
             self.app.middlewares.append(mid.process_request)
         self.host = host
         self.port = port
         self.apps = {}
         self.stop_future = None
-        self.websocket_settings = settings.server.get("websocket")
-        self.client_path = settings.get("client-path", settings.paths.client)
-        self.base_url = settings.server.url
+        self.websocket_settings = settings.get("websocket")
+        self.base_url = settings.url
 
     def url(self, name, **kwargs):
-        return self.settings.url(name, **kwargs)
+        return self.base_url + self.app.router[name].url_for(**kwargs)
 
     def register_routes(self):
         """
@@ -43,9 +42,6 @@ class HttpServer(BaseService):
             self.app.add_routes([aiohttp.web.get(self.websocket_settings, self.socket_handler)])
 
         self.app.add_routes([aiohttp.web.get("/settings.json", self.client_settings)])
-
-        if self.client_path:
-            self.app.router.add_static("/", self.client_path)
 
     def register_service(self, bot):
         """
@@ -104,7 +100,8 @@ class HttpServer(BaseService):
         """
         Stops self.run()
         """
-        if self.stop_future and not self.stop_future.cancelled:
+        if self.stop_future and not self.stop_future.cancelled():
+            self.log.debug("Shutting down HTTP server")
             self.stop_future.set_result(None)
             await self.site.stop()
 
@@ -192,4 +189,6 @@ class HttpServer(BaseService):
             return
 
     async def client_settings(self, request):
-        return aiohttp.web.json_response(self.settings.client.dict())
+        return aiohttp.web.json_response({
+            "socket": self.base_url + self.settings.websocket
+        })

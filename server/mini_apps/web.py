@@ -1,4 +1,5 @@
 import pathlib
+import functools
 
 import aiohttp.web
 import aiohttp_jinja2
@@ -17,6 +18,11 @@ class View:
 
     def bound_handler(self, obj):
         return self.handler.__get__(obj, obj.__class__)
+
+    def __repr__(self):
+        return "View(%s)" % ", ".join(
+            "%s=%r" % item for item in vars(self).items()
+        )
 
 
 class MetaWebApp(type):
@@ -39,7 +45,7 @@ class MetaWebApp(type):
         return super().__new__(cls, name, bases, attrs)
 
 
-def view_decorator(func, url, methods, name):
+def view_decorator(func, url=None, methods=["get"], name=None):
     if url is None:
         url = "/%s/" % func.__name__
     func.view = View(url, methods, name, func)
@@ -64,10 +70,12 @@ def template_view(*args, template, **kwargs):
     View rendered with a Jinja2 template
     """
     def deco(func):
+        @functools.wraps(func)
         def handler(self, request):
             context = func(self, request)
             response = aiohttp_jinja2.render_template(template, request, context)
             return response
+        return view_decorator(handler, *args, **kwargs)
 
     return deco
 
@@ -83,6 +91,7 @@ class WebApp(Service, metaclass=MetaWebApp):
 
     def add_routes(self, http):
         app = aiohttp.web.Application()
+        self.http = http
 
         self.prepare_app(http, app)
 
@@ -108,9 +117,11 @@ class JinjaApp(WebApp):
     """
 
     def prepare_app(self, http, app: aiohttp.web.Application):
-        paths = [
-            self.get_server_path() / "templates"
-        ]
+        paths = self.settings.get("templates")
+        if paths:
+            paths = [self.settings.paths.root / path for path in paths]
+        else:
+            paths = [self.get_server_path() / "templates"]
 
         extra = self.settings.get("template_paths")
         if extra:
@@ -122,7 +133,7 @@ class JinjaApp(WebApp):
             context_processors=[m.process_context for m in http.middleware] + [self.context_processor]
         )
 
-    def context_processor(self, request: aiohttp.web.Request):
+    async def context_processor(self, request: aiohttp.web.Request):
         """
         Jinja context processor
         """
@@ -130,5 +141,5 @@ class JinjaApp(WebApp):
             "app": self,
             "settings": self.settings,
             "request": request,
-            "url": self.server.url
+            "url": self.http.url
         }

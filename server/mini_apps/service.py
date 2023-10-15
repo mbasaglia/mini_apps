@@ -51,9 +51,13 @@ class BaseService(LogSource):
         """
         Should run the service until disconnected
         """
-        print(self)
-        breakpoint()
         raise NotImplementedError()
+
+    async def stop(self):
+        """
+        Stops run() from running
+        """
+        pass
 
 
 class Service(BaseService):

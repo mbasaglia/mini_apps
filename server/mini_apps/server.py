@@ -26,7 +26,7 @@ class ServerTask:
     """
     def __init__(self, service: Service):
         self.service = service
-        self.taks = None
+        self.task = None
 
     def start(self):
         """
@@ -36,6 +36,12 @@ class ServerTask:
         wrapped = coro_wrapper(coro, self.service)
         self.task = asyncio.create_task(wrapped, name=self.service.name)
         return self.task
+
+    async def stop(self):
+        """
+        Stops the service
+        """
+        await self.service.stop()
 
 
 class Server(LogSource):
@@ -57,6 +63,7 @@ class Server(LogSource):
     def setup_run(self, host, port):
         database = self.settings.connect_database()
 
+        # Register all the services
         http = self.settings.http_server(host, port)
 
         for app in self.settings.app_list:
@@ -67,7 +74,7 @@ class Server(LogSource):
         http.register_routes()
         self.add_service(http)
 
-        self.tasks = []
+        # Start the tasks
         for task in self.services.values():
             self.tasks.append(task.start())
 
@@ -102,11 +109,20 @@ class Server(LogSource):
             self.log.info("Shutting down")
             database.close()
 
-            for task in self.tasks:
-                self.log.debug("Stopping %s", task.get_name())
-                task.cancel()
+            for task in self.services.values():
+                self.log.debug("Stopping %s", task.service.name)
+                await task.stop()
 
-            await asyncio.wait(self.tasks, return_when=asyncio.ALL_COMPLETED)
+            done, pending = await asyncio.wait(self.tasks, return_when=asyncio.ALL_COMPLETED, timeout=1)
+
+            # Cancel misbehaving tasks
+            if pending:
+                for task in pending:
+                    self.log.debug("Force stopping %s", task.get_name())
+                    task.cancel()
+
+                await asyncio.wait(self.tasks, return_when=asyncio.ALL_COMPLETED, timeout=1)
+
             self.log.debug("All stopped")
 
             if reload:
