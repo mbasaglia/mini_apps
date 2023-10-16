@@ -1,5 +1,6 @@
 import pathlib
 import functools
+import traceback
 
 import aiohttp.web
 import aiohttp_jinja2
@@ -7,6 +8,15 @@ import aiohttp_jinja2
 import jinja2
 
 from .service import Service, ServiceStatus
+
+
+class ViewHandler:
+    def __init__(self, instance: "WebApp", handler):
+        self.handler = handler.__get__(instance, instance.__class__)
+        self.instance = instance
+
+    async def __call__(self, request):
+        return await self.instance.handler_wrapper(self.handler, request)
 
 
 class View:
@@ -17,7 +27,7 @@ class View:
         self.methods = methods
 
     def bound_handler(self, obj):
-        return self.handler.__get__(obj, obj.__class__)
+        return functools.wraps(self.handler)(ViewHandler(obj, self.handler))
 
     def __repr__(self):
         return "View(%s)" % ", ".join(
@@ -71,8 +81,8 @@ def template_view(*args, template, **kwargs):
     """
     def deco(func):
         @functools.wraps(func)
-        def handler(self, request):
-            context = func(self, request)
+        async def handler(self, request):
+            context = await func(self, request)
             response = aiohttp_jinja2.render_template(template, request, context)
             return response
         return view_decorator(handler, *args, **kwargs)
@@ -99,7 +109,14 @@ class WebApp(Service, metaclass=MetaWebApp):
             for method in view.methods:
                 app.router.add_route(method, view.url, view.bound_handler(self), name=view.name)
 
-        http.app.add_subapp("/%s" % self.name, app)
+        # Work around aiohttp add_aubapp so we can set the subapp name
+        resource = aiohttp.web.PrefixedSubAppResource("/%s" % self.name, app)
+        resource._name = self.name
+        http.app.router.register_resource(resource)
+        http.app._reg_subapp_signals(app)
+        http.app._subapps.append(app)
+        app.pre_freeze()
+        self.app = app
 
     def prepare_app(self, http, app: aiohttp.web.Application):
         """
@@ -109,6 +126,14 @@ class WebApp(Service, metaclass=MetaWebApp):
 
     async def run(self):
         self.status = ServiceStatus.Running
+
+    async def handler_wrapper(self, handler, request):
+        try:
+            return await handler(request)
+        except Exception:
+            self.log_exception()
+            if self.settings.get("debug"):
+                return aiohttp.web.Response(body=traceback.format_exc(), status=500)
 
 
 class JinjaApp(WebApp):
@@ -121,7 +146,10 @@ class JinjaApp(WebApp):
         if paths:
             paths = [self.settings.paths.root / path for path in paths]
         else:
-            paths = [self.get_server_path() / "templates"]
+            paths = [
+                self.settings.paths.root / "templates",
+                self.get_server_path() / "templates"
+            ]
 
         extra = self.settings.get("template_paths")
         if extra:
@@ -141,5 +169,10 @@ class JinjaApp(WebApp):
             "app": self,
             "settings": self.settings,
             "request": request,
-            "url": self.http.url
+            "url": self.url
         }
+
+    def url(self, name, **kwargs):
+        if name in self.app.router.named_resources():
+            kwargs["app"] = self.app
+        return self.http.url(name, **kwargs)

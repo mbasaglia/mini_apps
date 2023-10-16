@@ -38,11 +38,11 @@ class AuthMiddleware(Middleware):
 
 class AuthApp(JinjaApp):
     @template_view(template="login.html", name="login")
-    def login(self, request: aiohttp.web.Request):
+    async def login(self, request: aiohttp.web.Request):
         return {}
 
-    @view
-    def login_auth(self, request: aiohttp.web.Request):
+    @view(name="login_auth")
+    async def login_auth(self, request: aiohttp.web.Request):
         self.log.info(request.url.query)
         self.middleware.redirect(request.url.query.get("redirect"))
 

@@ -20,7 +20,7 @@ def print_resource(path, name, dest):
 
 
 def format_handler(handler):
-    if inspect.isfunction(handler):
+    if inspect.isfunction(handler) or inspect.ismethod(handler):
         return "%s.%s" % (handler.__module__, handler.__qualname__)
     return str(handler)
 
@@ -50,4 +50,3 @@ if __name__ == "__main__":
     database.close()
 
     print_app(settings.server.app)
-

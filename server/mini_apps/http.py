@@ -50,8 +50,15 @@ class HttpServer(BaseService):
         self.websocket_settings = settings.get("websocket")
         self.base_url = settings.url
 
-    def url(self, name, **kwargs):
-        return self.base_url + self.app.router[name].url_for(**kwargs)
+    def url(self, name, *, app=None, **kwargs):
+        router = (app or self.app).router
+        for chunk in name.split(":"):
+            resource = router.named_resources()[chunk]
+            try:
+                router = resource._app.router
+            except Exception:
+                break
+        return self.base_url + str(resource.url_for(**kwargs))
 
     def register_routes(self):
         """
