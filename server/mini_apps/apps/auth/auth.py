@@ -1,16 +1,29 @@
+import json
+import hmac
+import datetime
+
+
 import aiohttp
 import aiohttp_session
 
 from mini_apps.web import JinjaApp, view, template_view
 from mini_apps.middleware.base import Middleware
-from .user import User, UserFilter
+from ...settings import AppSettings, SettingsValue
+from .user import User, UserFilter, clean_telegram_auth
 
 
 class AuthMiddleware(Middleware):
-    def __init__(self, http):
-        app = http.settings.ensure_app(AuthApp, "auth")
-        app.middleware = self
-        self.filter = UserFilter.from_settings(http.settings)
+    """
+    Middleware thhat handles logins and adds request.user
+    """
+    auth_key = "__auth"
+
+    def __init__(self, settings, http):
+        super().__init__(http)
+        self.settings = settings
+        self.filter = UserFilter.from_settings(self.settings)
+        self.cookie_max_age = datetime.timedelta(seconds=self.settings.get("max_age", 24*60*60))
+        self.cookie_refresh = self.settings.get("refresh", True)
 
     async def needs_login(self, request, handler):
         if not getattr(handler, "requires_auth"):
@@ -18,7 +31,7 @@ class AuthMiddleware(Middleware):
             return False
 
         session = await aiohttp_session.get_session(request)
-        request.user = self.filter.filter_user(User.from_json(session.get("user")))
+        request.user = self.filter.filter_user(User.from_json(session.get(self.auth_key)))
         if not request.user:
             return True
 
@@ -27,24 +40,38 @@ class AuthMiddleware(Middleware):
 
         return False
 
-    async def on_process_request(self, request, handler):
+    async def on_process_request(self, request: aiohttp.web.Request, handler):
         if self.needs_login(request, handler):
             return self.redirect()
 
-        await handler(request)
+        response: aiohttp.web.Response = await handler(request)
+
+        if getattr(request, "auth_change", False) or (request.user and self.cookie_refresh):
+            response.set_cookie(
+                self.auth_key,
+                json.dumps(request.user.to_json()) if request.user else "",
+                max_age=self.cookie_max_age.total_seconds(),
+                httponly=True,
+                domain=request.url().raw_authority,
+                secure=request.url().scheme == "https",
+                samesite="Strict",
+            )
+
+        return response
 
     def redirect(self, redirect):
-        raise aiohttp.web.HTTPSeeOther(self.http.url("login").with_query("redirect", redirect))
+        return aiohttp.web.HTTPSeeOther(self.http.url("login").with_query("redirect", redirect))
 
     async def log_in(self, request, user):
         session = await aiohttp_session.get_session(request)
         user = self.filter.filter_user(user)
         request.user = user
+        request.auth_change = True
 
         if user:
-            session["user"] = user.to_json()
+            session[self.auth_key] = user.to_json()
         else:
-            session.pop("user")
+            session.pop(self.auth_key)
 
         return user
 
@@ -53,14 +80,26 @@ class AuthMiddleware(Middleware):
 
 
 class AuthApp(JinjaApp):
+    def add_routes(self, http):
+        self.middleware = AuthMiddleware(self.settings, http)
+        http.register_middleware(http)
+
     @template_view(template="login.html", name="login")
     async def login(self, request: aiohttp.web.Request):
         return {}
 
     @view(name="login_auth")
     async def login_auth(self, request: aiohttp.web.Request):
-        self.log.info(request.url.query)
-        self.middleware.redirect(request.url.query.get("redirect"))
+        data = dict(request.url.query)
+        redirect = data.pop("redirect", "")
+        self.log.info(data)
+        data = clean_telegram_auth(data, self.settings.bot_token)
+        if data and data["user"]:
+            user = User.from_telegram_dict(data)
+            await self.middleware.log_in(request, user)
+            return aiohttp.web.HTTPSeeOther(request.url.with_path(redirect))
+        else:
+            return self.middleware.redirect(redirect)
 
 
 def require_user(func=None, *, is_admin=False):

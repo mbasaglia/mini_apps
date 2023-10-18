@@ -11,6 +11,7 @@ from telethon.sessions import MemorySession
 from .models import User
 from .service import SocketService, ServiceStatus
 from .command import bot_command, BotCommand
+from .apps.auth.user import clean_telegram_auth
 
 
 class MetaBot(type):
@@ -194,25 +195,11 @@ class Bot(SocketService, metaclass=MetaBot):
         """
         # Parse the data
         clean = {}
-        data_check_string = ""
         for key, value in sorted(urllib.parse.parse_qs(data).items()):
-            if key == "user":
-                clean[key] = json.loads(value[0])
-            else:
-                clean[key] = value[0]
+            clean[key] = value[0]
 
-            if key != "hash":
-                data_check_string += "%s=%s\n" % (key, value[0])
-
-        # Check the hash
-        data_check_string = data_check_string.strip()
-        token = self.settings.bot_token.encode("ascii")
-        secret_key = hmac.new(b"WebAppData", token, digestmod=hashlib.sha256).digest()
-        correct_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), digestmod=hashlib.sha256).hexdigest()
-
-        # If the hash is invalid, return None
-        if clean.get("hash", "") != correct_hash:
-            return None
+        clean = clean_telegram_auth(clean, self.settings.bot_token, key_prefix=b"WebAppData")
+        clean["user"] = json.loads(clean["user"])
 
         return clean
 
