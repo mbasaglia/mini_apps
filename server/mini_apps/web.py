@@ -1,3 +1,4 @@
+import pprint
 import pathlib
 import functools
 import traceback
@@ -83,6 +84,7 @@ def template_view(*args, template, **kwargs):
         @functools.wraps(func)
         async def handler(self, request):
             context = await func(self, request)
+            request.jinja_context = context
             response = aiohttp_jinja2.render_template(template, request, context)
             return response
         return view_decorator(handler, *args, **kwargs)
@@ -128,13 +130,28 @@ class WebApp(Service, metaclass=MetaWebApp):
         self.status = ServiceStatus.Running
 
     async def handler_wrapper(self, handler, request):
+        """
+        Invokes the actual handler and manages exception
+        """
         try:
             return await handler(request)
         except Exception:
-            self.log_exception()
-            if self.settings.get("debug"):
-                return aiohttp.web.Response(body=traceback.format_exc(), status=500)
+            return await self.on_http_exception()
 
+    async def on_http_exception(self, request):
+        """
+        Invoked on http handler exception
+        """
+        self.log_exception()
+        if self.settings.get("debug"):
+            return await self.exception_debug_response()
+        return aiohttp.web.HTTPInternalServerError()
+
+    async def exception_debug_response(self, request):
+        """
+        Should render a repsonse detailing the current exception
+        """
+        return aiohttp.web.Response(body=traceback.format_exc(), status=500)
 
 class JinjaApp(WebApp):
     """
@@ -176,3 +193,16 @@ class JinjaApp(WebApp):
         if name in self.app.router.named_resources():
             kwargs["app"] = self.app
         return self.http.url(name, **kwargs)
+
+    async def exception_debug_response(self, request):
+        """
+        Should render a repsonse detailing the current exception
+        """
+        body = traceback.format_exc()
+        body += "\nContext:\n"
+        body += pprint.pformat(getattr(request, "jinja_context"))
+        env = jinja2.get_env(self.app)
+        if isinstance(env.loader, jinja2.loaders.FileSystemLoader):
+            body += "\nTemplate Paths:\n"
+            body += pprint.pformat(env.loader.searchpath)
+        return aiohttp.web.Response(body=body, status=500)

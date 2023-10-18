@@ -4,7 +4,7 @@ import inspect
 import pathlib
 
 from .settings import LogSource
-from .models import User
+from .apps.auth.user import User, UserFilter
 
 
 class Client:
@@ -89,57 +89,6 @@ class Service(BaseService):
         Returns the path for containing the module that defines class
         """
         return pathlib.Path(inspect.getfile(cls)).absolute().parent
-
-
-class UserFilter:
-    """
-    Class that filters logged in users for websocket and telegram input
-    """
-    def filter_user(self, user):
-        """
-        Filter users
-
-        Override in derived classes
-        """
-        return user
-
-    def filter_telegram_id(self, telegram_id):
-        """
-        Filters a user from a telegram message
-        """
-        return self.filter_user(User(telegram_id=telegram_id))
-
-    @staticmethod
-    def from_settings(settings):
-        if "banned" in settings or "admins" in settings:
-            return SettingsListUserFilter(set(settings.get("banned", [])), set(settings.get("admins", [])))
-        return UserFilter()
-
-
-class SettingsListUserFilter(UserFilter):
-    """
-    Ban/admin list filter
-    """
-    def __init__(self, banned, admins):
-        self.banned = banned
-        self.admins = admins
-
-    def filter_user(self, user):
-        """
-        Filter users
-
-        Users in the ban list will not be connected, users in the admin list will be marked as admins
-        """
-        if not user:
-            return None
-
-        if user.telegram_id in self.banned:
-            return None
-
-        if user.telegram_id in self.admins:
-            user.is_admin = True
-
-        return user
 
 
 class SocketService(Service):
