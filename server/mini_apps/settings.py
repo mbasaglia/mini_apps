@@ -104,32 +104,33 @@ class Settings(SettingsValue):
         self.app_list = []
         self.database_models = []
 
-        for name, app_settings in apps.items():
+        for app_settings in apps:
             if app_settings.pop("enabled", True):
-                app = self.load_app(app_settings, name)
-                self.add_app(name, app)
+                app = self.load_app(app_settings)
+                self.add_app(app)
 
         self.server.url = self.server.url.rstrip("/")
 
-    def add_app(self, name, app):
-        setattr(self.apps, name, app)
+    def add_app(self, app):
+        if app.name in self.apps:
+            raise KeyError("Duplicate app %s" % app.name)
+        setattr(self.apps, app.name, app)
         self.app_list.append(app)
         return app
 
     def ensure_app(self, cls, name_hint=None):
-        if name_hint:
-            existing = self.apps.get(name_hint)
-            if isinstance(existing, cls):
-                return existing
-        else:
-            existing = None
+        if not name_hint:
+            name_hint = cls.default_name()
+
+        existing = self.apps.get(name_hint)
+        if isinstance(existing, cls):
+            return existing
+
+        existing = None
 
         for app in self.app_list:
             if isinstance(app, cls):
                 return app
-
-        if existing or not name_hint:
-            name_hint = cls.__name__
 
         return self.add_app(name_hint, cls(name_hint, AppSettings({}, self)))
 
@@ -160,7 +161,7 @@ class Settings(SettingsValue):
     def get_paths(cls):
         server_path = pathlib.Path(__file__).absolute().parent.parent
         root = server_path.parent
-        settings_path = server_path / "settings.json"
+        settings_path = root / "settings.json"
         return {
             "root": root,
             "server": server_path,
@@ -212,13 +213,13 @@ class Settings(SettingsValue):
 
         return cls(**db_settings)
 
-    def load_app(self, app_settings: dict, name: str):
+    def load_app(self, app_settings: dict):
         """
         Loads a mini app / bot
         """
         cls = self.import_class(app_settings.pop("class"))
         settings = AppSettings(app_settings, self)
-        app = cls(settings, name)
+        app = cls(settings)
         app.register_models()
         return app
 

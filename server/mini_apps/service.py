@@ -39,8 +39,8 @@ class BaseService(LogSource):
     """
     Abstract class for services that can run on the server
     """
-    def __init__(self, settings, name):
-        super().__init__(name or self.__class__.__name__)
+    def __init__(self, settings):
+        super().__init__(settings.get("name", self.default_name()))
         self.settings = settings
         self.status = ServiceStatus.Disconnected
         self.server = None
@@ -58,6 +58,16 @@ class BaseService(LogSource):
         Stops run() from running
         """
         pass
+
+    @classmethod
+    def default_name(cls):
+        """
+        Returns the default name for this service
+        """
+        chunks = cls.__module__.split(".")
+        if chunks[-1] == "app":
+            return chunks[-2]
+        return chunks[-1]
 
 
 class Service(BaseService):
@@ -95,8 +105,8 @@ class SocketService(Service):
     """
     Service that can handle socket connections
     """
-    def __init__(self, settings, name):
-        super().__init__(settings, name)
+    def __init__(self, settings):
+        super().__init__(settings)
         self.clients = {}
         self.filter = UserFilter.from_settings(settings)
 

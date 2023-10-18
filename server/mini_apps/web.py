@@ -98,8 +98,8 @@ class WebApp(Service, metaclass=MetaWebApp):
     """
     views = []
 
-    def __init__(self, settings, name):
-        super().__init__(settings, name)
+    def __init__(self, settings):
+        super().__init__(settings)
 
     def add_routes(self, http):
         app = aiohttp.web.Application()

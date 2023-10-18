@@ -78,11 +78,16 @@ class AuthMiddleware(Middleware):
     async def log_out(self, request):
         await self.log_in(None)
 
+    async def on_process_context(self, request):
+        return {
+            "user": request.user
+        }
+
 
 class AuthApp(JinjaApp):
     def add_routes(self, http):
         self.middleware = AuthMiddleware(self.settings, http)
-        http.register_middleware(http)
+        http.register_middleware(self.middleware)
 
     @template_view(template="login.html", name="login")
     async def login(self, request: aiohttp.web.Request):
@@ -112,3 +117,8 @@ def require_user(func=None, *, is_admin=False):
         return func
 
     return deco
+
+def require_admin(func):
+    func.requires_auth = True
+    func.requires_auth_admin = True
+    return func

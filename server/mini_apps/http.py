@@ -35,14 +35,12 @@ class HttpServer(BaseService):
     """
 
     def __init__(self, host, port, settings):
-        super().__init__(settings, "http")
+        super().__init__(settings)
         self.app = aiohttp.web.Application()
         self.middleware = [
             CsrfMiddleware(self)
         ]
         aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.secret_key))
-        for mid in self.middleware:
-            self.app.middlewares.append(mid.process_request)
         self.host = host
         self.port = port
         self.apps = {}
@@ -76,6 +74,9 @@ class HttpServer(BaseService):
         self.apps[bot.name] = bot
         bot.add_routes(self)
 
+    def register_middleware(self, middleware):
+        self.middleware.append(middleware)
+
     async def run(self):
         """
         Runs the websocket server
@@ -85,6 +86,9 @@ class HttpServer(BaseService):
         try:
             loop = asyncio.get_running_loop()
             self.stop_future = loop.create_future()
+
+            for mid in self.middleware:
+                self.app.middlewares.append(mid.process_request)
 
             for app in self.apps.values():
                 app.on_server_start()
