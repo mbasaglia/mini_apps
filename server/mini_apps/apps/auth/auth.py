@@ -5,6 +5,7 @@ import datetime
 
 import aiohttp
 import aiohttp_session
+from yarl import URL
 
 from mini_apps.web import JinjaApp, view, template_view
 from mini_apps.middleware.base import Middleware
@@ -18,15 +19,16 @@ class AuthMiddleware(Middleware):
     """
     auth_key = "__auth"
 
-    def __init__(self, settings, http):
+    def __init__(self, settings, http, prefix):
         super().__init__(http)
         self.settings = settings
+        self.prefix = prefix
         self.filter = UserFilter.from_settings(self.settings)
         self.cookie_max_age = datetime.timedelta(seconds=self.settings.get("max_age", 24*60*60))
         self.cookie_refresh = self.settings.get("refresh", True)
 
     async def needs_login(self, request, handler):
-        if not getattr(handler, "requires_auth"):
+        if not getattr(handler, "requires_auth", False):
             request.user = None
             return False
 
@@ -41,8 +43,8 @@ class AuthMiddleware(Middleware):
         return False
 
     async def on_process_request(self, request: aiohttp.web.Request, handler):
-        if self.needs_login(request, handler):
-            return self.redirect()
+        if await self.needs_login(request, handler):
+            return self.redirect(request.url)
 
         response: aiohttp.web.Response = await handler(request)
 
@@ -60,7 +62,9 @@ class AuthMiddleware(Middleware):
         return response
 
     def redirect(self, redirect):
-        return aiohttp.web.HTTPSeeOther(self.http.url("login").with_query("redirect", redirect))
+        if isinstance(redirect, URL):
+            redirect = redirect.path
+        return aiohttp.web.HTTPSeeOther(self.http.url("%s:login" % self.prefix).with_query(redirect=path))
 
     async def log_in(self, request, user):
         session = await aiohttp_session.get_session(request)
@@ -86,8 +90,9 @@ class AuthMiddleware(Middleware):
 
 class AuthApp(JinjaApp):
     def add_routes(self, http):
-        self.middleware = AuthMiddleware(self.settings, http)
+        self.middleware = AuthMiddleware(self.settings, http, self.name)
         http.register_middleware(self.middleware)
+        return super().add_routes(http)
 
     @template_view(template="login.html", name="login")
     async def login(self, request: aiohttp.web.Request):

@@ -56,7 +56,7 @@ class HttpServer(BaseService):
                 router = resource._app.router
             except Exception:
                 break
-        return self.base_url + str(resource.url_for(**kwargs))
+        return URL(self.base_url + str(resource.url_for(**kwargs)))
 
     def register_routes(self):
         """
