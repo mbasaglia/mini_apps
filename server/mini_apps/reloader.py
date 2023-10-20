@@ -7,7 +7,7 @@ class Reloader(LogSource):
     """
     Utility to reload scripts when the sources change
     """
-    def __init__(self, paths, globs=["**/*.py", "*/*.json", "*/*.html", "*/*.js", "*/*.css"], polling_interval=1):
+    def __init__(self, paths, globs=["**/*.py", "**/*.json", "**/*.html", "**/*.js", "**/*.css"], polling_interval=1):
         super().__init__("reloader")
         self.paths = paths
         self.globs = globs

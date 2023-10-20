@@ -1,11 +1,47 @@
 {% extends "auth-base.html" %}
 {% block content %}
+
+<h1>Services</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Class</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for service in services %}
+            <tr>
+                <td>{{ service.name }}</td>
+                <td>{{ service.status.name }}</td>
+                <td><pre><code>{{ service.__class__.__module__ }}.{{ service.__class__.__name__ }}</code></pre></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 <h1>Bots</h1>
 <table>
     <thead>
-        <tr></tr>
+        <tr>
+            <th>Username</th>
+            <th>Service Name</th>
+            <th>Status</th>
+            <th>Class</th>
+            <th>Token</th>
+        </tr>
     </thead>
     <tbody>
+        {% for bot in bots %}
+            <tr>
+                <td>@{{ bot.telegram_me.username }}</td>
+                <td>{{ bot.name }}</td>
+                <td>{{ bot.status.name }}</td>
+                <td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td>
+                <td><pre><code>{{ bot.settings.bot_token }}</code></pre></td>
+            </tr>
+        {% endfor %}
     </tbody>
 </table>
 {% endblock %}

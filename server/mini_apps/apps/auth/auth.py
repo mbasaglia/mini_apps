@@ -33,7 +33,18 @@ class AuthMiddleware(Middleware):
             return False
 
         session = await aiohttp_session.get_session(request)
-        request.user = self.filter.filter_user(User.from_json(session.get(self.auth_key)))
+        session_user = session.get(self.auth_key)
+        if session_user:
+            user = User.from_json(session_user)
+        else:
+            fake_user = self.settings.get("fake-user")
+            if not fake_user:
+                return True
+
+            user = User.from_telegram_dict(fake_user.dict())
+
+        request.user = self.filter.filter_user(user)
+
         if not request.user:
             return True
 
@@ -54,8 +65,8 @@ class AuthMiddleware(Middleware):
                 json.dumps(request.user.to_json()) if request.user else "",
                 max_age=self.cookie_max_age.total_seconds(),
                 httponly=True,
-                domain=request.url().raw_authority,
-                secure=request.url().scheme == "https",
+                domain=request.url.raw_authority,
+                secure=request.url.scheme == "https",
                 samesite="Strict",
             )
 
@@ -64,7 +75,7 @@ class AuthMiddleware(Middleware):
     def redirect(self, redirect):
         if isinstance(redirect, URL):
             redirect = redirect.path
-        return aiohttp.web.HTTPSeeOther(self.http.url("%s:login" % self.prefix).with_query(redirect=path))
+        return aiohttp.web.HTTPSeeOther(self.http.url("%s:login" % self.prefix).with_query(redirect=redirect))
 
     async def log_in(self, request, user):
         session = await aiohttp_session.get_session(request)
@@ -86,6 +97,12 @@ class AuthMiddleware(Middleware):
         return {
             "user": request.user
         }
+
+
+class JingaAppWithAuth(JinjaApp):
+    def template_paths(self):
+        return super().template_paths() + self.settings.ensure_app(AuthApp).template_paths()
+
 
 
 class AuthApp(JinjaApp):

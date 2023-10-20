@@ -97,7 +97,7 @@ class Server(LogSource):
                 paths = [
                     server_path / "mini_apps",
                     server_path / "server.py",
-                    server_path / "settings.json"
+                    self.settings.paths.settings,
                 ]
                 reloader = Reloader(paths)
                 reload = await reloader.watch()
