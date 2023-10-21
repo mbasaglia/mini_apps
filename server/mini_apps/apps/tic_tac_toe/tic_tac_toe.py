@@ -4,7 +4,9 @@ import random
 import hashids
 import telethon
 
-from mini_apps.bot import Bot, Client
+from mini_apps.bot import Bot
+from mini_apps.web import WebApp, ExtendedApplication
+from mini_apps.service import Client
 
 
 id_encoder = hashids.Hashids("tictactoe", alphabet="abcdefhkmnpqrstuvwxy34578")
@@ -164,7 +166,7 @@ class Game:
         return True
 
 
-class TicTacToe(Bot):
+class TicTacToe(WebApp, Bot):
     """
     Tic Tac Toe Game
     """
@@ -172,11 +174,12 @@ class TicTacToe(Bot):
         super().__init__(*args)
         self.players = {}
 
-    def add_routes(self, http):
+    def prepare_app(self, http, app: ExtendedApplication):
         """
         Registers routes to the web server
         """
-        http.add_static_web_app(self, self.get_server_path() / "client")
+        app.add_static_path("/", self.get_server_path() / "client" / "index.html")
+        app.add_static_path("/", self.get_server_path() / "client")
 
     def inline_buttons(self):
         """

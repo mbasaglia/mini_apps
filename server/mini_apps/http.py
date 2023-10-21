@@ -3,30 +3,13 @@ import json
 
 import aiohttp
 import aiohttp.web
-import aiohttp.web_urldispatcher
 import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from yarl import URL
 
-from .service import BaseService, ServiceStatus, Client
+from .service import BaseService, ServiceStatus, Client, Service
 from .middleware.csrf import CsrfMiddleware
-
-
-class FileResource(aiohttp.web_urldispatcher.PlainResource):
-    def __init__(self, prefix: str, file, name: str = None):
-        super().__init__(prefix, name=name)
-        self.file = file
-        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("GET", self._handle, self))
-        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("HEAD", self._handle, self))
-
-    def get_info(self):
-        return {
-            "file": self.file,
-            "prefix": self._path
-        }
-
-    async def _handle(self, request: aiohttp.web.Request):
-        return aiohttp.web.FileResponse(self.file)
+from .web import ExtendedApplication
 
 
 class HttpServer(BaseService):
@@ -36,7 +19,7 @@ class HttpServer(BaseService):
 
     def __init__(self, host, port, settings):
         super().__init__(settings)
-        self.app = aiohttp.web.Application()
+        self.app = ExtendedApplication()
         self.middleware = [
             CsrfMiddleware(self)
         ]
@@ -47,6 +30,7 @@ class HttpServer(BaseService):
         self.stop_future = None
         self.websocket_settings = settings.get("websocket")
         self.base_url = settings.url
+        self.common_template_paths = []
 
     def url(self, name, *, app=None, **kwargs):
         router = (app or self.app).router
@@ -67,12 +51,15 @@ class HttpServer(BaseService):
 
         self.app.add_routes([aiohttp.web.get("/settings.json", self.client_settings)])
 
-    def register_service(self, bot):
+    def register_service(self, service: Service):
         """
-        Registeres a bot
+        Registeres a service
         """
-        self.apps[bot.name] = bot
-        bot.add_routes(self)
+        if service.accepts_http:
+            self.apps[service.name] = service
+            service.add_routes(self)
+        elif service.accepts_socket:
+            self.apps[service.name] = service
 
     def register_middleware(self, middleware):
         self.middleware.append(middleware)

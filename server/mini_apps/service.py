@@ -44,6 +44,7 @@ class BaseService(LogSource):
         self.settings = settings
         self.status = ServiceStatus.Disconnected
         self.server = None
+        self.autostart = settings.get("autostart", True)
         if not self.settings.get("url"):
             self.settings.url = "%s/%s/" % (self.settings.server.url.rstrip("/"), self.name)
 
@@ -75,12 +76,6 @@ class Service(BaseService):
     Service that can be registered on HttpServer
     """
 
-    def add_routes(self, http):
-        """
-        Registers routes to the web server
-        """
-        pass
-
     def register_models(self):
         """
         Override in derived classes to register the models in self.settings.database_models
@@ -99,6 +94,20 @@ class Service(BaseService):
         Returns the path for containing the module that defines class
         """
         return pathlib.Path(inspect.getfile(cls)).absolute().parent
+
+    def add_routes(self, http):
+        """
+        Registers routes to the web server
+        """
+        raise NotImplementedError
+
+    @property
+    def accepts_http(self):
+        return False
+
+    @property
+    def accepts_socket(self):
+        return False
 
 
 class SocketService(Service):
@@ -152,3 +161,7 @@ class SocketService(Service):
         Called when a client disconnects from the server
         """
         pass
+
+    @property
+    def accepts_socket(self):
+        return True

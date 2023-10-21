@@ -64,17 +64,32 @@ class Server(LogSource):
         database = self.settings.connect_database()
 
         # Register all the services
-        http = self.settings.http_server(host, port)
+        self.http = self.settings.http_server(host, port)
 
         for app in self.settings.app_list:
             self.add_service(app)
-            http.register_service(app)
+            self.http.register_service(app)
             app.server = self
 
-        http.register_routes()
-        self.add_service(http)
+        self.http.register_routes()
+        self.add_service(self.http)
 
         return database
+
+    def get_server_task(self, service):
+        if isinstance(service, ServerTask):
+            return service
+        if isinstance(service, Service):
+            return self.services[service.name]
+        return self.services[service]
+
+    def start_service(self, service):
+        self.tasks.append(self.get_server_task(service).start())
+
+    async def stop_service(self, service):
+        task = self.get_server_task(service)
+        self.log.debug("Stopping %s", task.service.name)
+        await task.stop()
 
     async def run(self, host, port, reload):
         """
@@ -86,7 +101,8 @@ class Server(LogSource):
 
         # Start the tasks
         for task in self.services.values():
-            self.tasks.append(task.start())
+            if task.service.autostart:
+                self.tasks.append(task.start())
 
         try:
             if not reload:
@@ -110,8 +126,7 @@ class Server(LogSource):
             database.close()
 
             for task in self.services.values():
-                self.log.debug("Stopping %s", task.service.name)
-                await task.stop()
+                await self.stop_service(task)
 
             done, pending = await asyncio.wait(self.tasks, return_when=asyncio.ALL_COMPLETED, timeout=1)
 

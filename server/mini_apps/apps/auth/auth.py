@@ -99,16 +99,11 @@ class AuthMiddleware(Middleware):
         }
 
 
-class JingaAppWithAuth(JinjaApp):
-    def template_paths(self):
-        return super().template_paths() + self.settings.ensure_app(AuthApp).template_paths()
-
-
-
 class AuthApp(JinjaApp):
     def add_routes(self, http):
         self.middleware = AuthMiddleware(self.settings, http, self.name)
         http.register_middleware(self.middleware)
+        http.common_template_paths += self.template_paths()
         return super().add_routes(http)
 
     @template_view(template="login.html", name="login")

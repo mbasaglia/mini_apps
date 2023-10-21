@@ -4,11 +4,29 @@ import functools
 import traceback
 
 import aiohttp.web
+import aiohttp.web_urldispatcher
 import aiohttp_jinja2
 
 import jinja2
 
 from .service import Service, ServiceStatus
+
+
+class FileResource(aiohttp.web_urldispatcher.PlainResource):
+    def __init__(self, prefix: str, file, name: str = None):
+        super().__init__(prefix, name=name)
+        self.file = file
+        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("GET", self._handle, self))
+        self.register_route(aiohttp.web_urldispatcher.ResourceRoute("HEAD", self._handle, self))
+
+    def get_info(self):
+        return {
+            "file": self.file,
+            "prefix": self._path
+        }
+
+    async def _handle(self, request: aiohttp.web.Request):
+        return aiohttp.web.FileResponse(self.file)
 
 
 class ViewHandler:
@@ -92,6 +110,29 @@ def template_view(*args, template, **kwargs):
     return deco
 
 
+class ExtendedApplication(aiohttp.web.Application):
+    """
+    aiohttp application with extra stuff
+    """
+    def add_static_path(self, prefix, path: pathlib.Path):
+        """
+        Registers a static path to the app
+        """
+        if path.is_file():
+            self.router.register_resource(FileResource("/", path))
+        else:
+            self.router.add_static("/", path)
+
+    def add_named_subapp(self, name, app: aiohttp.web.Application):
+        # Work around aiohttp add_aubapp so we can set the subapp name
+        resource = aiohttp.web.PrefixedSubAppResource("/%s" % name, app)
+        resource._name = self.name
+        self.router.register_resource(resource)
+        self._reg_subapp_signals(app)
+        self._subapps.append(app)
+        app.pre_freeze()
+
+
 class WebApp(Service, metaclass=MetaWebApp):
     """
     Web app
@@ -101,8 +142,16 @@ class WebApp(Service, metaclass=MetaWebApp):
     def __init__(self, settings):
         super().__init__(settings)
 
+    @property
+    def accepts_http(self):
+        return True
+
     def add_routes(self, http):
-        app = aiohttp.web.Application()
+        """
+        Registers routes to the web server
+        """
+
+        app = ExtendedApplication()
         self.http = http
 
         self.prepare_app(http, app)
@@ -111,16 +160,9 @@ class WebApp(Service, metaclass=MetaWebApp):
             for method in view.methods:
                 app.router.add_route(method, view.url, view.bound_handler(self), name=view.name)
 
-        # Work around aiohttp add_aubapp so we can set the subapp name
-        resource = aiohttp.web.PrefixedSubAppResource("/%s" % self.name, app)
-        resource._name = self.name
-        http.app.router.register_resource(resource)
-        http.app._reg_subapp_signals(app)
-        http.app._subapps.append(app)
-        app.pre_freeze()
-        self.app = app
+        http.app.add_named_subapp(self.name, app)
 
-    def prepare_app(self, http, app: aiohttp.web.Application):
+    def prepare_app(self, http, app: ExtendedApplication):
         """
         Prepares the http app
         """
@@ -153,12 +195,13 @@ class WebApp(Service, metaclass=MetaWebApp):
         """
         return aiohttp.web.Response(body=traceback.format_exc(), status=500)
 
+
 class JinjaApp(WebApp):
     """
     Web app that uses Jinja2 templates
     """
 
-    def prepare_app(self, http, app: aiohttp.web.Application):
+    def prepare_app(self, http, app: ExtendedApplication):
         paths = self.template_paths()
 
         extra = self.settings.get("template_paths")
@@ -175,14 +218,20 @@ class JinjaApp(WebApp):
         """
         Returns the jinja2 template search paths
         """
+        template_paths = []
+
         paths = self.settings.get("templates")
         if paths:
-            return [self.settings.paths.root / path for path in paths]
-        else:
-            return [
-                self.settings.paths.root / "templates",
-                self.get_server_path() / "templates"
-            ]
+            template_paths += [self.settings.paths.root / path for path in paths]
+
+        template_paths += [
+            self.settings.paths.root / "templates",
+            self.get_server_path() / "templates"
+        ]
+
+        template_paths += self.http.common_template_paths
+
+        return template_paths
 
     async def context_processor(self, request: aiohttp.web.Request):
         """
