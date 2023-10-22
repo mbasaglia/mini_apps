@@ -1,5 +1,5 @@
 {% macro service_status(status) -%}
-    <span title="status">
+    <span class="status" title="{{ status.name }}">
     {% if status.name == "Disconnected" %}
         {{ icon("pause") }}
     {% elif status.name == "Crashed" %}

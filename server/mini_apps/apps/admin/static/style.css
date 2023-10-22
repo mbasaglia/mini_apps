@@ -287,3 +287,8 @@ table.table td, table.table th {
     max-width: max-content;
 }
 
+.status {
+    text-align: center;
+    width: 100%;
+    display: inline-block;
+}

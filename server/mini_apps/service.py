@@ -46,6 +46,10 @@ class BaseService(LogSource):
         self.server = None
         self.autostart = settings.get("autostart", True)
 
+    @property
+    def is_running(self):
+        return self.status.value >= ServiceStatus.Starting.value
+
     async def run(self):
         """
         Should run the service until disconnected

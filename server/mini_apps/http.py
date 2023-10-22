@@ -33,25 +33,18 @@ class HttpServer(BaseService):
         self.base_url = settings.url.rstrip("/")
         self.websocket_url = self.base_url.replace("http", "ws") + self.websocket_settings
         self.common_template_paths = []
+        if self.websocket_settings:
+            self.app.add_routes([aiohttp.web.get(self.websocket_settings, self.socket_handler)])
 
-    def url(self, name, *, app=None, **kwargs):
+    def url(self, url_name, *, app=None, **kwargs):
         router = (app or self.app).router
-        for chunk in name.split(":"):
+        for chunk in url_name.split(":"):
             resource = router.named_resources()[chunk]
             try:
                 router = resource._app.router
             except Exception:
                 break
         return URL(self.base_url + str(resource.url_for(**kwargs)))
-
-    def register_routes(self):
-        """
-        Registers built-in routes
-        """
-        if self.websocket_settings:
-            self.app.add_routes([aiohttp.web.get(self.websocket_settings, self.socket_handler)])
-
-        self.app.add_routes([aiohttp.web.get("/settings.json", self.client_settings)])
 
     def register_consumer(self, what, service: Service):
         """
@@ -80,7 +73,6 @@ class HttpServer(BaseService):
 
             self.http_provider.on_start()
             self.socket_provider.on_start()
-            self.register_routes()
 
             runner = aiohttp.web.AppRunner(self.app)
             await runner.setup()
@@ -199,11 +191,6 @@ class HttpServer(BaseService):
                     await client.send(type="error", msg="Internal server error")
         except (asyncio.exceptions.IncompleteReadError):
             return
-
-    async def client_settings(self, request):
-        return aiohttp.web.json_response({
-            "socket": self.base_url.replace("http", "ws") + self.settings.websocket
-        })
 
     def provides(self):
         provides = ["http"]

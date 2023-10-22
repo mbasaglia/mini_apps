@@ -1,6 +1,7 @@
+import io
 import aiohttp
 
-from mini_apps.web import template_view, JinjaApp
+from mini_apps.web import template_view, JinjaApp, view
 from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
 
@@ -12,6 +13,10 @@ def admin_view(*args, **kwargs):
 
 
 class AdminApp(JinjaApp):
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.bot_pics = {}
+
     def context(self, title, dict):
         dict.update(
             static=self.url + "static/",
@@ -41,3 +46,21 @@ class AdminApp(JinjaApp):
             "services": services,
             "bots": bots,
         })
+
+    def get_bot(self, request: aiohttp.web.Request):
+        name = request.match_info["name"]
+        bot = self.settings.apps.get(name)
+        if not isinstance(bot, TelegramBot):
+            raise aiohttp.web.HTTPNotFound()
+        return bot
+
+    @view("/bot/{name}/picture.jpg", name="bot_picture")
+    async def bot_picture(self, request: aiohttp.web.Request):
+        bot = self.get_bot(request)
+        if bot.name not in self.bot_pics:
+            file = io.BytesIO()
+            await bot.telegram.download_profile_photo(bot.telegram_me, file, download_big=False)
+            self.bot_pics[bot.name] = file.getvalue()
+
+        return aiohttp.web.Response(body=self.bot_pics[bot.name], content_type="image/jpeg")
+

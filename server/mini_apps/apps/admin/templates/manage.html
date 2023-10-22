@@ -25,7 +25,7 @@
     <tbody>
         {% for service in services %}
             <tr>
-                <td>{{ service.name }}</td>
+                <td><pre><code>{{ service.name }}</code></pre></td>
                 <td>{{ service_status(service.status) }}</td>
                 <td><pre><code>{{ service.__class__.__module__ }}.{{ service.__class__.__name__ }}</code></pre></td>
             </tr>
@@ -37,21 +37,37 @@
 <table class="table">
     <thead>
         <tr>
-            <th>Username</th>
-            <th>Service Name</th>
+            <th>Name</th>
+            <th>Picture</th>
             <th>Status</th>
-            <th>Class</th>
+            <th>Service</th>
             <th>Token</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for bot in bots %}
             <tr>
-                <td>@{{ bot.telegram_me.username }}</td>
-                <td>{{ bot.name }}</td>
-                <td>{{ bot.status.name }}</td>
-                <td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td>
-                <td><pre><code>{{ bot.settings.bot_token }}</code></pre></td>
+                <td>
+                    <p>{{ bot.telegram_me.first_name }}</p>
+                    <p><a href="https://t.me/{{ bot.telegram_me.username }}">@{{ bot.telegram_me.username }}</a></p>
+                </td>
+                <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
+                <td>{{ service_status(bot.status) }}</td>
+                <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
+                <td style="font-size: small"><pre><code>{{ bot.settings.bot_token }}</code></pre></td>
+                <td>
+                    <ul class="buttons" style="flex-wrap: nowrap;">
+                        <li><a href="" title="Remove">{{ icon("trash") }}</a></li>
+                        <li><a href="" title="Details">{{ icon("info-circle") }}</a></li>
+                        {% if bot.is_running %}
+                            <li><a href="" title="Stop">{{ icon("pause-circle", "regular") }}</a></li>
+                        {% else %}
+                            <li><a href="" title="Start">{{ icon("play-circle", "regular") }}</a></li>
+                        {% endif %}
+                        <li><a href="" title="Reconnect">{{ icon("sync") }}</a></li>
+                    </ul>
+                </td>
             </tr>
         {% endfor %}
     </tbody>
