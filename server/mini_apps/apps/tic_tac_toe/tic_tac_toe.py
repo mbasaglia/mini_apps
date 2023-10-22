@@ -5,7 +5,7 @@ import hashids
 import telethon
 
 from mini_apps.telegram import TelegramMiniApp, bot_command
-from mini_apps.web import WebApp, ExtendedApplication, template_view
+from mini_apps.web import ExtendedApplication, template_view
 from mini_apps.service import Client
 
 

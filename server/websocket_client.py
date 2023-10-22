@@ -5,8 +5,6 @@ import sys
 
 import websockets
 
-from mini_apps.settings import Settings
-
 
 async def connect_stdin():
     loop = asyncio.get_event_loop()
