@@ -52,7 +52,7 @@
             document.getElementById("event-list")
         );
 
-        mini_event_app.connect_from_settings();
+        mini_event_app.connect("{{ socket }}");
 
         mini_event_app.connect_ui();
 

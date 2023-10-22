@@ -13,7 +13,7 @@ def clean_telegram_auth(data: dict, bot_token: str, max_age=datetime.timedelta(d
 
     data_check = sorted(
         "%s=%s" % (key, value)
-        for key, value in data.items()
+        for key, value in clean.items()
     )
     data_check_string = "\n".join(data_check)
 
@@ -26,7 +26,7 @@ def clean_telegram_auth(data: dict, bot_token: str, max_age=datetime.timedelta(d
     correct_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), hashlib.sha256).hexdigest()
 
     # If the hash is invalid, return None
-    if clean.get("hash", "") != correct_hash:
+    if hash != correct_hash:
         return None
 
     # Check age

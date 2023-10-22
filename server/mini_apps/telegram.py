@@ -9,7 +9,7 @@ from telethon.sessions import MemorySession
 from .service import ServiceStatus, Service
 from .command import bot_command, BotCommand
 from .apps.auth.user import clean_telegram_auth, User
-from .web import SocketService, WebApp
+from .web import SocketService, JinjaApp
 
 
 def meta_bot(name, bases, attrs):
@@ -207,7 +207,7 @@ class TelegramBot(Service):
         return bot_command(*args, **kwargs)
 
 
-class TelegramMiniApp(TelegramBot, WebApp, SocketService):
+class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
     """
         Telegram bot with web frontend and socket connection
     """

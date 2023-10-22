@@ -44,16 +44,6 @@ export class SocketConnection extends EventTarget
     }
 
     /**
-     * \brief Connects based on a settings file
-     */
-    connect_from_settings(settings_url)
-    {
-        fetch(settings_url)
-        .then(resp => resp.json())
-        .then((data => this.connect(data.socket)).bind(this));
-    }
-
-    /**
      * \brief Sends the given data through the socket
      */
     send(data)

@@ -1,4 +1,4 @@
-import { App } from "../src/app.js";
+import { App } from "/mini_apps/src/app.js";
 
 
 export class TicTacToe extends App

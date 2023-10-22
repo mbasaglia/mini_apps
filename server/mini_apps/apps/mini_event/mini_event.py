@@ -14,7 +14,7 @@ from mini_apps.apps.auth.user import User
 from mini_apps.telegram import TelegramMiniApp, bot_command
 from mini_apps.db import BaseModel, ServiceWithModels
 from mini_apps.service import Client
-from mini_apps.web import ExtendedApplication
+from mini_apps.web import ExtendedApplication, template_view
 
 
 class Event(BaseModel):
@@ -67,9 +67,18 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         """
         return [Event, UserEvent]
 
+    @template_view("/", template="mini_event.html")
+    async def index(self, request):
+        return {
+            "socket": self.http.websocket_url
+        }
+
     def prepare_app(self, http, app: ExtendedApplication):
-        app.add_static_path("/", self.get_server_path() / "client" / "index.html")
-        app.add_static_path("/", self.get_server_path() / "client")
+        """
+        Registers routes to the web server
+        """
+        super().prepare_app(http, app)
+        app.add_static_path("/mini_event.js", self.get_server_path() / "mini_event.js")
 
     def on_provider_start(self, provider):
         """

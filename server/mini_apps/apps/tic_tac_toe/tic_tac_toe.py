@@ -4,8 +4,8 @@ import random
 import hashids
 import telethon
 
-from mini_apps.bot import Bot
-from mini_apps.web import WebApp, ExtendedApplication
+from mini_apps.telegram import TelegramMiniApp, bot_command
+from mini_apps.web import WebApp, ExtendedApplication, template_view
 from mini_apps.service import Client
 
 
@@ -166,7 +166,7 @@ class Game:
         return True
 
 
-class TicTacToe(WebApp, Bot):
+class TicTacToe(TelegramMiniApp):
     """
     Tic Tac Toe Game
     """
@@ -174,12 +174,18 @@ class TicTacToe(WebApp, Bot):
         super().__init__(*args)
         self.players = {}
 
+    @template_view("/", template="tic_tac_toe.html")
+    async def index(self, request):
+        return {
+            "socket": self.http.websocket_url
+        }
+
     def prepare_app(self, http, app: ExtendedApplication):
         """
         Registers routes to the web server
         """
-        app.add_static_path("/", self.get_server_path() / "client" / "index.html")
-        app.add_static_path("/", self.get_server_path() / "client")
+        super().prepare_app(http, app)
+        app.add_static_path("/tic_tac_toe.js", self.get_server_path() / "tic_tac_toe.js")
 
     def inline_buttons(self):
         """
@@ -190,7 +196,7 @@ class TicTacToe(WebApp, Bot):
             types.TypeKeyboardButtonRow([
                 types.KeyboardButtonWebView(
                     "Play",
-                    self.settings.url
+                    self.url
                 )
             ])
         ])
@@ -257,7 +263,7 @@ class TicTacToe(WebApp, Bot):
             except Exception:
                 self.log_exception()
 
-    @Bot.bot_command("start", description="Start message")
+    @bot_command("start", description="Start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
@@ -352,7 +358,7 @@ class TicTacToe(WebApp, Bot):
                 description=player.game.id,
                 text="[Play Tic Tac Toe with me!](https://t.me/{me}/{shortname}?startapp={id})".format(
                     me=self.telegram_me.username,
-                    shortname=self.settings.short_name,
+                    shortname=self.settings.get("short_name", self.name),
                     id=player.game.id
                 )
             ))

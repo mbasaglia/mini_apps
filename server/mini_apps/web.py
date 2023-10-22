@@ -239,7 +239,8 @@ class JinjaApp(WebApp):
 
         template_paths += [
             self.settings.paths.root / "templates",
-            self.get_server_path() / "templates"
+            self.get_server_path() / "templates",
+            self.get_server_path(),
         ]
 
         template_paths += self.http.common_template_paths

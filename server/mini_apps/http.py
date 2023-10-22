@@ -29,8 +29,9 @@ class HttpServer(BaseService):
         self.http_provider = ServiceProvider("http", self)
         self.socket_provider = ServiceProvider("websocket", self)
         self.stop_future = None
-        self.websocket_settings = settings.get("websocket")
+        self.websocket_settings = settings.get("websocket", "")
         self.base_url = settings.url.rstrip("/")
+        self.websocket_url = self.base_url.replace("http", "ws") + self.websocket_settings
         self.common_template_paths = []
 
     def url(self, name, *, app=None, **kwargs):

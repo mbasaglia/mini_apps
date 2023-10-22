@@ -55,8 +55,8 @@ export class App
         this.user = ev.detail;
     }
 
-    connect_from_settings()
+    connect(url)
     {
-        this.connection.connect_from_settings("/settings.json");
+        this.connection.connect(url);
     }
 }
