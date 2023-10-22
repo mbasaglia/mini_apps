@@ -1,5 +1,4 @@
 import json
-import hmac
 import datetime
 
 
@@ -9,7 +8,6 @@ from yarl import URL
 
 from mini_apps.web import JinjaApp, view, template_view
 from mini_apps.middleware.base import Middleware
-from ...settings import AppSettings, SettingsValue
 from .user import User, UserFilter, clean_telegram_auth
 
 
@@ -134,6 +132,7 @@ def require_user(func=None, *, is_admin=False):
         return func
 
     return deco
+
 
 def require_admin(func):
     func.requires_auth = True

@@ -91,25 +91,18 @@ class Settings(SettingsValue):
     Global settings
     """
     def __init__(self, data: dict):
-        database = data.pop("database")
         apps = data.pop("apps")
         log = data.pop("log", {})
         super().__init__(data)
 
-        self._database_settings = database
-        self._database = None
-
         self.init_logging(log)
         self.apps = SettingsValue()
         self.app_list = []
-        self.database_models = []
 
         for app_settings in apps:
             if app_settings.pop("enabled", True):
                 app = self.load_app(app_settings)
                 self.add_app(app)
-
-        self.server.url = self.server.url.rstrip("/")
 
     def add_app(self, app):
         if app.name in self.apps:
@@ -198,21 +191,6 @@ class Settings(SettingsValue):
             paths=paths
         )
 
-    def load_database(self, db_settings: dict):
-        """
-        Loads database settings
-        """
-        cls = self.import_class(db_settings.pop("class"))
-
-        if cls.__name__ == "SqliteDatabase" and db_settings["database"] != ":memory:":
-            database_path = self.paths.root / db_settings["database"]
-            database_path.parent.mkdir(parents=True, exist_ok=True)
-            db_settings["database"] = str(database_path)
-
-        LogSource.get_logger("database").debug("Database %s with %s" % (db_settings.get("database"), cls.__name__))
-
-        return cls(**db_settings)
-
     def load_app(self, app_settings: dict):
         """
         Loads a mini app / bot
@@ -220,7 +198,6 @@ class Settings(SettingsValue):
         cls = self.import_class(app_settings.pop("class"))
         settings = AppSettings(app_settings, self)
         app = cls(settings)
-        app.register_models()
         return app
 
     def import_class(self, import_string: str):
@@ -229,29 +206,3 @@ class Settings(SettingsValue):
         """
         module_name, class_name = import_string.rsplit(".", 1)
         return getattr(importlib.import_module(module_name), class_name)
-
-    def connect_database(self):
-        """
-        Connects to the database and initializes the models
-        """
-        from .db import connect
-
-        database = connect(self.database)
-        database.connect()
-        database.create_tables(self.database_models)
-        return database
-
-    def http_server(self, host=None, port=None):
-        """
-        Returns a WebsocketServer instance based on settings
-        """
-        from .http import HttpServer
-
-        if not isinstance(self.server, HttpServer):
-            self.server = HttpServer(
-                host or self.server.hostname,
-                port or self.server.port,
-                AppSettings(self.server.dict(), self),
-            )
-
-        return self.server

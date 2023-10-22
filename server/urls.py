@@ -41,7 +41,6 @@ def print_app(app):
             print(resource)
 
 
-
 if __name__ == "__main__":
     args = parser.parse_args()
     settings = Settings.load_global()

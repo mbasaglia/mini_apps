@@ -3,8 +3,8 @@ import json
 import inspect
 import pathlib
 
-from .settings import LogSource
-from .apps.auth.user import User, UserFilter
+from .settings import LogSource, Settings
+from .apps.auth.user import User
 
 
 class Client:
@@ -14,7 +14,7 @@ class Client:
     def __init__(self, socket):
         self.id = id(self)
         self.socket = socket
-        self.user = None
+        self.user: User = None
         self.app = None
 
     async def send(self, **data):
@@ -39,14 +39,12 @@ class BaseService(LogSource):
     """
     Abstract class for services that can run on the server
     """
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         super().__init__(settings.get("name", self.default_name()))
         self.settings = settings
         self.status = ServiceStatus.Disconnected
         self.server = None
         self.autostart = settings.get("autostart", True)
-        if not self.settings.get("url"):
-            self.settings.url = "%s/%s/" % (self.settings.server.url.rstrip("/"), self.name)
 
     async def run(self):
         """
@@ -70,21 +68,56 @@ class BaseService(LogSource):
             return chunks[-2]
         return chunks[-1]
 
+    def register_consumer(self, what: str, service: "Service"):
+        raise NotImplementedError
 
-class Service(BaseService):
+    def provides(self):
+        """
+        List of manager service names provided by this service
+        """
+        return []
+
+    def consumes(self):
+        """
+        List of manager service names this service uses
+        """
+        return []
+
+
+class MetaService(type):
+    def __new__(cls, name, bases, attrs):
+        meta_processors = set()
+        for base in bases:
+            meta_processors |= getattr(base, "meta_processors", set())
+
+        for meta_processor in meta_processors:
+            meta_processor(name, bases, attrs)
+
+        created = super().__new__(cls, name, bases, attrs)
+        created.meta_processors = meta_processors
+        return created
+
+
+class Service(BaseService, metaclass=MetaService):
     """
     Service that can be registered on HttpServer
     """
 
-    def register_models(self):
+    def on_provider_added(self, provider: "ServiceProvider"):
         """
-        Override in derived classes to register the models in self.settings.database_models
+        Called when the app is added to the service provider
         """
         pass
 
-    def on_server_start(self):
+    def on_provider_start(self, provider: "ServiceProvider"):
         """
-        Called when the server starts
+        Called when the service provider starts
+        """
+        pass
+
+    def on_provider_stop(self, provider: "ServiceProvider"):
+        """
+        Called when the service provider stops
         """
         pass
 
@@ -101,67 +134,21 @@ class Service(BaseService):
         """
         raise NotImplementedError
 
-    @property
-    def accepts_http(self):
-        return False
 
-    @property
-    def accepts_socket(self):
-        return False
+class ServiceProvider:
+    def __init__(self, name, service: BaseService):
+        self.name = name
+        self.apps = {}
+        self.service = service
 
+    def register_app(self, app: Service):
+        self.apps[app.name] = app
+        app.on_provider_added(self)
 
-class SocketService(Service):
-    """
-    Service that can handle socket connections
-    """
-    def __init__(self, settings):
-        super().__init__(settings)
-        self.clients = {}
-        self.filter = UserFilter.from_settings(settings)
+    def on_start(self):
+        for app in self.apps.values():
+            app.on_provider_start(self)
 
-    async def on_client_authenticated(self, client: Client):
-        """
-        Called when a client has been authenticated
-        """
-        pass
-
-    async def login(self, client: Client, message: dict):
-        """Login logic
-
-        :param client: Client requesting to log in
-        :param message: Data as sent from the client
-        """
-        client.user = self.filter.filter_user(self.get_user(message))
-        if client.user:
-            self.clients[client.id] = client
-
-    def get_user(self, message: dict):
-        """
-        Called to authenticate a user based on the mini app initData
-        Return None if authentication fails, otherwise return a user object
-        """
-        return None
-
-    async def handle_message(self, client: Client, type: str, data: dict):
-        """
-        Override to handle socket messages
-        """
-        pass
-
-    async def disconnect(self, client: Client):
-        """
-        Disconnects the given client
-        """
-        self.clients.pop(client.id)
-        self.log.debug("#%s Disconnected", client.id)
-        await self.on_client_disconnected(client)
-
-    async def on_client_disconnected(self, client: Client):
-        """
-        Called when a client disconnects from the server
-        """
-        pass
-
-    @property
-    def accepts_socket(self):
-        return True
+    def on_stop(self):
+        for app in self.apps.values():
+            app.on_provider_stop(self)

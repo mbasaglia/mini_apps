@@ -9,7 +9,8 @@ import aiohttp_jinja2
 
 import jinja2
 
-from .service import Service, ServiceStatus
+from .service import Service, ServiceStatus, Client
+from .apps.auth.user import UserFilter
 
 
 class FileResource(aiohttp.web_urldispatcher.PlainResource):
@@ -54,24 +55,21 @@ class View:
         )
 
 
-class MetaWebApp(type):
+def meta_webapp(name, bases, attrs):
     """
     Metaclass for telegram bot to allow automatic registration of commands from methods
     """
-    def __new__(cls, name, bases, attrs):
-        views = []
-        for base in bases:
-            base_views = getattr(base, "views", [])
-            views += base_views
+    views = []
+    for base in bases:
+        base_views = getattr(base, "views", [])
+        views += base_views
 
-        for attr in attrs.values():
-            view = getattr(attr, "view", None)
-            if view and isinstance(view, View):
-                views.append(view)
+    for attr in attrs.values():
+        view = getattr(attr, "view", None)
+        if view and isinstance(view, View):
+            views.append(view)
 
-        attrs["views"] = views
-
-        return super().__new__(cls, name, bases, attrs)
+    attrs["views"] = views
 
 
 def view_decorator(func, url=None, methods=["get"], name=None):
@@ -133,23 +131,31 @@ class ExtendedApplication(aiohttp.web.Application):
         app.pre_freeze()
 
 
-class WebApp(Service, metaclass=MetaWebApp):
+class WebApp(Service):
     """
     Web app
     """
     views = []
+    meta_processors = set([meta_webapp])
 
     def __init__(self, settings):
         super().__init__(settings)
 
-    @property
-    def accepts_http(self):
-        return True
+    def consumes(self):
+        return super().consumes() + ["http"]
+
+    def on_provider_added(self, provider):
+        super().on_provider_added(provider)
+        if provider.name == "http":
+            self.add_routes(provider.service)
 
     def add_routes(self, http):
         """
         Registers routes to the web server
         """
+        self.url = self.settings.get("url")
+        if not self.url:
+            self.url = "%s/%s/" % (http.base_url, self.name)
 
         app = ExtendedApplication()
         self.http = http
@@ -261,3 +267,59 @@ class JinjaApp(WebApp):
             body += "\nTemplate Paths:\n"
             body += pprint.pformat(env.loader.searchpath)
         return aiohttp.web.Response(body=body, status=500)
+
+
+class SocketService(Service):
+    """
+    Service that can handle socket connections
+    """
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.clients = {}
+        self.filter = UserFilter.from_settings(settings)
+
+    async def on_client_authenticated(self, client: Client):
+        """
+        Called when a client has been authenticated
+        """
+        pass
+
+    async def login(self, client: Client, message: dict):
+        """Login logic
+
+        :param client: Client requesting to log in
+        :param message: Data as sent from the client
+        """
+        client.user = self.filter.filter_user(self.get_user(message))
+        if client.user:
+            self.clients[client.id] = client
+
+    def get_user(self, message: dict):
+        """
+        Called to authenticate a user based on the mini app initData
+        Return None if authentication fails, otherwise return a user object
+        """
+        return None
+
+    async def handle_message(self, client: Client, type: str, data: dict):
+        """
+        Override to handle socket messages
+        """
+        pass
+
+    async def disconnect(self, client: Client):
+        """
+        Disconnects the given client
+        """
+        self.clients.pop(client.id)
+        self.log.debug("#%s Disconnected", client.id)
+        await self.on_client_disconnected(client)
+
+    async def on_client_disconnected(self, client: Client):
+        """
+        Called when a client disconnects from the server
+        """
+        pass
+
+    def consumes(self):
+        return super().consumes() + ["websocket"]

@@ -10,9 +10,11 @@ import aiocron
 import peewee
 import telethon
 
-from mini_apps.models import User
-from mini_apps.bot import Bot, Client
-from mini_apps.db import BaseModel
+from mini_apps.apps.auth.user import User
+from mini_apps.bot import Bot
+from mini_apps.db import BaseModel, ServiceWithModels
+from mini_apps.service import Client
+from mini_apps.web import WebApp, SocketService, ExtendedApplication
 
 
 class Event(BaseModel):
@@ -37,7 +39,7 @@ class Event(BaseModel):
 
 
 class UserEvent(BaseModel):
-    user = peewee.ForeignKeyField(User, backref="events")
+    telegram_id = peewee.IntegerField()
     event = peewee.ForeignKeyField(Event, backref="attendees")
 
     class Meta:
@@ -49,7 +51,7 @@ class UserEvent(BaseModel):
         )
 
 
-class MiniEventApp(Bot):
+class MiniEventApp(Bot, WebApp, SocketService, ServiceWithModels):
     """
     This class has custom logic
     """
@@ -59,26 +61,27 @@ class MiniEventApp(Bot):
         self.events = {}
         self.sorted_events = []
 
-    def register_models(self):
+    def database_models(self):
         """
         Registers the database models
         """
-        self.settings.database_models += [User, Event, UserEvent]
+        return [Event, UserEvent]
 
-    def add_routes(self, http):
-        """
-        Registers routes to the web server
-        """
-        http.add_static_web_app(self, self.get_server_path() / "client")
+    def prepare_app(self, http, app: ExtendedApplication):
+        app.add_static_path("/", self.get_server_path() / "client" / "index.html")
+        app.add_static_path("/", self.get_server_path() / "client")
 
-    def on_server_start(self):
+    def on_provider_start(self, provider):
         """
         Called when the server starts
         """
-        self.load_events()
+        super().on_provider_start(provider)
 
-        # Run every minute
-        aiocron.crontab('* * * * * 0', func=self.check_starting)
+        if provider.name == "database":
+            self.load_events()
+
+            # Run every minute
+            aiocron.crontab('* * * * * 0', func=self.check_starting)
 
     def load_events(self):
         """
@@ -113,7 +116,7 @@ class MiniEventApp(Bot):
             return
 
         # Create the relation if it doesn't exist
-        created = UserEvent.get_or_create(user_id=client.user.id, event_id=event_id)[1]
+        created = UserEvent.get_or_create(telegram_id=client.user.telegram_id, event_id=event_id)[1]
 
         # Update the event on all clients
         if created:
@@ -131,7 +134,7 @@ class MiniEventApp(Bot):
             return
 
         # If the user is attending the event, delete the attendance
-        attendance = UserEvent.get_or_none(user_id=client.user.id, event_id=event_id)
+        attendance = UserEvent.get_or_none(telegram_id=client.user.telegram_id, event_id=event_id)
         if attendance:
             attendance.delete_instance()
             await self.broadcast_event_change(event)
@@ -243,7 +246,7 @@ class MiniEventApp(Bot):
         data = event.to_json()
 
         data["image"] = self.settings.media_url + event.image
-        data["attending"] = bool(event.attendees.filter(UserEvent.user_id == user.id).first())
+        data["attending"] = bool(event.attendees.filter(UserEvent.telegram_id == user.telegram_id).first())
 
         # This allows passing the attendee count so we don't have to calculate it
         # multiple times on broadcast_event_change()
@@ -282,7 +285,7 @@ class MiniEventApp(Bot):
             types.TypeKeyboardButtonRow([
                 types.KeyboardButtonWebView(
                     "View Events",
-                    self.settings.url
+                    self.url
                 )
             ])
         ])
@@ -383,7 +386,7 @@ class MiniEventApp(Bot):
                             time.sleep(1)
 
                         await self.telegram.send_message(
-                            user.user.telegram_id,
+                            user.telegram_id,
                             message=text
                         )
 

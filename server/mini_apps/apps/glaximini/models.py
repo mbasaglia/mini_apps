@@ -2,7 +2,6 @@
 import peewee
 
 from mini_apps.db import BaseModel, JSONField
-from mini_apps.models import User
 
 
 class Document(BaseModel):
@@ -16,7 +15,7 @@ class Document(BaseModel):
 
 
 class UserDoc(BaseModel):
-    user = peewee.ForeignKeyField(User, backref="documents")
+    telegram_id = peewee.IntegerField()
     document = peewee.ForeignKeyField(Document, backref="users")
 
     class Meta:

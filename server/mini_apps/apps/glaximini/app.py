@@ -18,11 +18,11 @@ class Glaximini(Bot):
         self.documents = {}
         self.help_pic = None
 
-    def register_models(self):
+    def database_models(self):
         """
         Registers the database models
         """
-        self.settings.database_models += [models.User, models.Document, models.UserDoc, models.Shape, models.Keyframe]
+        return [models.Document, models.UserDoc, models.Shape, models.Keyframe]
 
     def add_routes(self, http):
         """
@@ -77,7 +77,7 @@ class Glaximini(Bot):
 
     def save_document(self, client: Client):
         if client.document:
-            with self.settings.database.atomic():
+            with self.database.atomic():
                 client.document.save()
 
     async def handle_message(self, client: Client, type: str, data: dict):

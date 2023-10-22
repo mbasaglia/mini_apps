@@ -1,46 +1,41 @@
-import asyncio
-import json
-import hmac
-import hashlib
 import re
+import json
+import asyncio
 import urllib.parse
 
 import telethon
 from telethon.sessions import MemorySession
 
-from .models import User
-from .service import SocketService, ServiceStatus
+from .service import ServiceStatus, Service
 from .command import bot_command, BotCommand
-from .apps.auth.user import clean_telegram_auth
+from .apps.auth.user import clean_telegram_auth, User
 
 
-class MetaBot(type):
+def meta_bot(name, bases, attrs):
     """
     Metaclass for telegram bot to allow automatic registration of commands from methods
     """
-    def __new__(cls, name, bases, attrs):
-        bot_commands = {}
-        for base in bases:
-            base_commands = getattr(base, "bot_commands", {})
-            bot_commands.update(base_commands)
+    bot_commands = {}
+    for base in bases:
+        base_commands = getattr(base, "bot_commands", {})
+        bot_commands.update(base_commands)
 
-        for attr in attrs.values():
-            command = getattr(attr, "bot_command", None)
-            if command and isinstance(command, BotCommand):
-                bot_commands[command.trigger] = command
+    for attr in attrs.values():
+        command = getattr(attr, "bot_command", None)
+        if command and isinstance(command, BotCommand):
+            bot_commands[command.trigger] = command
 
-        attrs["bot_commands"] = bot_commands
-
-        return super().__new__(cls, name, bases, attrs)
+    attrs["bot_commands"] = bot_commands
 
 
-class Bot(SocketService, metaclass=MetaBot):
+class Bot(Service):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own app
     """
     bot_commands = {}
     command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)")
+    meta_processors = set([meta_bot])
 
     def __init__(self, settings):
         super().__init__(settings)
@@ -60,9 +55,8 @@ class Bot(SocketService, metaclass=MetaBot):
             else:
                 return None
 
-        with self.settings.database.atomic():
-            user = User.get_user(data["user"])
-            user.telegram_data = data
+        user = User.get_user(data["user"])
+        user.telegram_data = data
 
         return user
 

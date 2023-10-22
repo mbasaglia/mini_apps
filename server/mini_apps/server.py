@@ -3,6 +3,7 @@ import asyncio
 from .settings import Settings, LogSource
 from .service import Service
 from .reloader import Reloader
+from .http import HttpServer
 
 
 async def coro_wrapper(coro, logger: LogSource):
@@ -59,22 +60,17 @@ class Server(LogSource):
         Adds a service to the server
         """
         self.services[service.name] = ServerTask(service)
+        service.server = self
 
     def setup_run(self, host, port):
-        database = self.settings.connect_database()
-
         # Register all the services
-        self.http = self.settings.http_server(host, port)
-
         for app in self.settings.app_list:
+            if isinstance(app, HttpServer):
+                if host:
+                    app.host = host
+                if port:
+                    app.port = port
             self.add_service(app)
-            self.http.register_service(app)
-            app.server = self
-
-        self.http.register_routes()
-        self.add_service(self.http)
-
-        return database
 
     def get_server_task(self, service):
         if isinstance(service, ServerTask):
@@ -97,7 +93,7 @@ class Server(LogSource):
 
         :return: True if the server needs to be reloaded
         """
-        database = self.setup_run(host, port)
+        self.setup_run(host, port)
 
         # Start the tasks
         for task in self.services.values():
@@ -123,7 +119,6 @@ class Server(LogSource):
 
         finally:
             self.log.info("Shutting down")
-            database.close()
 
             for task in self.services.values():
                 await self.stop_service(task)

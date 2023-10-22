@@ -7,7 +7,7 @@ import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from yarl import URL
 
-from .service import BaseService, ServiceStatus, Client, Service
+from .service import BaseService, ServiceStatus, Client, Service, ServiceProvider
 from .middleware.csrf import CsrfMiddleware
 from .web import ExtendedApplication
 
@@ -17,19 +17,20 @@ class HttpServer(BaseService):
     Class that runs the https server and dispatches incoming messages to the installed apps / routes
     """
 
-    def __init__(self, host, port, settings):
+    def __init__(self, settings):
         super().__init__(settings)
         self.app = ExtendedApplication()
         self.middleware = [
             CsrfMiddleware(self)
         ]
         aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.secret_key))
-        self.host = host
-        self.port = port
-        self.apps = {}
+        self.host = settings.get("host", "localhost")
+        self.port = settings.get("port", 2537)
+        self.http_provider = ServiceProvider("http", self)
+        self.socket_provider = ServiceProvider("websocket", self)
         self.stop_future = None
         self.websocket_settings = settings.get("websocket")
-        self.base_url = settings.url
+        self.base_url = settings.url.rstrip("/")
         self.common_template_paths = []
 
     def url(self, name, *, app=None, **kwargs):
@@ -51,15 +52,14 @@ class HttpServer(BaseService):
 
         self.app.add_routes([aiohttp.web.get("/settings.json", self.client_settings)])
 
-    def register_service(self, service: Service):
+    def register_consumer(self, what, service: Service):
         """
         Registeres a service
         """
-        if service.accepts_http:
-            self.apps[service.name] = service
-            service.add_routes(self)
-        elif service.accepts_socket:
-            self.apps[service.name] = service
+        if what == "http":
+            self.http_provider.register_app(service)
+        elif what == "websocket":
+            self.socket_provider.register_app(service)
 
     def register_middleware(self, middleware):
         self.middleware.append(middleware)
@@ -77,8 +77,9 @@ class HttpServer(BaseService):
             for mid in self.middleware:
                 self.app.middlewares.append(mid.process_request)
 
-            for app in self.apps.values():
-                app.on_server_start()
+            self.http_provider.on_start()
+            self.socket_provider.on_start()
+            self.register_routes()
 
             runner = aiohttp.web.AppRunner(self.app)
             await runner.setup()
@@ -91,18 +92,13 @@ class HttpServer(BaseService):
             await self.stop_future
             self.log.info("Stopped")
             self.status = ServiceStatus.Disconnected
+
+            self.http_provider.on_stop()
+            self.socket_provider.on_stop()
+
         except Exception:
             self.status = ServiceStatus.Crashed
             self.log_exception()
-
-    def add_static_web_app(self, bot, path):
-        """
-        Shorthand for serving a directory and its index.html for a web app
-        """
-        app = aiohttp.web.Application()
-        app.router.register_resource(FileResource("/", path / "index.html"))
-        app.router.add_static("/", path)
-        self.app.add_subapp("/%s" % bot.name, app)
 
     async def stop(self):
         """
@@ -183,7 +179,7 @@ class HttpServer(BaseService):
                     # Find the app this message is for
                     app_name = data.pop("app", None)
                     if app_name:
-                        app = self.apps.get(app_name)
+                        app = self.socket_provider.apps.get(app_name)
                         if app:
                             yield app, data, message.data
                             continue
@@ -200,3 +196,6 @@ class HttpServer(BaseService):
         return aiohttp.web.json_response({
             "socket": self.base_url + self.settings.websocket
         })
+
+    def provides(self):
+        return ["websocket", "http"]
