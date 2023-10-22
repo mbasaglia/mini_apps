@@ -1,6 +1,6 @@
 {% extends "admin-base.html" %}
 
-{% from "macros.html" import service_status %}
+{% from "macros.html" import service_status, bot_actions %}
 
 {% block content %}
 <h1>User</h1>
@@ -50,23 +50,14 @@
             <tr>
                 <td>
                     <p>{{ bot.telegram_me.first_name }}</p>
-                    <p><a href="https://t.me/{{ bot.telegram_me.username }}">@{{ bot.telegram_me.username }}</a></p>
+                    <p><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></p>
                 </td>
                 <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
                 <td>{{ service_status(bot.status) }}</td>
                 <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
-                <td style="font-size: small"><pre><code>{{ bot.settings.bot_token }}</code></pre></td>
+                <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
                 <td>
-                    <ul class="buttons" style="flex-wrap: nowrap;">
-                        <li><a href="" title="Remove">{{ icon("trash") }}</a></li>
-                        <li><a href="" title="Details">{{ icon("info-circle") }}</a></li>
-                        {% if bot.is_running %}
-                            <li><a href="" title="Stop">{{ icon("pause-circle", "regular") }}</a></li>
-                        {% else %}
-                            <li><a href="" title="Start">{{ icon("play-circle", "regular") }}</a></li>
-                        {% endif %}
-                        <li><a href="" title="Reconnect">{{ icon("sync") }}</a></li>
-                    </ul>
+                    <ul class="buttons">{{ bot_actions(bot) }}</ul>
                 </td>
             </tr>
         {% endfor %}

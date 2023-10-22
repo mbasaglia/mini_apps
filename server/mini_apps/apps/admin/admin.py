@@ -4,10 +4,12 @@ import aiohttp
 from mini_apps.web import template_view, JinjaApp, view
 from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
+from . import messages
 
 
 def admin_view(*args, **kwargs):
     def deco(func):
+        kwargs.setdefault("name", func.__name__)
         return require_admin(template_view(*args, **kwargs)(func))
     return deco
 
@@ -17,7 +19,7 @@ class AdminApp(JinjaApp):
         super().__init__(settings)
         self.bot_pics = {}
 
-    def context(self, title, dict):
+    def context(self, title, **dict):
         dict.update(
             static=self.url + "static/",
             title=title,
@@ -42,12 +44,12 @@ class AdminApp(JinjaApp):
             else:
                 services.append(service.service)
 
-        return self.context("Services", {
-            "services": services,
-            "bots": bots,
-        })
+        return self.context("Services",
+            services=services,
+            bots=bots,
+        )
 
-    def get_bot(self, request: aiohttp.web.Request):
+    def get_bot(self, request: aiohttp.web.Request) -> TelegramBot:
         name = request.match_info["name"]
         bot = self.settings.apps.get(name)
         if not isinstance(bot, TelegramBot):
@@ -64,3 +66,11 @@ class AdminApp(JinjaApp):
 
         return aiohttp.web.Response(body=self.bot_pics[bot.name], content_type="image/jpeg")
 
+    @admin_view("/bot/{name}/", template="details.html")
+    async def bot_details(self, request):
+        bot = self.get_bot(request)
+        commands = await bot.get_commands()
+        return self.context(bot.telegram_me.username,
+            bot=bot,
+            commands=commands
+        )

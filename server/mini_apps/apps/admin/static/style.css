@@ -90,7 +90,7 @@ ul.buttons {
     margin: 1em;
     padding: 0;
     list-style: none;
-    flex-flow: row wrap;
+    flex-flow: row;
     justify-content: center;
 }
 
@@ -291,4 +291,5 @@ table.table td, table.table th {
     text-align: center;
     width: 100%;
     display: inline-block;
+    white-space: pre;
 }

@@ -16,15 +16,16 @@
         <nav class="menu">
             <ul>
                 {% block nav %}
+                    <li><a href="{{ url("manage") }}">{{ icon("home") }} Overview</a></li>
                     <li class="separator"></li>
                     <span><img src="{{ user.pfp }}" /> {{ user.name }}</span>
                     <li><a href="{{ url('auth:logout') }}">{{ icon("sign-out-alt") }} Log out</a></li>
                 {% endblock %}
             </ul>
         </nav>
-        {% if messages %}
+        {% if request.messages %}
         <ul class="messages">
-            {% for message in messages %}
+            {% for message in request.messages %}
             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
                 {% if message.level_tag == "info" %}
                     {{ icon("info-circle") }}

@@ -1,16 +1,19 @@
-{% macro service_status(status) -%}
+{% macro service_status(status, show_name=False) -%}
     <span class="status" title="{{ status.name }}">
-    {% if status.name == "Disconnected" %}
+    {%- if status.name == "Disconnected" -%}
         {{ icon("pause") }}
-    {% elif status.name == "Crashed" %}
+    {%- elif status.name == "Crashed" -%}
         {{ icon("bug") }}
-    {% elif status.name == "Starting" %}
+    {%- elif status.name == "Starting" -%}
         {{ icon("clock", "regular") }}
-    {% elif status.name == "StartFlood" %}
+    {%- elif status.name == "StartFlood" -%}
         {{ icon("clock-rotate-left") }}
-    {% elif status.name == "Running" %}
+    {%- elif status.name == "Running" -%}
         {{ icon("check") }}
-    {% endif %}
+    {%- endif -%}
+    {%- if show_name -%}
+        &nbsp;{{ status.name }}
+    {%- endif -%}
     </span>
 {%- endmacro %}
 
@@ -18,3 +21,13 @@
     <i class="fa-{{ icon }} fa-{{ category }}"></i>
 {%- endmacro %}
 
+
+{% macro bot_actions(bot) -%}
+    <li><a href="{{ url("bot_details", name=bot.name) }}" title="Details">{{ icon("info-circle") }}</a></li>
+    {% if bot.is_running %}
+        <li><a href="" title="Stop">{{ icon("pause-circle", "regular") }}</a></li>
+    {% else %}
+        <li><a href="" title="Start">{{ icon("play-circle", "regular") }}</a></li>
+    {% endif %}
+    <li><a href="" title="Reconnect">{{ icon("sync") }}</a></li>
+{%- endmacro %}

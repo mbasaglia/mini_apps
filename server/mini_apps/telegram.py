@@ -42,6 +42,13 @@ class TelegramBot(Service):
         super().__init__(settings)
         self.telegram = None
         self.telegram_me = None
+        self.token = self.settings.bot_token
+
+    def telegram_link(self):
+        """
+        Return the url for telegram
+        """
+        return "https://t.me/" + self.telegram_me.username
 
     async def run(self):
         """
@@ -52,7 +59,6 @@ class TelegramBot(Service):
             session = self.settings.get("session", MemorySession())
             api_id = self.settings.api_id
             api_hash = self.settings.api_hash
-            bot_token = self.settings.bot_token
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
             dc = self.settings.get("telegram_server")
@@ -64,7 +70,7 @@ class TelegramBot(Service):
 
             while True:
                 try:
-                    await self.telegram.start(bot_token=bot_token)
+                    await self.telegram.start(bot_token=self.token)
                     break
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
                     self.status = ServiceStatus.StartFlood
@@ -90,6 +96,15 @@ class TelegramBot(Service):
     async def stop(self):
         if self.telegram and self.telegram.is_connected():
             self.telegram.disconnect()
+
+    async def get_commands(self):
+        """
+        Returns the bot commands from the server
+        """
+        r = await self.telegram(telethon.functions.bots.GetBotCommandsRequest(
+            telethon.tl.types.BotCommandScopeDefault(), "en"
+        ))
+        return r
 
     async def send_telegram_commands(self):
         """
