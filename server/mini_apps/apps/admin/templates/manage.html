@@ -1,8 +1,20 @@
-{% extends "auth-base.html" %}
+{% extends "admin-base.html" %}
+
+{% from "macros.html" import service_status %}
+
 {% block content %}
+<h1>User</h1>
+<table class="table">
+    <tr><th>Name</th><td>{{ user.name }}</td></tr>
+    <tr><th>Icon</th><td><img src="{{ user.pfp }}" class="profile-pic"/></td></tr>
+    {% if user.telegram_username %}
+    <tr><th>Username</th><td><a href="https://t.me/{{ user.telegram_username }}">@{{ user.telegram_username }}</td></tr>
+    {% endif %}
+    <tr><th>ID</th><td>{{ user.telegram_id }}</td></tr>
+</table>
 
 <h1>Services</h1>
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Name</th>
@@ -14,7 +26,7 @@
         {% for service in services %}
             <tr>
                 <td>{{ service.name }}</td>
-                <td>{{ service.status.name }}</td>
+                <td>{{ service_status(service.status) }}</td>
                 <td><pre><code>{{ service.__class__.__module__ }}.{{ service.__class__.__name__ }}</code></pre></td>
             </tr>
         {% endfor %}
@@ -22,7 +34,7 @@
 </table>
 
 <h1>Bots</h1>
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Username</th>

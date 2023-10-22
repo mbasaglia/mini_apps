@@ -105,7 +105,6 @@ def template_view(*args, template, **kwargs):
         @functools.wraps(func)
         async def handler(self, request):
             context = await func(self, request)
-            request.jinja_context = context
             response = aiohttp_jinja2.render_template(template, request, context)
             return response
         return view_decorator(handler, *args, **kwargs)
@@ -244,7 +243,10 @@ class JinjaApp(WebApp):
             self.get_server_path(),
         ]
 
-        template_paths += self.http.common_template_paths
+        path_set = set(template_paths)
+        for path in self.http.common_template_paths:
+            if path not in path_set:
+                template_paths.append(path)
 
         return template_paths
 
@@ -256,10 +258,10 @@ class JinjaApp(WebApp):
             "app": self,
             "settings": self.settings,
             "request": request,
-            "url": self.url
+            "url": self.get_url
         }
 
-    def url(self, name, **kwargs):
+    def get_url(self, name, **kwargs):
         if name in self.app.router.named_resources():
             kwargs["app"] = self.app
         return self.http.url(name, **kwargs)
@@ -271,10 +273,10 @@ class JinjaApp(WebApp):
         body = "Exception:\n\n"
         body += traceback.format_exc()
         body += "\nContext:\n\n"
-        body += pprint.pformat(getattr(request, "jinja_context", None))
+        body += pprint.pformat(request.get(aiohttp_jinja2.REQUEST_CONTEXT_KEY))
         env = aiohttp_jinja2.get_env(self.app)
         if isinstance(env.loader, jinja2.loaders.FileSystemLoader):
-            body += "\nTemplate Paths:\n\n"
+            body += "\n\nTemplate Paths:\n\n"
             body += pprint.pformat(env.loader.searchpath)
         return aiohttp.web.Response(body=body, status=500)
 

@@ -121,6 +121,11 @@ class AuthApp(JinjaApp):
         else:
             return self.middleware.redirect(redirect)
 
+    @view(name="logout")
+    async def loggout(self, request: aiohttp.web.Request):
+        await self.middleware.log_out(request)
+        return self.middleware.redirect(request.headers().get("referer", ""))
+
 
 def require_user(func=None, *, is_admin=False):
     def deco(func):

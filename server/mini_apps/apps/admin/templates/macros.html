@@ -1,0 +1,20 @@
+{% macro service_status(status) -%}
+    <span title="status">
+    {% if status.name == "Disconnected" %}
+        {{ icon("pause") }}
+    {% elif status.name == "Crashed" %}
+        {{ icon("bug") }}
+    {% elif status.name == "Starting" %}
+        {{ icon("clock", "regular") }}
+    {% elif status.name == "StartFlood" %}
+        {{ icon("clock-rotate-left") }}
+    {% elif status.name == "Running" %}
+        {{ icon("check") }}
+    {% endif %}
+    </span>
+{%- endmacro %}
+
+{% macro icon(icon, category="solid") -%}
+    <i class="fa-{{ icon }} fa-{{ category }}"></i>
+{%- endmacro %}
+

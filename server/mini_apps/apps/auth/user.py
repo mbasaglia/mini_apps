@@ -42,6 +42,7 @@ def clean_telegram_auth(data: dict, bot_token: str, max_age=datetime.timedelta(d
 class User:
     telegram_id: int
     name: str
+    telegram_username: str = ""
     is_admin: bool = False
     pfp: str = None
 
@@ -52,7 +53,12 @@ class User:
         if last_name:
             name += " " + last_name
 
-        return cls(name=name, telegram_id=telegram_data["id"], pfp=telegram_data.get("photo_url", None))
+        return cls(
+            name=name,
+            telegram_id=telegram_data["id"],
+            pfp=telegram_data.get("photo_url", None),
+            telegram_username = telegram_data.get("username", ""),
+        )
 
     @classmethod
     def from_json(cls, json_dict):

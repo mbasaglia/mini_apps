@@ -5,10 +5,29 @@ from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
 
 
+def admin_view(*args, **kwargs):
+    def deco(func):
+        return require_admin(template_view(*args, **kwargs)(func))
+    return deco
+
+
 class AdminApp(JinjaApp):
-    @require_admin
-    @template_view("/", template="bot-list.html")
-    async def index(self, request: aiohttp.web.Request):
+    def context(self, title, dict):
+        dict.update(
+            static=self.url + "static/",
+            title=title,
+        )
+        return dict
+
+    def prepare_app(self, http, app):
+        """
+        Registers routes to the web server
+        """
+        super().prepare_app(http, app)
+        app.add_static_path("/static", self.get_server_path() / "static")
+
+    @admin_view("/", template="manage.html")
+    async def manage(self, request: aiohttp.web.Request):
         bots = []
         services = []
 
@@ -18,7 +37,7 @@ class AdminApp(JinjaApp):
             else:
                 services.append(service.service)
 
-        return {
+        return self.context("Services", {
             "services": services,
             "bots": bots,
-        }
+        })
