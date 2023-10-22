@@ -6,13 +6,16 @@ import json
 
 import telethon
 
-from mini_apps.bot import Bot
+from mini_apps.web import ExtendedApplication, template_view
+from mini_apps.telegram import TelegramMiniApp, bot_command
+from mini_apps.db import ServiceWithModels
+
 from mini_apps.service import Client
 from . import models
 from . import document
 
 
-class Glaximini(Bot):
+class Glaximini(TelegramMiniApp, ServiceWithModels):
     def __init__(self, *args):
         super().__init__(*args)
         self.documents = {}
@@ -24,11 +27,18 @@ class Glaximini(Bot):
         """
         return [models.Document, models.UserDoc, models.Shape, models.Keyframe]
 
-    def add_routes(self, http):
+    @template_view("/", template="glaximini.html")
+    async def index(self, request):
+        return {
+            "socket": self.http.websocket_url
+        }
+
+    def prepare_app(self, http, app: ExtendedApplication):
         """
         Registers routes to the web server
         """
-        http.add_static_web_app(self, self.get_server_path() / "client")
+        super().prepare_app(http, app)
+        app.add_static_path("/js", self.get_server_path() / "public")
 
     def inline_buttons(self):
         """
@@ -44,7 +54,7 @@ class Glaximini(Bot):
             ])
         ])
 
-    @Bot.bot_command("start", description="Shows the start message")
+    @bot_command("start", description="Shows the start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot
@@ -58,7 +68,7 @@ class Glaximini(Bot):
         """
         Called when a client has been authenticated
         """
-        userdoc = models.UserDoc.get_or_none(models.UserDoc.user_id == client.user.id)
+        userdoc = models.UserDoc.get_or_none(models.UserDoc.telegram_id == client.user.telegram_id)
         if userdoc:
             doc = document.Document(userdoc.document)
         else:
@@ -142,7 +152,7 @@ class Glaximini(Bot):
         """
         await query.answer(self.telegram_inline_results(query))
 
-    @Bot.bot_command
+    @bot_command
     async def help(self, text: str, event: telethon.events.NewMessage):
         """
         Shows a description of the Mini App user interface

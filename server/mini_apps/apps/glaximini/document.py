@@ -98,7 +98,7 @@ class Document:
         }
 
     async def join(self, client):
-        await client.send(type="document.open", **self.message_data(), id_prefix="%s-%s-" % (int(time.time()), client.user.id))
+        await client.send(type="document.open", **self.message_data(), id_prefix="%s-%s-" % (int(time.time()), client.user.telegram_id))
 
         for other in self.clients.values():
             await client.send(type="client.join", **other.to_json())
@@ -117,16 +117,16 @@ class Document:
 
         client.document = self
         self.clients[client.id] = client
-        models.UserDoc.get_or_create(user=client.user, document=self.model)
+        models.UserDoc.get_or_create(telegram_id=client.user.telegram_id, document=self.model)
 
         await self.broadcast(type="client.join", skip=client.id, **client.to_json())
 
     async def leave(self, client):
         self.clients.pop(client.id)
         for other in self.clients.values():
-            if client.user.id == other.user.id:
+            if client.user.telegram_id == other.user.telegram_id:
                 return
-        await self.broadcast(type="client.leave", id=client.user.id)
+        await self.broadcast(type="client.leave", id=client.user.telegram_id)
 
     async def broadcast(self, *, skip=None, **data):
         messages = []

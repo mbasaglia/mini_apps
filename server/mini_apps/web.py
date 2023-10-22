@@ -174,6 +174,7 @@ class WebApp(Service):
                 app.router.add_route(method, view.url, view.bound_handler(self), name=view.name)
 
         http.app.add_named_subapp(self.name, app)
+        self.app = app
 
     def prepare_app(self, http, app: ExtendedApplication):
         """
@@ -267,12 +268,13 @@ class JinjaApp(WebApp):
         """
         Should render a repsonse detailing the current exception
         """
-        body = traceback.format_exc()
-        body += "\nContext:\n"
+        body = "Exception:\n\n"
+        body += traceback.format_exc()
+        body += "\nContext:\n\n"
         body += pprint.pformat(getattr(request, "jinja_context", None))
         env = aiohttp_jinja2.get_env(self.app)
         if isinstance(env.loader, jinja2.loaders.FileSystemLoader):
-            body += "\nTemplate Paths:\n"
+            body += "\nTemplate Paths:\n\n"
             body += pprint.pformat(env.loader.searchpath)
         return aiohttp.web.Response(body=body, status=500)
 

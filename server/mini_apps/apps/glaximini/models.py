@@ -23,7 +23,7 @@ class UserDoc(BaseModel):
         # a tuple of column names to index and a boolean indicating
         # whether the index is unique or not.
         indexes = (
-            (("user", "document"), True),
+            (("telegram_id", "document"), True),
         )
 
 

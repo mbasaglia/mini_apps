@@ -1,4 +1,4 @@
-import { App } from "../src/app.js";
+import { App } from "/mini_apps/src/app.js";
 import { Editor } from "./editor.js";
 import { Playback } from "./playback.js";
 import { ShapeDeleteCommand } from "./command.js";
