@@ -6,7 +6,7 @@ from aiohttp.web_urldispatcher import PrefixedSubAppResource, PlainResource, Sta
 
 from mini_apps.server import Server
 from mini_apps.settings import Settings
-from mini_apps.http import FileResource
+from mini_apps.web import FileResource
 
 parser = argparse.ArgumentParser(description="Lists HTTP server URLs")
 
@@ -45,7 +45,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     settings = Settings.load_global()
     server = Server(settings)
-    database = server.setup_run(None, None)
-    database.close()
+    server.setup_run(None, None)
 
-    print_app(settings.server.app)
+    print_app(server.providers["http"].app)

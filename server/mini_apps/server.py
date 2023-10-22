@@ -54,6 +54,7 @@ class Server(LogSource):
         self.settings = settings
         self.services = {}
         self.tasks = []
+        self.providers = {}
 
     def add_service(self, service: Service):
         """
@@ -61,6 +62,12 @@ class Server(LogSource):
         """
         self.services[service.name] = ServerTask(service)
         service.server = self
+
+        for prov in service.provides():
+            self.providers[prov] = service
+
+        for cons in service.consumes():
+            self.providers[cons].register_consumer(cons, service)
 
     def setup_run(self, host, port):
         # Register all the services

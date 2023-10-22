@@ -29,6 +29,11 @@ class FileResource(aiohttp.web_urldispatcher.PlainResource):
     async def _handle(self, request: aiohttp.web.Request):
         return aiohttp.web.FileResponse(self.file)
 
+    def __repr__(self):
+        return "<%s %s>" % (self.__class__.__name__, " ".join(
+            "%s=%r" % i for i in self.get_info()
+        ))
+
 
 class ViewHandler:
     def __init__(self, instance: "WebApp", handler):
@@ -117,14 +122,14 @@ class ExtendedApplication(aiohttp.web.Application):
         Registers a static path to the app
         """
         if path.is_file():
-            self.router.register_resource(FileResource("/", path))
+            self.router.register_resource(FileResource(prefix, path))
         else:
-            self.router.add_static("/", path)
+            self.router.add_static(prefix, path)
 
     def add_named_subapp(self, name, app: aiohttp.web.Application):
         # Work around aiohttp add_aubapp so we can set the subapp name
         resource = aiohttp.web.PrefixedSubAppResource("/%s" % name, app)
-        resource._name = self.name
+        resource._name = name
         self.router.register_resource(resource)
         self._reg_subapp_signals(app)
         self._subapps.append(app)
@@ -147,18 +152,20 @@ class WebApp(Service):
     def on_provider_added(self, provider):
         super().on_provider_added(provider)
         if provider.name == "http":
-            self.add_routes(provider.service)
+            http = provider.service
+            self.http = http
+
+            self.url = self.settings.get("url")
+            if not self.url:
+                self.url = "%s/%s/" % (http.base_url, self.name)
+
+            self.add_routes(http)
 
     def add_routes(self, http):
         """
         Registers routes to the web server
         """
-        self.url = self.settings.get("url")
-        if not self.url:
-            self.url = "%s/%s/" % (http.base_url, self.name)
-
         app = ExtendedApplication()
-        self.http = http
 
         self.prepare_app(http, app)
 

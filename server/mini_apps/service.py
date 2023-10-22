@@ -86,7 +86,7 @@ class BaseService(LogSource):
 
 class MetaService(type):
     def __new__(cls, name, bases, attrs):
-        meta_processors = set()
+        meta_processors = attrs.get("meta_processors", set())
         for base in bases:
             meta_processors |= getattr(base, "meta_processors", set())
 

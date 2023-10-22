@@ -78,11 +78,11 @@ class UserFilter:
         """
         return user
 
-    def filter_telegram_id(self, telegram_id):
+    def filter_telegram_id(self, telegram_id, name: str = ""):
         """
         Filters a user from a telegram message
         """
-        return self.filter_user(User(telegram_id=telegram_id))
+        return self.filter_user(User(telegram_id=telegram_id, name=name))
 
     @staticmethod
     def from_settings(settings):

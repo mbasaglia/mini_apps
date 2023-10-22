@@ -47,7 +47,7 @@ class UserEvent(BaseModel):
         # a tuple of column names to index and a boolean indicating
         # whether the index is unique or not.
         indexes = (
-            (("user", "event"), True),
+            (("telegram_id", "event"), True),
         )
 
 
