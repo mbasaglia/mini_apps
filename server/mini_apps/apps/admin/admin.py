@@ -5,7 +5,7 @@ from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
 
 
-class ControllerApp(JinjaApp):
+class AdminApp(JinjaApp):
     @require_admin
     @template_view("/", template="bot-list.html")
     async def index(self, request: aiohttp.web.Request):
