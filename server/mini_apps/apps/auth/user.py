@@ -7,7 +7,7 @@ import dataclasses
 
 def clean_telegram_auth(data: dict, bot_token: str, max_age=datetime.timedelta(days=1), key_prefix: bytes = None):
     clean = dict(data)
-    hash = clean.pop("hash")
+    hash = clean.pop("hash", None)
     if not hash:
         return None
 

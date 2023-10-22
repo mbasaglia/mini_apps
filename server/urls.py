@@ -47,4 +47,5 @@ if __name__ == "__main__":
     server = Server(settings)
     server.setup_run(None, None)
 
+    server.providers["http"].register_routes()
     print_app(server.providers["http"].app)

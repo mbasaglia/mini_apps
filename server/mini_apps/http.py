@@ -116,31 +116,36 @@ class HttpServer(BaseService):
         socket = aiohttp.web.WebSocketResponse()
         await socket.prepare(request)
 
-        # Create the client object for this socket
-        client = Client(socket)
-        self.log.debug("#%s connected from %s", client.id, request.remote)
-        await client.send(type="connect")
+        # Log in and assign client to an app
+        try:
+            # Create the client object for this socket
+            client = Client(socket)
+            self.log.debug("#%s connected from %s", client.id, request.remote)
+            await client.send(type="connect")
 
-        # Wait for a login message
-        async for app, message, raw in self.socket_messages(client):
-            self.log.debug("#%s setup %s", client.id, raw[:80])
-            if message["type"] != "login":
-                await client.send(type="error", msg="You need to login first")
-            else:
-                client.app = app
-                try:
-                    await app.login(client, message)
-                except Exception:
-                    app.log_exception()
-                    pass
-                break
+            # Wait for a login message
+            async for app, message, raw in self.socket_messages(client):
+                self.log.debug("#%s setup %s", client.id, raw[:80])
+                if message["type"] != "login":
+                    await client.send(type="error", msg="You need to login first")
+                else:
+                    client.app = app
+                    try:
+                        await app.login(client, message)
+                    except Exception:
+                        app.log_exception()
+                        pass
+                    break
 
-        # Disconnect if there is no correct login
-        if not client.app or not client.user:
-            self.log.debug("#%s failed login", client.id)
-            if not client.socket.closed:
-                await client.send(type="disconnect")
-            return
+            # Disconnect if there is no correct login
+            if not client.app or not client.user:
+                self.log.debug("#%s failed login", client.id)
+                if not client.socket.closed:
+                    await client.send(type="disconnect")
+                return socket
+
+        except Exception:
+            self.log_exception()
 
         try:
             self.log.debug("#%s logged in as %s on %s", client.id, client.to_json(), app.name)
@@ -159,6 +164,8 @@ class HttpServer(BaseService):
         finally:
             # Disconnect when the client has finished
             await client.app.disconnect(client)
+
+        return socket
 
     async def socket_messages(self, client: Client):
         """
@@ -194,8 +201,11 @@ class HttpServer(BaseService):
 
     async def client_settings(self, request):
         return aiohttp.web.json_response({
-            "socket": self.base_url + self.settings.websocket
+            "socket": self.base_url.replace("http", "ws") + self.settings.websocket
         })
 
     def provides(self):
-        return ["websocket", "http"]
+        provides = ["http"]
+        if self.websocket_settings:
+            provides.append("websocket")
+        return provides

@@ -27,7 +27,7 @@ settings = Settings.load_global(__name__ != "__main__")
 
 parser = argparse.ArgumentParser(description="Runs the server")
 parser.add_argument(
-    "--host",
+    "--host", "-H",
     type=str,
     default=None,
     help="Websocket bind address"

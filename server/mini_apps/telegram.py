@@ -9,6 +9,7 @@ from telethon.sessions import MemorySession
 from .service import ServiceStatus, Service
 from .command import bot_command, BotCommand
 from .apps.auth.user import clean_telegram_auth, User
+from .web import SocketService, WebApp
 
 
 def meta_bot(name, bases, attrs):
@@ -28,10 +29,10 @@ def meta_bot(name, bases, attrs):
     attrs["bot_commands"] = bot_commands
 
 
-class Bot(Service):
+class TelegramBot(Service):
     """
     Contains boilerplate code to manage the various connections
-    Inherit from this and override the relevant methods to implement your own app
+    Inherit from this and override the relevant methods to implement your own bot
     """
     bot_commands = {}
     command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)")
@@ -41,24 +42,6 @@ class Bot(Service):
         super().__init__(settings)
         self.telegram = None
         self.telegram_me = None
-
-    def get_user(self, message: dict):
-        """
-        Called to authenticate a user based on the mini app initData
-        Return None if authentication fails, otherwise return a user object
-        """
-        data = self.decode_telegram_data(message["data"])
-        if data is None:
-            fake_user = self.settings.get("fake-user")
-            if fake_user:
-                data = {"user": fake_user.dict()}
-            else:
-                return None
-
-        user = User.get_user(data["user"])
-        user.telegram_data = data
-
-        return user
 
     async def run(self):
         """
@@ -183,20 +166,6 @@ class Bot(Service):
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    def decode_telegram_data(self, data: str):
-        """
-        Decodes data as per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
-        """
-        # Parse the data
-        clean = {}
-        for key, value in sorted(urllib.parse.parse_qs(data).items()):
-            clean[key] = value[0]
-
-        clean = clean_telegram_auth(clean, self.settings.bot_token, key_prefix=b"WebAppData")
-        clean["user"] = json.loads(clean["user"])
-
-        return clean
-
     async def on_telegram_exception(self, exception: Exception):
         """
         Called when there is an exception on the telegram connection
@@ -236,3 +205,41 @@ class Bot(Service):
         :param description: Command description as shown in the bot menu
         """
         return bot_command(*args, **kwargs)
+
+
+class TelegramMiniApp(TelegramBot, WebApp, SocketService):
+    """
+        Telegram bot with web frontend and socket connection
+    """
+    def get_user(self, message: dict):
+        """
+        Called to authenticate a user based on the mini app initData
+        Return None if authentication fails, otherwise return a user object
+        """
+        data = self.decode_telegram_data(message["data"])
+        if data is None:
+            fake_user = self.settings.get("fake-user")
+            if fake_user:
+                data = {"user": fake_user.dict()}
+            else:
+                return None
+
+        user = User.from_telegram_dict(data["user"])
+        user.telegram_data = data
+
+        return user
+
+    def decode_telegram_data(self, data: str):
+        """
+        Decodes data as per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+        """
+        # Parse the data
+        clean = {}
+        for key, value in sorted(urllib.parse.parse_qs(data).items()):
+            clean[key] = value[0]
+
+        clean = clean_telegram_auth(clean, self.settings.bot_token, key_prefix=b"WebAppData")
+        if clean is not None:
+            clean["user"] = json.loads(clean["user"])
+
+        return clean

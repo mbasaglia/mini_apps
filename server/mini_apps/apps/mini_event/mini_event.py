@@ -11,10 +11,10 @@ import peewee
 import telethon
 
 from mini_apps.apps.auth.user import User
-from mini_apps.bot import Bot
+from mini_apps.telegram import TelegramMiniApp, bot_command
 from mini_apps.db import BaseModel, ServiceWithModels
 from mini_apps.service import Client
-from mini_apps.web import WebApp, SocketService, ExtendedApplication
+from mini_apps.web import ExtendedApplication
 
 
 class Event(BaseModel):
@@ -51,7 +51,7 @@ class UserEvent(BaseModel):
         )
 
 
-class MiniEventApp(Bot, WebApp, SocketService, ServiceWithModels):
+class MiniEventApp(TelegramMiniApp, ServiceWithModels):
     """
     This class has custom logic
     """
@@ -265,7 +265,7 @@ class MiniEventApp(Bot, WebApp, SocketService, ServiceWithModels):
         for client in self.clients.values():
             await client.send(type="event", **self.event_data(event, client.user, attendees))
 
-    @Bot.bot_command("start", description="Shows the start message")
+    @bot_command("start", description="Shows the start message")
     async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
         """
         Called when a user sends /start to the bot

@@ -54,13 +54,11 @@ async def run_client(url):
             task.cancel()
 
 
-settings = Settings.load_global(True)
-
 parser = argparse.ArgumentParser(description="Manually sends websocket data")
 parser.add_argument(
     "url",
     type=str,
-    default="ws://localhost:%s/" % settings.server.port,
+    default="ws://localhost:2537/wss/",
     nargs="?",
     help="Websocket URL"
 )
