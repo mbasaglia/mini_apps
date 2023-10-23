@@ -23,7 +23,7 @@ async def run_server(settings, host, port, reload):
             return
 
 
-settings = Settings.load_global(__name__ != "__main__")
+settings = Settings.load_global()
 
 parser = argparse.ArgumentParser(description="Runs the server")
 parser.add_argument(

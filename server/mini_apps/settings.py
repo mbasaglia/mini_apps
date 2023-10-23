@@ -1,7 +1,8 @@
-import importlib
+import os
 import json
 import logging
 import pathlib
+import importlib
 import traceback
 
 
@@ -158,6 +159,10 @@ class Settings(SettingsValue):
         server_path = pathlib.Path(__file__).absolute().parent.parent
         root = server_path.parent
         settings_path = root / "settings.json"
+        env_path = os.environ.get("SETTINGS", "")
+        if env_path:
+            settings_path = pathlib.Path(env_path)
+
         return {
             "root": root,
             "server": server_path,
@@ -166,29 +171,13 @@ class Settings(SettingsValue):
         }
 
     @classmethod
-    def load_global(cls, fallback=False):
+    def load_global(cls):
         """
         Loads the global settings file
 
         :param fallback: If True, it will load a minimal default configuration without raising errors
         """
         paths = cls.get_paths()
-
-        if fallback and not paths["settings"].exists():
-            return cls({
-                "database": {
-                    "class": "peewee.SqliteDatabase",
-                    "database": ":memory:"
-                },
-                "server": {
-                    "hostname": "localhost",
-                    "port": 2536,
-                    "websocket": "/wss",
-                },
-                "apps": {},
-                "paths": paths,
-            })
-
         return cls.load(
             paths["settings"],
             paths=paths
