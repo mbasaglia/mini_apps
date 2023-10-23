@@ -10,8 +10,8 @@ import importlib.util
 
 import telethon
 
-from .bot import Bot
-from .command import BotCommand
+from ..telegram import TelegramBot
+from ..command import BotCommand
 
 
 class AutoBotData:
@@ -131,7 +131,7 @@ class AutoBotRegistry:
         return deco
 
 
-class AutoBot(Bot):
+class AutoBot(TelegramBot):
     """
     Bot that automatically loads commands from a directory
     """
