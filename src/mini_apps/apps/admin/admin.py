@@ -66,6 +66,8 @@ class AdminApp(JinjaApp):
     @admin_view("/bot/{name}/picture.jpg")
     async def bot_picture(self, request: aiohttp.web.Request, name):
         bot = self.get_bot(name)
+        if not bot.telegram_me:
+            return aiohttp.web.HTTPNotFound()
         if bot.name not in self.bot_pics:
             file = io.BytesIO()
             await bot.telegram.download_profile_photo(bot.telegram_me, file, download_big=False)
