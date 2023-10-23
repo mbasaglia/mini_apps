@@ -285,10 +285,6 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         This bot allows you to sign up for events
         """), buttons=self.inline_buttons())
 
-    @bot_command("kill", description="kill")
-    async def on_kill(self, args: str, event: telethon.events.NewMessage):
-        raise Exception("oh noes")
-
     def inline_buttons(self):
         """
         Returns the telegram inline button that opens the web app

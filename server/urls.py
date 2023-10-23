@@ -2,7 +2,7 @@
 import inspect
 import argparse
 
-from aiohttp.web_urldispatcher import PrefixedSubAppResource, PlainResource, StaticResource
+from aiohttp.web_urldispatcher import PrefixedSubAppResource, PlainResource, StaticResource, DynamicResource
 
 from mini_apps.server import Server
 from mini_apps.settings import Settings
@@ -37,8 +37,10 @@ def print_app(app):
             print_app(info["app"])
         elif isinstance(resource, StaticResource):
             print_resource(info["prefix"], resource.name, info["directory"])
+        elif isinstance(resource, DynamicResource):
+            print_resource(info["formatter"], resource.name, format_handler(resource._routes[0].handler))
         else:
-            print(resource)
+            print(resource, info)
 
 
 if __name__ == "__main__":

@@ -35,6 +35,10 @@
 <h2>Exceptions</h2>
 {% if bot.exception_log %}
     <pre><code>{{ bot.exception_log }}</code></pre>
+
+    <ul class="buttons">
+        <li><a href="{{ url("bot_clear_exceptions", name=bot.name) }}">Clear Exception Log</a></li>
+    </ul>
 {% else %}
     <p>No exceptions logged</p>
 {% endif %}

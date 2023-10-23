@@ -114,3 +114,9 @@ class AdminApp(JinjaApp):
             self.log_exception()
             messages.add_message(request, messages.ERROR, "Could not restart %s:\n%s" % (name, traceback.format_exc()))
         return aiohttp.web.HTTPSeeOther(self.get_url("manage"))
+
+    @admin_view("/bot/{name}/clear-exceptions/")
+    async def bot_clear_exceptions(self, request, name):
+        self.get_bot(name).exception_log = ""
+        messages.add_message(request, messages.INFO, "Exceptions cleared")
+        return aiohttp.web.HTTPSeeOther(self.get_url("bot_details", name=name))
