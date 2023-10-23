@@ -1,4 +1,4 @@
-peewee
+# Telegram integration
 telethon
 
 # HTTP server
@@ -18,3 +18,4 @@ aiocron
 #lottie
 git+https://gitlab.com/mattbas/python-lottie.git@master
 hashids
+peewee
