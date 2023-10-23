@@ -21,7 +21,7 @@ ensure you followed all the [installation steps](../installation/basic.md).
 
 An custom app needs at least 3 files:
 
-`server/mini_apps/apps/my_app.py`: This is a python file that will contain the server-side code
+`src/mini_apps/apps/my_app.py`: This is a python file that will contain the server-side code
 `client/my_app/index.html`: This is an html file that will have the HTML structure
 `client/my_app/my_app.js`: This is a javascript file that will have the client-side code
 
@@ -44,7 +44,7 @@ This will contain all the server-side logic for your app.
 
 ### Configuration
 
-Ass something like the following to `server/settings.json`:
+Ass something like the following to `src/settings.json`:
 
 ```js
 {

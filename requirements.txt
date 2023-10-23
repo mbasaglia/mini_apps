@@ -1,0 +1,20 @@
+peewee
+telethon
+
+# HTTP server
+aiohttp
+aiohttp-session
+
+# PyPI
+twine
+
+# Web controller
+aiohttp-jinja2
+
+# Mini Events
+aiocron
+
+# Glaximini
+#lottie
+git+https://gitlab.com/mattbas/python-lottie.git@master
+hashids

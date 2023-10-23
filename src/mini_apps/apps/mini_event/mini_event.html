@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Event</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" type="text/css" href="/mini_apps/style.css" />
+</head>
+<body>
+    <main id="event-list">
+        <article id="placeholder">
+            <header>Loading Events...</header>
+        </article>
+
+
+        <article id="admin-actions" style="display: none">
+            <header>Admin Actions</header>
+
+            <form autocomplete="off" id="new-event" style="display: none">
+                <section>
+                    <label for="new-event-title">Title</label>
+                    <input type="text" id="new-event-title" name="title" required />
+                    <label for="new-event-description">Description</label>
+                    <input type="text" id="new-event-description" name="description"  required/>
+                    <label for="new-event-image">Image</label>
+                    <span id="image-error" style="display: none" class="error"></span>
+                    <input type="file" id="new-event-image" name="image" />
+                    <label for="new-event-start">Start Time</label>
+                    <input type="time" id="new-event-start" name="start" pattern="[0-9]{2}:[0-9]{2}" required />
+                    <label for="new-event-duration">Duration</label>
+                    <input type="number" min="1" max="6" id="new-event-duration" value="1" name="duration" required/>
+                </section>
+                <p class="buttons">
+                    <button id="confirm-button" type="submit">Confirm</button>
+                    <button id="cancel-button">Cancel</button>
+                </p>
+            </form>
+
+            <p class="buttons" id="admin-buttons">
+                <button id="create-event-button">Create Event</button>
+                <button id="show-admin-button">Show Admin Buttons</button>
+                <button id="hide-admin-button" style="display: none;">Hide Admin Buttons</button>
+            </p>
+        </article>
+    </main>
+
+    <script type="module">
+        import { MiniEventApp } from "./mini_event.js";
+
+        const mini_event_app = new MiniEventApp(
+            window.Telegram,
+            document.getElementById("event-list")
+        );
+
+        mini_event_app.connect("{{ socket }}");
+
+        mini_event_app.connect_ui();
+
+        // This makes it easier to debug on the browser console
+        window.mini_event_app = mini_event_app;
+    </script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" type="text/css" href="/mini_apps/style.css" />
+    <style>
+        .screen {
+            display: none;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+        #new-game-id {
+            font-size: xx-large;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        #request-input {
+            font-size: xx-large;
+            width: 100%;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 1fr;
+            width: 80%;
+            margin: 0 auto;
+        }
+        #opponent-text {
+            text-align: center;
+        }
+        .cell {
+            background: var(--tg-theme-bg-color);
+            padding: 6px;
+            font-weight: bold;
+            font-size: xxx-large;
+            border-radius: 6px;
+            margin: 6px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--tg-theme-button-color);
+        }
+        #board:not(.waiting) .cell.empty {
+            cursor: pointer;
+        }
+        #board:not(.waiting) .cell.empty:hover {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        .winning.cell {
+            border: 6px solid var(--tg-theme-text-color);
+            margin: 2px;
+        }
+        .waiting {
+            opacity: 50%;
+            cursor: wait;
+        }
+        /* Ensure people with crazy long names don't break the UI */
+        header#turn {
+            height: 1.2em;
+            white-space: pre;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <article class="screen" id="loading" style="display: block">
+            <header>Loading...</header>
+        </article>
+        <article class="screen" id="start">
+            <p>Play a game of Tic Tac Toe against a friend on Telegram!</p>
+            <p>Enter a code and press <em>Join Game</em> or create a new game.</p>
+            <input type="text" autocomplete="off" id="request-input" />
+            <p id="request-error" style="display: none;"></p>
+            <p class="buttons">
+                <button id="button-send-request">Join Game</button>
+                <button id="button-create">Create New Game</button>
+            </p>
+        </article>
+        <article class="screen" id="new-game">
+            <p>Invite code: <code id="new-game-id"></code><p>
+            <p>Send this code to a friend to star playing!<p>
+            <p class="buttons">
+                <button id="button-copy-code">Copy Code</button>
+                <button id="button-send-code">Send Code</button>
+                <button id="button-cancel-new-game">Go Back</button>
+            </p>
+        </article>
+        <article class="screen" id="request-sent">
+            <p>Waiting for the other player to accept...</p>
+        </article>
+        <article class="screen" id="request-received">
+            <p><strong id="request-name"></strong> wants to join.</p>
+            <p class="buttons">
+                <button id="button-request-accept">Accept</button>
+                <button id="button-request-refuse">Refuse</button>
+            </p>
+        </article>
+        <article class="screen" id="game">
+            <header id="turn"></header>
+            <div id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            <p id="opponent-text">Playing against <strong id="opponent-name"></strong></p>
+            <p class="buttons">
+                <button id="button-restart">Back to Start</button>
+            </p>
+        </article>
+    </main>
+
+    <script type="module">
+        import { TicTacToe } from "./tic_tac_toe.js";
+
+        // Create the app object
+        const tttapp = new TicTacToe(window.Telegram);
+
+        // This connects to the server with a websocket
+        tttapp.connect("{{ socket }}");
+
+        // This makes it easier to debug on the browser console
+        window.tttapp = tttapp;
+
+        // Expand the telegram web view
+        window.Telegram.WebApp.expand();
+    </script>
+</body>
+</html>

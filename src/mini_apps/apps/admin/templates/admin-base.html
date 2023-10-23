@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% from "macros.html" import icon %}
+
+{% block title %}
+    Admin | {{ title }}
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="https://use.fontawesome.com/releases/v6.4.0/css/all.css" />
+    <link rel="stylesheet" type="text/css" href="{{ static + "style.css" }}" />
+{% endblock %}
+
+{% block header %}
+    <header>
+        <nav class="menu">
+            <ul>
+                {% block nav %}
+                    <li><a href="{{ url("manage") }}">{{ icon("home") }} Overview</a></li>
+                    <li class="separator"></li>
+                    <span><img src="{{ user.pfp }}" /> {{ user.name }}</span>
+                    <li><a href="{{ url('auth:logout') }}">{{ icon("sign-out-alt") }} Log out</a></li>
+                {% endblock %}
+            </ul>
+        </nav>
+        {% if request.messages %}
+        <ul class="messages">
+            {% for message in request.messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                {% if message.level_tag == "info" %}
+                    {{ icon("info-circle") }}
+                {% elif message.level_tag == "error" %}
+                    {{ icon("exclamation-circle") }}
+                {% elif message.level_tag == "warning" %}
+                    {{ icon("exclamation-triangle") }}
+                {% elif message.level_tag == "success" %}
+                    {{ icon("check-circle") }}
+                {% elif message.level_tag == "debug" %}
+                    {{ icon("bug") }}
+                {% endif %}
+                {{ message.render() }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </header>
+{% endblock %}

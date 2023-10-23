@@ -27,7 +27,7 @@ Server-side configuration is more involved, everything will be described in the 
 |`log`      | `object`  | `{}`  | Logging configuration             |
 |`websocket`| `object`  |       | Websocket settings                |
 |`apps`     | `object`  |       | Available apps and their settings |
-|`reload`   | `boolean` |`false`| If `true`, [server/server.py](../scripts.md#server-server-py) will reload when the sources change |
+|`reload`   | `boolean` |`false`| If `true`, [src/server.py](../scripts.md#server-server-py) will reload when the sources change |
 
 
 Example:
