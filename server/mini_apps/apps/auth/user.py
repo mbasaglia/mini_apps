@@ -57,7 +57,7 @@ class User:
             name=name,
             telegram_id=telegram_data["id"],
             pfp=telegram_data.get("photo_url", None),
-            telegram_username = telegram_data.get("username", ""),
+            telegram_username=telegram_data.get("username", ""),
         )
 
     @classmethod

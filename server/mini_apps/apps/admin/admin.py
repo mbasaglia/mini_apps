@@ -4,7 +4,7 @@ import aiohttp
 from mini_apps.web import template_view, JinjaApp, view
 from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
-from . import messages
+# from . import messages
 
 
 def admin_view(*args, **kwargs):
@@ -44,7 +44,8 @@ class AdminApp(JinjaApp):
             else:
                 services.append(service.service)
 
-        return self.context("Services",
+        return self.context(
+            "Services",
             services=services,
             bots=bots,
         )
@@ -70,7 +71,8 @@ class AdminApp(JinjaApp):
     async def bot_details(self, request):
         bot = self.get_bot(request)
         commands = await bot.get_commands()
-        return self.context(bot.telegram_me.username,
+        return self.context(
+            bot.telegram_me.username,
             bot=bot,
             commands=commands
         )
