@@ -31,6 +31,31 @@ class LogSource:
         return log
 
 
+def dict_merge_recursive(orig: dict, overrides: dict):
+    for key, val in overrides.items():
+        if key not in orig or not isinstance(val, dict):
+            orig[key] = val
+        else:
+            dict_merge_recursive(orig[key], val)
+
+
+def apply_secrets_impl(data: dict, secrets: dict):
+    for key, val in data.items():
+        if isinstance(val, dict):
+            apply_secrets_impl(val, secrets)
+        elif isinstance(val, str) and val.startswith("$secrets."):
+            data[key] = secrets[val[len("$secrets."):]]
+        elif isinstance(val, list):
+            for sub in val:
+                if isinstance(sub, dict):
+                    apply_secrets_impl(sub, secrets)
+
+
+def apply_secrets(data):
+    secrets = data.pop("$secrets")
+    apply_secrets_impl(data, secrets)
+
+
 class SettingsValue:
     """
     Object to access settings in a more convenient way than a dict
@@ -68,6 +93,12 @@ class SettingsValue:
         """
         with open(filename, "r") as settings_file:
             data = json.load(settings_file)
+            if "$include" in data:
+                include_path = filename.parent / data.pop("$include")
+                with open(include_path, "r") as include:
+                    dict_merge_recursive(data, json.load(include))
+            if "$secrets" in data:
+                apply_secrets(data)
             data.update(extra)
             return cls(data)
 
@@ -162,11 +193,14 @@ class Settings(SettingsValue):
         env_path = os.environ.get("SETTINGS", "")
         if env_path:
             settings_path = pathlib.Path(env_path)
+        elif not settings_path.exists():
+            curdir_settings = pathlib.Path() / "settings.json"
+            if curdir_settings.exists():
+                settings_path = curdir_settings
 
         return {
             "root": root,
             "server": server_path,
-            "client": root / "client",
             "settings": settings_path,
         }
 
