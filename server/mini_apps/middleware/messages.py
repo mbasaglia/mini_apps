@@ -21,12 +21,17 @@ _REQUEST_KEY = "messages"
 class Message:
     message: str
     level_tag: str
+    rendered: bool = False
 
     @property
     def tags(self):
         return self.level_tag
 
     def __str__(self):
+        return self.message
+
+    def render(self):
+        self.rendered = True
         return self.message
 
     def to_json(self):
@@ -49,7 +54,7 @@ class MessageMiddleware(Middleware):
         session = await aiohttp_session.get_session(request)
         request[_REQUEST_KEY] = list(map(Message.from_json, session.get(_REQUEST_KEY, [])))
         response = await handler(request)
-        session[_REQUEST_KEY] = [m.to_json() for m in request[_REQUEST_KEY]]
+        session[_REQUEST_KEY] = [m.to_json() for m in request[_REQUEST_KEY] if not m.rendered]
         return response
 
     async def on_process_context(self, request):

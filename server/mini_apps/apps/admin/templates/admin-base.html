@@ -38,7 +38,7 @@
                 {% elif message.level_tag == "debug" %}
                     {{ icon("bug") }}
                 {% endif %}
-                {{ message }}
+                {{ message.render() }}
             </li>
             {% endfor %}
         </ul>

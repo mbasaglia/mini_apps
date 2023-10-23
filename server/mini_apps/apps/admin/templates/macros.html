@@ -1,5 +1,8 @@
-{% macro service_status(status, show_name=False) -%}
+{% macro service_status(status, show_name=False, show_warning=False) -%}
     <span class="status" title="{{ status.name }}">
+    {%- if exception_log -%}
+        {{ icon("triangle-exclamation") }}
+    {%- endif -%}
     {%- if status.name == "Disconnected" -%}
         {{ icon("pause") }}
     {%- elif status.name == "Crashed" -%}

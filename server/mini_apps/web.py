@@ -103,8 +103,8 @@ def template_view(*args, template, **kwargs):
     """
     def deco(func):
         @functools.wraps(func)
-        async def handler(self, request):
-            context = await func(self, request)
+        async def handler(self, request, **func_kwargs):
+            context = await func(self, request, **func_kwargs)
             response = aiohttp_jinja2.render_template(template, request, context)
             return response
         return view_decorator(handler, *args, **kwargs)

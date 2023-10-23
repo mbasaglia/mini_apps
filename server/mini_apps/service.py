@@ -139,6 +139,17 @@ class Service(BaseService, metaclass=MetaService):
         raise NotImplementedError
 
 
+class LogRetainingService(BaseService):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.exception_log = ""
+
+    def log_formatted_exception(self, message):
+        super().log_formatted_exception(message)
+        self.exception_log += "\n" + message
+        self.exception_log = self.exception_log[-1024:]
+
+
 class ServiceProvider:
     def __init__(self, name, service: BaseService):
         self.name = name

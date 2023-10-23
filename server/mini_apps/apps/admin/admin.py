@@ -36,9 +36,9 @@ class AdminApp(JinjaApp):
         """
         Registers routes to the web server
         """
+        http.register_middleware(messages.MessageMiddleware(http))
         super().prepare_app(http, app)
         app.add_static_path("/static", self.get_server_path() / "static")
-        http.register_middleware(messages.MessageMiddleware(http))
 
     @admin_view("/", template="manage.html")
     async def manage(self, request: aiohttp.web.Request):
@@ -74,8 +74,8 @@ class AdminApp(JinjaApp):
         return aiohttp.web.Response(body=self.bot_pics[bot.name], content_type="image/jpeg")
 
     @admin_view("/bot/{name}/", template="details.html")
-    async def bot_details(self, request):
-        bot = self.get_bot(request)
+    async def bot_details(self, request, name):
+        bot = self.get_bot(name)
         commands = await bot.get_commands()
         return self.context(
             bot.telegram_me.username,

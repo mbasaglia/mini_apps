@@ -33,7 +33,7 @@
     </tbody>
 </table>
 
-<h1>Bots</h1>
+<h1>Telegram Bots</h1>
 <table class="table">
     <thead>
         <tr>
@@ -53,7 +53,7 @@
                     <p><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></p>
                 </td>
                 <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
-                <td>{{ service_status(bot.status) }}</td>
+                <td>{{ service_status(bot.status, False, bot.exception_log) }}</td>
                 <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
                 <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
                 <td>
