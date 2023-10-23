@@ -40,8 +40,8 @@ class ViewHandler:
         self.handler = handler.__get__(instance, instance.__class__)
         self.instance = instance
 
-    async def __call__(self, request):
-        return await self.instance.handler_wrapper(self.handler, request)
+    async def __call__(self, request: aiohttp.web.Request):
+        return await self.instance.handler_wrapper(self.handler, request, **request.match_info)
 
 
 class View:
@@ -184,12 +184,12 @@ class WebApp(Service):
     async def run(self):
         self.status = ServiceStatus.Running
 
-    async def handler_wrapper(self, handler, request):
+    async def handler_wrapper(self, handler, request, **kwargs):
         """
         Invokes the actual handler and manages exception
         """
         try:
-            return await handler(request)
+            return await handler(request, **kwargs)
         except Exception:
             return await self.on_http_exception(request)
 

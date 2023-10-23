@@ -1,16 +1,22 @@
 import io
+import traceback
+
 import aiohttp
 
 from mini_apps.web import template_view, JinjaApp, view
 from mini_apps.apps.auth.auth import require_admin
 from mini_apps.telegram import TelegramBot
-# from . import messages
+from mini_apps.middleware import messages
 
 
 def admin_view(*args, **kwargs):
     def deco(func):
         kwargs.setdefault("name", func.__name__)
-        return require_admin(template_view(*args, **kwargs)(func))
+        if "template" in kwargs:
+            inner_deco = template_view(*args, **kwargs)
+        else:
+            inner_deco = view(*args, **kwargs)
+        return require_admin(inner_deco(func))
     return deco
 
 
@@ -32,6 +38,7 @@ class AdminApp(JinjaApp):
         """
         super().prepare_app(http, app)
         app.add_static_path("/static", self.get_server_path() / "static")
+        http.register_middleware(messages.MessageMiddleware(http))
 
     @admin_view("/", template="manage.html")
     async def manage(self, request: aiohttp.web.Request):
@@ -50,16 +57,15 @@ class AdminApp(JinjaApp):
             bots=bots,
         )
 
-    def get_bot(self, request: aiohttp.web.Request) -> TelegramBot:
-        name = request.match_info["name"]
+    def get_bot(self, name: str) -> TelegramBot:
         bot = self.settings.apps.get(name)
         if not isinstance(bot, TelegramBot):
             raise aiohttp.web.HTTPNotFound()
         return bot
 
-    @view("/bot/{name}/picture.jpg", name="bot_picture")
-    async def bot_picture(self, request: aiohttp.web.Request):
-        bot = self.get_bot(request)
+    @admin_view("/bot/{name}/picture.jpg")
+    async def bot_picture(self, request: aiohttp.web.Request, name):
+        bot = self.get_bot(name)
         if bot.name not in self.bot_pics:
             file = io.BytesIO()
             await bot.telegram.download_profile_photo(bot.telegram_me, file, download_big=False)
@@ -76,3 +82,35 @@ class AdminApp(JinjaApp):
             bot=bot,
             commands=commands
         )
+
+    @admin_view("/bot/{name}/stop/")
+    async def bot_stop(self, request, name):
+        try:
+            await self.server.stop_service(name)
+            messages.add_message(request, messages.INFO, "%s stopped" % name)
+        except Exception:
+            self.log_exception()
+            messages.add_message(request, messages.ERROR, "Could not stop %s:\n%s" % (name, traceback.format_exc()))
+        return aiohttp.web.HTTPSeeOther(self.get_url("manage"))
+
+    @admin_view("/bot/{name}/start/")
+    async def bot_start(self, request, name):
+        try:
+            self.server.start_service(name)
+            messages.add_message(request, messages.INFO, "%s started" % name)
+        except Exception:
+            self.log_exception()
+            messages.add_message(request, messages.ERROR, "Could not start %s:\n%s" % (name, traceback.format_exc()))
+        return aiohttp.web.HTTPSeeOther(self.get_url("manage"))
+
+    @admin_view("/bot/{name}/reload/")
+    async def bot_restart(self, request, name):
+        try:
+            await self.server.stop_service(name)
+            self.server.start_service(name)
+            self.bot_pics.pop(name, None)
+            messages.add_message(request, messages.INFO, "%s restarted" % name)
+        except Exception:
+            self.log_exception()
+            messages.add_message(request, messages.ERROR, "Could not restart %s:\n%s" % (name, traceback.format_exc()))
+        return aiohttp.web.HTTPSeeOther(self.get_url("manage"))

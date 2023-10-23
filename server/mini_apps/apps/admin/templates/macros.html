@@ -25,9 +25,9 @@
 {% macro bot_actions(bot) -%}
     <li><a href="{{ url("bot_details", name=bot.name) }}" title="Details">{{ icon("info-circle") }}</a></li>
     {% if bot.is_running %}
-        <li><a href="" title="Stop">{{ icon("pause-circle", "regular") }}</a></li>
+        <li><a href="{{ url("bot_stop", name=bot.name) }}" title="Stop">{{ icon("pause-circle", "regular") }}</a></li>
     {% else %}
-        <li><a href="" title="Start">{{ icon("play-circle", "regular") }}</a></li>
+        <li><a href="{{ url("bot_start", name=bot.name) }}" title="Start">{{ icon("play-circle", "regular") }}</a></li>
     {% endif %}
-    <li><a href="" title="Reconnect">{{ icon("sync") }}</a></li>
+    <li><a href="{{ url("bot_restart", name=bot.name) }}" title="Reconnect">{{ icon("sync") }}</a></li>
 {%- endmacro %}
