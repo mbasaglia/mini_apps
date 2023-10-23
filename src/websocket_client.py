@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import sys
 
-import websockets
+import aiohttp
 
 
 async def connect_stdin():
@@ -21,7 +21,7 @@ async def stdin(websocket):
             raw = await reader.readuntil(b"\n")
             line = raw.decode("utf-8")
             print("> %s" % line)
-            await websocket.send(line)
+            await websocket.send_str(line)
         except (KeyboardInterrupt, asyncio.exceptions.IncompleteReadError):
             break
 
@@ -29,27 +29,28 @@ async def stdin(websocket):
 
 
 async def connection(websocket):
-    while True:
-        try:
-            data = await websocket.recv()
-            print("< %s" % data)
-        except KeyboardInterrupt:
-            return
-        except websockets.exceptions.ConnectionClosed:
-            print("Disconnected")
-            return
+    try:
+        async for msg in websocket:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                print("< %s" % msg.data)
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                print("Error")
+                return
+    except KeyboardInterrupt:
+        return
 
 
 async def run_client(url):
     print("Connecting to %s" % url)
-    async with websockets.connect(url) as websocket:
-        tasks = [
-            asyncio.create_task(connection(websocket)),
-            asyncio.create_task(stdin(websocket))
-        ]
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
+    async with aiohttp.ClientSession() as session:
+        async with session.ws_connect(url) as websocket:
+            tasks = [
+                asyncio.create_task(connection(websocket)),
+                asyncio.create_task(stdin(websocket))
+            ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
 
 
 parser = argparse.ArgumentParser(description="Manually sends websocket data")
