@@ -39,21 +39,21 @@ def dict_merge_recursive(orig: dict, overrides: dict):
             dict_merge_recursive(orig[key], val)
 
 
-def apply_secrets_impl(data: dict, secrets: dict):
+def apply_vars_impl(data: dict, vars: dict):
     for key, val in data.items():
         if isinstance(val, dict):
-            apply_secrets_impl(val, secrets)
-        elif isinstance(val, str) and val.startswith("$secrets."):
-            data[key] = secrets[val[len("$secrets."):]]
+            apply_vars_impl(val, vars)
+        elif isinstance(val, str) and val.startswith("$vars."):
+            data[key] = vars[val[len("$vars."):]]
         elif isinstance(val, list):
             for sub in val:
                 if isinstance(sub, dict):
-                    apply_secrets_impl(sub, secrets)
+                    apply_vars_impl(sub, vars)
 
 
-def apply_secrets(data):
-    secrets = data.pop("$secrets")
-    apply_secrets_impl(data, secrets)
+def apply_vars(data):
+    vars = data.pop("$vars")
+    apply_vars_impl(data, vars)
 
 
 class SettingsValue:
@@ -97,8 +97,8 @@ class SettingsValue:
                 include_path = filename.parent / data.pop("$include")
                 with open(include_path, "r") as include:
                     dict_merge_recursive(data, json.load(include))
-            if "$secrets" in data:
-                apply_secrets(data)
+            if "$vars" in data:
+                apply_vars(data)
             data.update(extra)
             return cls(data)
 
