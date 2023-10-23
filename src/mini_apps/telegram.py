@@ -9,7 +9,7 @@ from telethon.sessions import MemorySession
 from .service import ServiceStatus, Service, LogRetainingService
 from .command import bot_command, BotCommand
 from .apps.auth.user import clean_telegram_auth, User
-from .web import SocketService, JinjaApp
+from .web import SocketService, JinjaApp, ServiceWithUserFilter
 
 
 def meta_bot(name, bases, attrs):
@@ -29,7 +29,7 @@ def meta_bot(name, bases, attrs):
     attrs["bot_commands"] = bot_commands
 
 
-class TelegramBot(LogRetainingService, Service):
+class TelegramBot(LogRetainingService, ServiceWithUserFilter):
     """
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own bot

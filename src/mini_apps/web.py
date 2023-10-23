@@ -281,14 +281,22 @@ class JinjaApp(WebApp):
         return aiohttp.web.Response(body=body, status=500)
 
 
-class SocketService(Service):
+class ServiceWithUserFilter(Service):
+    """
+    Service with the ability to filter users
+    """
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.filter = UserFilter.from_settings(settings)
+
+
+class SocketService(ServiceWithUserFilter):
     """
     Service that can handle socket connections
     """
     def __init__(self, settings):
         super().__init__(settings)
         self.clients = {}
-        self.filter = UserFilter.from_settings(settings)
 
     async def on_client_authenticated(self, client: Client):
         """

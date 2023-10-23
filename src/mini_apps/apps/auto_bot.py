@@ -36,19 +36,8 @@ class AutoBotRegistry:
     Keeps track of all the "auto" bot handlers
     """
     def __init__(self):
-        self.bots = {}
         self.loaded = {}
         self.current = None
-
-    def bot(self, username):
-        if not username:
-            return self.current
-
-        bot = self.bots.get(username)
-        if not bot:
-            bot = AutoBotData()
-            self.bots[username] = bot
-        return bot
 
     def load_path(self, path: pathlib.Path):
         canonical = path.resolve()
@@ -81,52 +70,62 @@ class AutoBotRegistry:
         for file in path.iterdir():
             self._collect_path(name, file)
 
-    def bot_command(self, bot_username, trigger=None, description=None, hidden=False):
+    def bot_command(self, trigger=None, description=None, hidden=False):
         """
         Registers a bot command handler
         """
-        bot = self.bot(bot_username)
+        if callable(trigger):
+            func = trigger
+            trigger = None
+        else:
+            func = None
 
         def deco(func):
-            command = BotCommand.from_function(trigger, description, hidden)
-            bot.commands[command.trigger] = command
+            command = BotCommand.from_function(func, trigger, description, hidden)
+            self.current.commands[command.trigger] = command
             return func
+
+        if func is not None:
+            return deco(func)
 
         return deco
 
-    def bot_inline(self, bot_username):
+    def bot_inline(self, func=None):
         """
         Registers a bot inline handler
         """
-        bot = self.bot(bot_username)
-
         def deco(func):
-            bot.inline = func
+            self.current.inline = func
             return func
+
+        if func is not None:
+            return deco(func)
 
         return deco
 
-    def bot_button_callback(self, bot_username):
+    def bot_button_callback(self, func=None):
         """
         Registers a bot button callback handler
         """
-        bot = self.bot(bot_username)
-
         def deco(func):
-            bot.button_callback = func
+            self.current.button_callback = func
             return func
+
+        if func is not None:
+            return deco(func)
 
         return deco
 
-    def bot_media(self, bot_username):
+    def bot_media(self, func=None):
         """
         Registers a callback handler for messages containing media
         """
-        bot = self.bot(bot_username)
-
         def deco(func):
-            bot.media = func
+            self.current.media = func
             return func
+
+        if func is not None:
+            return deco(func)
 
         return deco
 
@@ -139,22 +138,20 @@ class AutoBot(TelegramBot):
 
     def __init__(self, *args):
         super().__init__(*args)
+
+        # Ensures we have an explicit name
+        self.name = self.settings.name
+
         if self.settings.command_path:
-            self.handlers = self.self.registry.load_path(self.settings.command_path)
-            if not self.handlers.has_data():
-                self.handlers = None
+            self.handlers = self.registry.load_path(pathlib.Path(self.settings.command_path))
         else:
-            self.handlers = None
+            self.handlers = AutoBotData()
 
-    async def on_telegram_connected(self):
-        if not self.handlers:
-            self.handlers = self.registry.bot(self.telegram_me.username)
+    async def on_telegram_command(self, trigger: str, query: str, event: telethon.events.NewMessage):
+        cmd = self.handlers.commands.get(trigger)
 
-    async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage):
-        func = self.handlers.get(trigger)
-
-        if func:
-            await func(args, event)
+        if cmd:
+            await cmd.function(query, event)
             return True
 
         return False
@@ -163,7 +160,7 @@ class AutoBot(TelegramBot):
         if self.handlers.button_callback:
             await self.handlers.button_callback(event)
 
-    async def on_telegram_inline(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_inline(self, event: telethon.events.InlineQuery):
         if self.handlers.inline:
             await self.handlers.inline(event)
 
