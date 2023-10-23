@@ -19,7 +19,7 @@ Set up a virtual environment and install dependencies:
 cd /opt/miniapps.example.com
 virtualenv --prompt "(miniapps) " env
 . env/bin/activate
-pip install -r server/requirements.txt
+pip install -r src/requirements.txt
 ```
 
 ## Supervisor
@@ -39,7 +39,7 @@ stderr_logfile=/var/log/apache2/miniapps.example.com/supervisor-err.log
 redirect_stderr=true
 stdout_logfile=/var/log/apache2/miniapps.example.com/supervisor.log
 directory=/opt/miniapps.example.com/
-command=/opt/miniapps.example.com/env/bin/python server/server.py
+command=/opt/miniapps.example.com/env/bin/python src/server.py
 ```
 
 Then run `supervisorctl reload` to load the new job, you can see whether it's running

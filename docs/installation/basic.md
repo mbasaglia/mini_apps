@@ -62,7 +62,7 @@ with the following content:
 }
 ```
 
-And the server-side settings file `/opt/miniapps.example.com/server/settings.json`
+And the server-side settings file `/opt/miniapps.example.com/src/settings.json`
 with the following:
 
 ```json

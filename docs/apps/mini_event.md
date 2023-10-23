@@ -50,10 +50,10 @@ And enable inline mode (`/setinline`).
 ## Scripts
 
 
-### `server/mini_apps/apps/mini_event/add_event.py`
+### `src/mini_apps/apps/mini_event/add_event.py`
 
 ```{argparse}
-   :filename: ../server/mini_apps/apps/mini_event/add_event.py
+   :filename: ../src/mini_apps/apps/mini_event/add_event.py
    :func: parser
    :prog: add_event.py
 ```
@@ -61,7 +61,7 @@ And enable inline mode (`/setinline`).
 
 ## Admin Interface
 
-If you created admin users (with `server/make_admin.py`), when those users
+If you created admin users (with `src/make_admin.py`), when those users
 access the mini app, they will see additional options, which allows them to manage
 the events.
 
