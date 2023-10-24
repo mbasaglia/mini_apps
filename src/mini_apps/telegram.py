@@ -130,7 +130,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
             telethon.tl.types.BotCommandScopeDefault(), "en", commands
         ))
 
-    async def on_telegram_message_raw(self, event: telethon.events.NewMessage):
+    async def on_telegram_message_raw(self, event: telethon.events.NewMessage.Event):
         """
         Called on messages sent to the telegram bot
         wraps on_telegram_message() for convenience and detects bot /commands
@@ -153,7 +153,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage):
+    async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage.Event):
         """
         Called on a telegram /command
 
@@ -166,7 +166,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
 
         return False
 
-    async def on_telegram_callback_raw(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_callback_raw(self, event: telethon.events.CallbackQuery.Event):
         """
         Called on telegram callback queries (inline button presses),
         just wraps on_telegram_callback() with exception handling for convenience
@@ -179,7 +179,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def on_telegram_inline_raw(self, event: telethon.events.InlineQuery):
+    async def on_telegram_inline_raw(self, event: telethon.events.InlineQuery.Event):
         """
         Called on telegram inline queries,
         just wraps on_telegram_inline() with exception handling for convenience
@@ -187,6 +187,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         try:
             if not self.filter.filter_telegram_id(event.sender_id):
                 self.log.debug("%s is banned", event.sender_id)
+                await event.answer([])
                 return
             await self.on_telegram_inline(event)
         except Exception as e:
@@ -204,19 +205,19 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         pass
 
-    async def on_telegram_message(self, event: telethon.events.NewMessage):
+    async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
         """
         Called on messages sent to the telegram bot
         """
         pass
 
-    async def on_telegram_callback(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_callback(self, event: telethon.events.CallbackQuery.Event):
         """
         Called on button presses on the telegram bot
         """
         pass
 
-    async def on_telegram_inline(self, event: telethon.events.InlineQuery):
+    async def on_telegram_inline(self, event: telethon.events.InlineQuery.Event):
         """
         Called on telegram bot inline queries
         """

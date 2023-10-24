@@ -59,6 +59,7 @@ class InlineHandler:
     def __init__(self, event: telethon.events.InlineQuery.Event):
         self.event = event
         self.builder = event.builder
+        self.query = event.query.query
         self.results = []
 
     async def __aenter__(self):
