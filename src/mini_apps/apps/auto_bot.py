@@ -66,8 +66,6 @@ class AutoBotRegistry:
         self.current = None
         return data
 
-
-
     def _module_from_file(self, name: str, path: pathlib.Path):
         spec = importlib.util.spec_from_file_location(name, str(path))
         module = importlib.util.module_from_spec(spec)
@@ -179,19 +177,19 @@ class AutoBot(TelegramBot):
             if isinstance(named, bool):
                 named = self.name
             self.handlers = self.registry.child(named).current
-            self.bot_commands = self.handlers.commands
+        self.bot_commands = self.handlers.commands
 
-    async def on_telegram_callback(self, event: telethon.events.CallbackQuery):
+    async def on_telegram_callback(self, event: telethon.events.CallbackQuery.Event):
         if self.handlers.button_callback:
-            await self.handlers.button_callback(event)
+            await self.handlers.button_callback(self, event.query.data, event)
 
-    async def on_telegram_inline(self, event: telethon.events.InlineQuery):
+    async def on_telegram_inline(self, event: telethon.events.InlineQuery.Event):
         if self.handlers.inline:
             await self.handlers.inline(event)
 
-    async def on_telegram_message(self, event: telethon.events.NewMessage):
+    async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
         if self.handlers.media and event.message.media and not event.sender.is_self:
-            self.handlers.media(event)
+            self.handlers.media(self, event)
 
 
 # Expose global functions from the default registry
