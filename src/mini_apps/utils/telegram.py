@@ -97,3 +97,31 @@ class InlineHandler:
                 telethon.tl.types.DocumentAttributeFilename("sticker.tgs")
             ]
         ))
+
+
+class MessageMarkup:
+    def to_data(self):
+        raise NotImplementedError
+
+
+class InlineKeyboard(MessageMarkup):
+    def __init__(self):
+        self.rows = []
+
+    def add_row(self):
+        self.rows.append([])
+
+    def add_button(self, button, row):
+        if not self.rows:
+            self.add_row()
+
+        self.rows[row].append(button)
+
+    def add_button_url(self, *args, row=-1, **kwargs):
+        self.add_button(telethon.tl.types.KeyboardButtonUrl(*args, **kwargs), row)
+
+    def add_button_callback(self, text, data, row=-1):
+        self.add_button(telethon.tl.types.KeyboardButtonCallback(text, data), row)
+
+    def to_data(self):
+        return self.rows
