@@ -54,11 +54,18 @@
     <tbody>
         {% for bot in bots %}
             <tr>
-                <td>
-                    <p>{{ bot.telegram_me.first_name }}</p>
-                    <p><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></p>
-                </td>
-                <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
+                {% if not bot.is_running %}
+                    <td>
+                        <p>{{ bot.name }}</p>
+                    </td>
+                    <td></td>
+                {% else %}
+                    <td>
+                        <p>{{ bot.telegram_me.first_name }}</p>
+                        <p><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></p>
+                    </td>
+                    <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
+                {% endif %}
                 <td>{{ service_status(bot.status, False, bot.exception_log, bot.flood_left()) }}</td>
                 <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
                 <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
