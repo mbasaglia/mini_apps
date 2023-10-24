@@ -38,22 +38,31 @@ def dict_merge_recursive(orig: dict, overrides: dict):
         else:
             dict_merge_recursive(orig[key], val)
 
+class VarsLoader:
+    prefix = "$vars."
+    this_prefix = "$this."
 
-def apply_vars_impl(data: dict, vars: dict):
-    for key, val in data.items():
-        if isinstance(val, dict):
-            apply_vars_impl(val, vars)
-        elif isinstance(val, str) and val.startswith("$vars."):
-            data[key] = vars[val[len("$vars."):]]
-        elif isinstance(val, list):
-            for sub in val:
-                if isinstance(sub, dict):
-                    apply_vars_impl(sub, vars)
+    def __init__(self, data):
+        self.vars = data.pop("$vars")
+        self.apply(data)
 
-
-def apply_vars(data):
-    vars = data.pop("$vars")
-    apply_vars_impl(data, vars)
+    def apply(self, data: dict):
+        for key, val in data.items():
+            if isinstance(val, dict):
+                self.apply(val)
+            elif isinstance(val, str):
+                if val.startswith(self.prefix):
+                    varname = val[len(self.prefix):]
+                    if varname.startswith("$"):
+                        varname = data[varname[1:]]
+                    data[key] = self.vars[varname]
+                elif val.startswith(self.this_prefix):
+                    varname = val[len(self.this_prefix):]
+                    data[key] = data[varname[1:]]
+            elif isinstance(val, list):
+                for sub in val:
+                    if isinstance(sub, dict):
+                        self.apply(sub)
 
 
 class SettingsValue:
@@ -98,7 +107,7 @@ class SettingsValue:
                 with open(include_path, "r") as include:
                     dict_merge_recursive(data, json.load(include))
             if "$vars" in data:
-                apply_vars(data)
+                VarsLoader(data)
             data.update(extra)
             return cls(data)
 

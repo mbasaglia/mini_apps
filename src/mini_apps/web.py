@@ -175,6 +175,10 @@ class WebApp(Service):
         http.app.add_named_subapp(self.name, app)
         self.app = app
 
+    @property
+    def runnable(self):
+        return False
+
     def prepare_app(self, http, app: ExtendedApplication):
         """
         Prepares the http app

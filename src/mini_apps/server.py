@@ -94,7 +94,7 @@ class Server(LogSource):
         self.log.debug("Stopping %s", task.service.name)
         await task.stop()
 
-    async def run(self, host, port, reload):
+    async def run(self, host: str, port: int, reload: bool, start: set):
         """
         Runs the server
 
@@ -104,7 +104,7 @@ class Server(LogSource):
 
         # Start the tasks
         for task in self.services.values():
-            if task.service.autostart:
+            if task.service.autostart or task.service.name in start:
                 self.tasks.append(task.start())
 
         try:

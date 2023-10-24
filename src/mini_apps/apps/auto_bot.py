@@ -38,6 +38,7 @@ class AutoBotRegistry:
     def __init__(self):
         self.loaded = {}
         self.current = None
+        self.children = {}
 
     def load_path(self, path: pathlib.Path):
         canonical = path.resolve()
@@ -129,6 +130,15 @@ class AutoBotRegistry:
 
         return deco
 
+    def child(self, name):
+        if name in self.children:
+            return self.children[name]
+
+        br = AutoBotRegistry()
+        br.current = AutoBotData()
+        self.children[name] = br
+        return br
+
 
 class AutoBot(TelegramBot):
     """
@@ -144,6 +154,12 @@ class AutoBot(TelegramBot):
 
         if self.settings.command_path:
             self.handlers = self.registry.load_path(pathlib.Path(self.settings.command_path))
+            # Allow filtering by name
+            named = self.settings.get("named", None)
+            if named:
+                if isinstance(named, bool):
+                    named = self.name
+                self.handlers = self.registry.child(named).current
         else:
             self.handlers = AutoBotData()
 
@@ -174,3 +190,7 @@ bot_command = AutoBot.registry.bot_command
 bot_inline = AutoBot.registry.bot_inline
 bot_button_callback = AutoBot.registry.bot_button_callback
 bot_media = AutoBot.registry.bot_media
+
+
+def bot(name):
+    return AutoBot.registry.child(name)

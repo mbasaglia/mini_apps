@@ -47,8 +47,15 @@ class BaseService(LogSource):
         self.autostart = settings.get("autostart", True)
 
     @property
+    def runnable(self):
+        """
+        Whether the service has a meanining ful run()
+        """
+        return True
+
+    @property
     def is_running(self):
-        return self.status.value >= ServiceStatus.Starting.value
+        return self.status.value >= ServiceStatus.Starting.value or not self.runnable
 
     async def run(self):
         """

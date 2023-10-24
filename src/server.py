@@ -8,13 +8,13 @@ from mini_apps.settings import Settings
 from mini_apps.server import Server
 
 
-async def run_server(settings, host, port, reload):
+async def run_server(settings, host, port, reload, start):
     """
     Runs the telegram bot and socket server
     """
 
     server = Server(settings)
-    reload = await server.run(host, port, reload)
+    reload = await server.run(host, port, reload, start)
     if reload:
         try:
             p = subprocess.run(sys.argv)
@@ -49,12 +49,19 @@ parser.add_argument(
     help="If present disables auto-reloading"
 )
 
+parser.add_argument(
+    "--start", "-s",
+    action="append",
+    type=str,
+    default=[],
+    help="Automatically start the given service, even if it's not autostart in settings"
+)
 
 if __name__ == "__main__":
     args = parser.parse_args()
 
     reload = not args.no_reload and (args.reload or settings.get("reload"))
     try:
-        asyncio.run(run_server(settings, args.host, args.port, reload))
+        asyncio.run(run_server(settings, args.host, args.port, reload, set(args.start)))
     except KeyboardInterrupt:
         pass

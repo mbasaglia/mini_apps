@@ -224,8 +224,12 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
 
 class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
     """
-        Telegram bot with web frontend and socket connection
+    Telegram bot with web frontend and socket connection
     """
+    @property
+    def runnable(self):
+        return True
+
     def get_user(self, message: dict):
         """
         Called to authenticate a user based on the mini app initData
