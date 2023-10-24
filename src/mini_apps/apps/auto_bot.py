@@ -6,6 +6,7 @@ where multiple commands can be loaded from python functions in separate Python m
 """
 import sys
 import pathlib
+import importlib
 import importlib.util
 
 import telethon
@@ -53,6 +54,19 @@ class AutoBotRegistry:
         self._collect_path("_autobot", path)
         self.current = None
         return data
+
+    def load_module(self, module_name):
+        if module_name in self.loaded:
+            return self.loaded[module_name]
+
+        data = AutoBotData()
+        self.current = data
+        self.loaded[module_name] = data
+        importlib.import_module(module_name)
+        self.current = None
+        return data
+
+
 
     def _module_from_file(self, name: str, path: pathlib.Path):
         spec = importlib.util.spec_from_file_location(name, str(path))
@@ -152,17 +166,20 @@ class AutoBot(TelegramBot):
         # Ensures we have an explicit name
         self.name = self.settings.name
 
-        if self.settings.command_path:
+        if self.settings.get("command_path"):
             self.handlers = self.registry.load_path(pathlib.Path(self.settings.command_path))
-            # Allow filtering by name
-            named = self.settings.get("named", None)
-            if named:
-                if isinstance(named, bool):
-                    named = self.name
-                self.handlers = self.registry.child(named).current
-                self.bot_commands = self.handlers.commands
+        elif self.settings.get("command_module"):
+            self.handlers = self.registry.load_module(self.settings.command_module)
         else:
             self.handlers = AutoBotData()
+
+        # Allow filtering by name
+        named = self.settings.get("named", None)
+        if named:
+            if isinstance(named, bool):
+                named = self.name
+            self.handlers = self.registry.child(named).current
+            self.bot_commands = self.handlers.commands
 
     async def on_telegram_callback(self, event: telethon.events.CallbackQuery):
         if self.handlers.button_callback:
