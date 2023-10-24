@@ -26,7 +26,13 @@
         {% for service in services %}
             <tr>
                 <td><pre><code>{{ service.name }}</code></pre></td>
-                <td>{{ service_status(service.status) }}</td>
+                <td>
+                    {% if service.runnable %}
+                        {{ service_status(service.status) }}
+                    {% else %}
+                        {{ service_status(None) }}
+                    {% endif %}
+                </td>
                 <td><pre><code>{{ service.__class__.__module__ }}.{{ service.__class__.__name__ }}</code></pre></td>
             </tr>
         {% endfor %}
@@ -53,7 +59,7 @@
                     <p><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></p>
                 </td>
                 <td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td>
-                <td>{{ service_status(bot.status, False, bot.exception_log) }}</td>
+                <td>{{ service_status(bot.status, False, bot.exception_log, bot.flood_left()) }}</td>
                 <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
                 <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
                 <td>

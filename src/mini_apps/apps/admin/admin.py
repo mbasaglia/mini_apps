@@ -80,7 +80,7 @@ class AdminApp(JinjaApp):
         bot = self.get_bot(name)
         commands = await bot.get_commands()
         return self.context(
-            bot.telegram_me.username,
+            bot.telegram_me.username if bot.telegram_me else bot.name,
             bot=bot,
             commands=commands
         )

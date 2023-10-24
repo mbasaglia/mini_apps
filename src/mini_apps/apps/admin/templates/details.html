@@ -12,7 +12,7 @@
     <tr><th>Token</th><td style="font-size: small">{{ bot.token }}</td></tr>
     <tr><th>Class</th><td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td></tr>
     <tr><th>Service</th><td>{{ bot.name }}</td></tr>
-    <tr><th>Status</th><td><div style="width: 1ch">{{ service_status(bot.status, True) }}</div></td></tr>
+    <tr><th>Status</th><td><div style="width: 1ch">{{ service_status(bot.status, True, "", bot.flood_left()) }}</div></td></tr>
 
     <tr><th>Actions</th><td>
         <ul class="buttons">

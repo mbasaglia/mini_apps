@@ -59,7 +59,7 @@ class VarsLoader:
                     data[key] = self.vars[varname]
                 elif val.startswith(self.this_prefix):
                     varname = val[len(self.this_prefix):]
-                    data[key] = data[varname[1:]]
+                    data[key] = data[varname]
             elif isinstance(val, list):
                 for sub in val:
                     if isinstance(sub, dict):

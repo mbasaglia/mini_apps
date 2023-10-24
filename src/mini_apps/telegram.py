@@ -1,5 +1,6 @@
 import re
 import json
+import time
 import asyncio
 import urllib.parse
 
@@ -43,12 +44,18 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         self.telegram = None
         self.telegram_me = None
         self.token = self.settings.bot_token
+        self.flood_end = 0
 
     def telegram_link(self):
         """
         Return the url for telegram
         """
         return "https://t.me/" + self.telegram_me.username
+
+    def flood_left(self):
+        if self.flood_end > 0:
+            return round(self.flood_end - time.time())
+        return 0
 
     async def run(self):
         """
@@ -75,7 +82,9 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
                     self.status = ServiceStatus.StartFlood
                     self.log.warn("Wating for %ss (Flood Wait)", e.seconds)
+                    self.flood_end = time.time() + e.seconds
                     await asyncio.sleep(e.seconds)
+                    self.flood_end = 0
 
             self.status = ServiceStatus.Starting
 
@@ -101,6 +110,8 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         Returns the bot commands from the server
         """
+        if not self.telegram:
+            return None
         r = await self.telegram(telethon.functions.bots.GetBotCommandsRequest(
             telethon.tl.types.BotCommandScopeDefault(), "en"
         ))

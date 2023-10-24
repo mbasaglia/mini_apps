@@ -28,11 +28,13 @@ class ServerTask:
     def __init__(self, service: Service):
         self.service = service
         self.task = None
+        self.started = False
 
     def start(self):
         """
         Creates and starts the task for this service
         """
+        self.started = True
         coro = self.service.run()
         wrapped = coro_wrapper(coro, self.service)
         self.task = asyncio.create_task(wrapped, name=self.service.name)
@@ -43,6 +45,7 @@ class ServerTask:
         Stops the service
         """
         await self.service.stop()
+        self.started = False
 
 
 class Server(LogSource):
@@ -91,8 +94,9 @@ class Server(LogSource):
 
     async def stop_service(self, service):
         task = self.get_server_task(service)
-        self.log.debug("Stopping %s", task.service.name)
-        await task.stop()
+        if task.started:
+            self.log.debug("Stopping %s", task.service.name)
+            await task.stop()
 
     async def run(self, host: str, port: int, reload: bool, start: set):
         """

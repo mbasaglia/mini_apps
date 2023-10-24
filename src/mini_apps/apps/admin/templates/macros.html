@@ -1,9 +1,11 @@
-{% macro service_status(status, show_name=False, show_warning=False) -%}
+{% macro service_status(status, show_name=False, show_warning=False, flood_details=0) -%}
     <span class="status" title="{{ status.name }}">
     {%- if show_warning -%}
         {{ icon("triangle-exclamation") }}
     {%- endif -%}
-    {%- if status.name == "Disconnected" -%}
+    {%- if not status -%}
+        {{ icon("minus") }}
+    {%- elif status.name == "Disconnected" -%}
         {{ icon("pause") }}
     {%- elif status.name == "Crashed" -%}
         {{ icon("bug") }}
@@ -11,6 +13,9 @@
         {{ icon("clock", "regular") }}
     {%- elif status.name == "StartFlood" -%}
         {{ icon("clock-rotate-left") }}
+        {%- if flood_details -%}
+            &nbsp;{{ flood_details }}
+        {%- endif -%}
     {%- elif status.name == "Running" -%}
         {{ icon("check") }}
     {%- endif -%}

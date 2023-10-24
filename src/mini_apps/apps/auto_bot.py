@@ -160,17 +160,9 @@ class AutoBot(TelegramBot):
                 if isinstance(named, bool):
                     named = self.name
                 self.handlers = self.registry.child(named).current
+                self.bot_commands = self.handlers.commands
         else:
             self.handlers = AutoBotData()
-
-    async def on_telegram_command(self, trigger: str, query: str, event: telethon.events.NewMessage):
-        cmd = self.handlers.commands.get(trigger)
-
-        if cmd:
-            await cmd.function(query, event)
-            return True
-
-        return False
 
     async def on_telegram_callback(self, event: telethon.events.CallbackQuery):
         if self.handlers.button_callback:
