@@ -93,7 +93,11 @@ class UserFilter:
     @staticmethod
     def from_settings(settings):
         if "banned" in settings or "admins" in settings:
-            return SettingsListUserFilter(set(settings.get("banned", [])), set(settings.get("admins", [])))
+            return SettingsListUserFilter(
+                set(settings.get("banned", [])),
+                set(settings.get("admins", [])),
+                settings.get("admin_only", False),
+            )
         return UserFilter()
 
 
@@ -101,9 +105,10 @@ class SettingsListUserFilter(UserFilter):
     """
     Ban/admin list filter
     """
-    def __init__(self, banned, admins):
+    def __init__(self, banned, admins, admin_only):
         self.banned = banned
         self.admins = admins
+        self.admin_only = admin_only
 
     def filter_user(self, user):
         """
@@ -119,5 +124,7 @@ class SettingsListUserFilter(UserFilter):
 
         if user.telegram_id in self.admins:
             user.is_admin = True
+        elif self.admin_only:
+            return None
 
         return user
