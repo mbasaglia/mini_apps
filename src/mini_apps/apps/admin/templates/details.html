@@ -3,15 +3,21 @@
 {% from "macros.html" import service_status, bot_actions %}
 
 {% block content %}
-<h1>@{{ bot.telegram_me.username }}</h1>
+{% if bot.is_running %}
+    <h1>@{{ bot.telegram_me.username }}</h1>
+{% else %}
+    <h1>@{{ bot.name }}</h1>
+{% endif %}
 
 <table class="table">
+{% if bot.is_running %}
     <tr><th>Name</th><td>{{ bot.telegram_me.first_name }}</td></tr>
     <tr><th>Icon</th><td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td></tr>
     <tr><th>Username</th><td><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></td></tr>
+{% endif %}
     <tr><th>Token</th><td style="font-size: small">{{ bot.token }}</td></tr>
-    <tr><th>Class</th><td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td></tr>
     <tr><th>Service</th><td>{{ bot.name }}</td></tr>
+    <tr><th>Class</th><td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td></tr>
     <tr><th>Status</th><td><div style="width: 1ch">{{ service_status(bot.status, True, "", bot.flood_left()) }}</div></td></tr>
 
     <tr><th>Actions</th><td>
