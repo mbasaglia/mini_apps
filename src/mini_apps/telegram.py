@@ -6,7 +6,7 @@ import urllib.parse
 import telethon
 from telethon.sessions import MemorySession
 
-from .service import ServiceStatus, Service, LogRetainingService
+from .service import ServiceStatus, LogRetainingService
 from .command import bot_command, BotCommand
 from .apps.auth.user import clean_telegram_auth, User
 from .web import SocketService, JinjaApp, ServiceWithUserFilter

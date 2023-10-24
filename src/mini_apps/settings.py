@@ -38,6 +38,7 @@ def dict_merge_recursive(orig: dict, overrides: dict):
         else:
             dict_merge_recursive(orig[key], val)
 
+
 class VarsLoader:
     prefix = "$vars."
     this_prefix = "$this."
