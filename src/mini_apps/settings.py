@@ -1,4 +1,6 @@
 import os
+import re
+import sys
 import json
 import logging
 import pathlib
@@ -40,30 +42,48 @@ def dict_merge_recursive(orig: dict, overrides: dict):
 
 
 class VarsLoader:
-    prefix = "$vars."
-    this_prefix = "$this."
+    expr = re.compile(r"^\$([a-z]+)\.([^.]+)$")
 
     def __init__(self, data):
         self.vars = data.pop("$vars")
+        self.constants = {
+            "cwd": str(pathlib.Path().absolute())
+        }
         self.apply(data)
+
+    def replace_string(self, val, data: dict):
+        match = self.expr.match(val)
+        if match:
+            group = match.group(1)
+            varname = match.group(2)
+            if varname.startswith("$"):
+                varname = data[varname[1:]]
+
+            if group == "vars":
+                source = self.vars
+            elif group == "this":
+                source = data
+            elif group == "globals":
+                source = self.constants
+
+            return source[varname]
 
     def apply(self, data: dict):
         for key, val in data.items():
             if isinstance(val, dict):
                 self.apply(val)
             elif isinstance(val, str):
-                if val.startswith(self.prefix):
-                    varname = val[len(self.prefix):]
-                    if varname.startswith("$"):
-                        varname = data[varname[1:]]
-                    data[key] = self.vars[varname]
-                elif val.startswith(self.this_prefix):
-                    varname = val[len(self.this_prefix):]
-                    data[key] = data[varname]
+                replace = self.replace_string(val, data)
+                if replace is not None:
+                    data[key] = replace
             elif isinstance(val, list):
-                for sub in val:
+                for i, sub in enumerate(val):
                     if isinstance(sub, dict):
                         self.apply(sub)
+                    elif isinstance(sub, str):
+                        replace = self.replace_string(sub, data)
+                        if replace is not None:
+                            val[i] = replace
 
 
 class SettingsValue:
@@ -138,6 +158,8 @@ class Settings(SettingsValue):
     def __init__(self, data: dict):
         apps = data.pop("apps")
         log = data.pop("log", {})
+        sys.path += data.pop("pythonpath", [])
+
         super().__init__(data)
 
         self.init_logging(log)
