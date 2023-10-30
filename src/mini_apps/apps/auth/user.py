@@ -47,6 +47,10 @@ class User:
     pfp: str = None
 
     @classmethod
+    def from_telegram_user(cls, user):
+        return cls.from_telegram_dict(vars(user))
+
+    @classmethod
     def from_telegram_dict(cls, telegram_data):
         name = telegram_data["first_name"]
         last_name = telegram_data.get("last_name")

@@ -19,7 +19,7 @@ def meta_bot(name, bases, attrs):
     """
     bot_commands = {}
     for base in bases:
-        base_commands = getattr(base, "bot_commands", {})
+        base_commands = getattr(base, "_class_bot_commands", {})
         bot_commands.update(base_commands)
 
     for attr in attrs.values():
@@ -27,7 +27,7 @@ def meta_bot(name, bases, attrs):
         if command and isinstance(command, BotCommand):
             bot_commands[command.trigger] = command
 
-    attrs["bot_commands"] = bot_commands
+    attrs["_class_bot_commands"] = bot_commands
 
 
 class TelegramBot(LogRetainingService, ServiceWithUserFilter):
@@ -35,7 +35,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
     Contains boilerplate code to manage the various connections
     Inherit from this and override the relevant methods to implement your own bot
     """
-    bot_commands = {}
+    _class_bot_commands = {}
     command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)", re.DOTALL)
     meta_processors = set([meta_bot])
 
@@ -45,6 +45,30 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         self.telegram_me = None
         self.token = self.settings.bot_token
         self.flood_end = 0
+        self._bot_commands = None
+
+    @property
+    def bot_commands(self):
+        if self._bot_commands is None:
+            self._bot_commands = self.get_bot_commands()
+        return self._bot_commands
+
+    def get_bot_commands(self):
+        return self._class_bot_commands
+
+    async def info(self) -> dict:
+        """
+        Returns a dict of additional information about this bot (displayed on the admin page)
+        """
+        info = {}
+        await self.get_info(info)
+        return info
+
+    async def get_info(self, info: dict):
+        """
+        Updates the info dict
+        """
+        pass
 
     def telegram_link(self):
         """
@@ -56,6 +80,14 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         if self.flood_end > 0:
             return round(self.flood_end - time.time())
         return 0
+
+    def add_event_handlers(self):
+        """
+        Sets the telegram event handlers
+        """
+        self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
+        self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
+        self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)
 
     async def run(self):
         """
@@ -71,9 +103,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
             dc = self.settings.get("telegram_server")
             if dc:
                 self.telegram.session.set_dc(dc.dc, dc.address, dc.port)
-            self.telegram.add_event_handler(self.on_telegram_message_raw, telethon.events.NewMessage)
-            self.telegram.add_event_handler(self.on_telegram_callback_raw, telethon.events.CallbackQuery)
-            self.telegram.add_event_handler(self.on_telegram_inline_raw, telethon.events.InlineQuery)
+            self.add_event_handlers()
 
             while True:
                 try:
@@ -117,17 +147,21 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         ))
         return r
 
-    async def send_telegram_commands(self):
+    async def send_telegram_commands(
+        self,
+        scope=telethon.tl.types.BotCommandScopeDefault(),
+        predicate=(lambda cmd: not cmd.hidden and not cmd.admin_only)
+    ):
         """
         Automatically sends the registered commands
         """
         commands = []
         for command in self.bot_commands.values():
-            if not command.hidden:
+            if predicate(command):
                 commands.append(command.to_data())
 
         await self.telegram(telethon.functions.bots.SetBotCommandsRequest(
-            telethon.tl.types.BotCommandScopeDefault(), "en", commands
+            scope, "en", commands
         ))
 
     async def on_telegram_message_raw(self, event: telethon.events.NewMessage.Event):
@@ -137,9 +171,15 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         try:
             self.log.debug("%s NewMessage %s", event.sender_id, event.text[:80])
-            if not self.filter.filter_telegram_id(event.sender_id):
+            user = self.filter.filter_telegram_id(event.sender_id)
+            event.bot_user = user
+            if not user:
                 self.log.debug("%s is banned", event.sender_id)
                 return
+
+            if not await self.should_process_event(event):
+                return
+
             match = self.command_trigger.match(event.text)
             if match:
                 username = match.group("username")
@@ -153,6 +193,12 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         except Exception as e:
             await self.on_telegram_exception(e)
 
+    async def should_process_event(self, event):
+        """
+        Used to filter events
+        """
+        return True
+
     async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage.Event):
         """
         Called on a telegram /command
@@ -160,7 +206,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         :return: True if the command has been handled
         """
         cmd = self.bot_commands.get(trigger)
-        if cmd:
+        if cmd and (not cmd.admin_only or event.bot_user.is_admin):
             await cmd.function(self, args, event)
             return True
 
@@ -208,6 +254,8 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
     async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
         """
         Called on messages sent to the telegram bot
+
+        :returns: True if the message has been handled and needs no further processing
         """
         pass
 
@@ -232,6 +280,12 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         :param description: Command description as shown in the bot menu
         """
         return bot_command(*args, **kwargs)
+
+    async def admin_log(self, message):
+        """
+        Logs a bot administration message
+        """
+        self.log.info(message)
 
 
 class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
@@ -274,3 +328,63 @@ class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
             clean["user"] = json.loads(clean["user"])
 
         return clean
+
+
+class ChatActionsBot(TelegramBot):
+    """
+    Telegram bot that handles chat action events
+    """
+    def add_event_handlers(self):
+        super().add_event_handlers()
+        self.telegram.add_event_handler(self.on_chat_action_raw, telethon.events.ChatAction)
+
+    async def on_chat_action_raw(self, event: telethon.events.ChatAction.Event):
+        """
+        Called on telegram chat actions
+        wraps on_chat_action() for convenience
+        """
+        try:
+            await self.on_chat_action(event)
+        except Exception as e:
+            await self.on_telegram_exception(e)
+
+    async def on_chat_action(self, event: telethon.events.ChatAction.Event):
+        """
+        Chat action handler
+        """
+        user = await event.get_user()
+        chat = await event.get_chat()
+        chat_id = chat.id
+        joined = event.user_joined or event.user_added
+        left = event.user_kicked or event.user_left
+
+        if self.telegram_me.id == user.id:
+            if joined:
+                await self.on_self_join(chat, event)
+            elif left:
+                await self.on_self_leave(chat, event)
+        else:
+            if joined:
+                await self.on_user_join(user, chat, event)
+            elif left:
+                await self.on_user_leave(user, chat, event)
+
+    async def on_user_join(self, user, chat, event):
+        """
+        Called when a user (not the bot) joins a chat
+        """
+
+    async def on_self_join(self, chat, event):
+        """
+        Called when the bot joins a chat
+        """
+
+    async def on_user_leave(self, user, chat, event):
+        """
+        Called when a user (not the bot) leaves a chat
+        """
+
+    async def on_self_leave(self, chat, event):
+        """
+        Called when the bot leaves a chat
+        """

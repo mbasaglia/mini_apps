@@ -177,7 +177,7 @@ class AutoBot(TelegramBot):
             if isinstance(named, bool):
                 named = self.name
             self.handlers = self.registry.child(named).current
-        self.bot_commands = self.handlers.commands
+        self._bot_commands = self.handlers.commands
 
     async def on_telegram_callback(self, event: telethon.events.CallbackQuery.Event):
         if self.handlers.button_callback:
@@ -190,6 +190,8 @@ class AutoBot(TelegramBot):
     async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
         if self.handlers.media and event.message.media and not event.sender.is_self:
             self.handlers.media(self, event)
+            return True
+        return False
 
 
 # Expose global functions from the default registry

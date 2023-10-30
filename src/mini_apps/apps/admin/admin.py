@@ -82,7 +82,8 @@ class AdminApp(JinjaApp):
         return self.context(
             bot.telegram_me.username if bot.telegram_me else bot.name,
             bot=bot,
-            commands=commands
+            commands=commands,
+            info=await bot.info(),
         )
 
     @admin_view("/bot/{name}/stop/")

@@ -27,6 +27,26 @@
     </td></tr>
 </table>
 
+{% if bot.info %}
+<h2>Info</h2>
+
+<table class="table">
+    {% for name, value in info.items() %}
+        <tr><th>{{ name }}</th><td>
+            {% if value.__class__.__name__ == "list" or value.__class__.__name__ == "set" %}
+                <ul>
+                {% for item in value %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                {{ value }}
+            {% endif %}
+        </td></tr>
+    {% endfor %}
+</table>
+{% endif %}
+
 <h2>Commands</h2>
 {% if not commands %}
     <p>No commands set</p>

@@ -43,6 +43,7 @@ def dict_merge_recursive(orig: dict, overrides: dict):
 
 class VarsLoader:
     expr = re.compile(r"^\$([a-z]+)\.([^.]+)$")
+    _replace_no_match = object()
 
     def __init__(self, data):
         self.vars = data.pop("$vars")
@@ -53,20 +54,22 @@ class VarsLoader:
 
     def replace_string(self, val, data: dict):
         match = self.expr.match(val)
-        if match:
-            group = match.group(1)
-            varname = match.group(2)
-            if varname.startswith("$"):
-                varname = data[varname[1:]]
+        if not match:
+            return self._replace_no_match
 
-            if group == "vars":
-                source = self.vars
-            elif group == "this":
-                source = data
-            elif group == "globals":
-                source = self.constants
+        group = match.group(1)
+        varname = match.group(2)
+        if varname.startswith("$"):
+            varname = data[varname[1:]]
 
-            return source[varname]
+        if group == "vars":
+            source = self.vars
+        elif group == "this":
+            source = data
+        elif group == "globals":
+            source = self.constants
+
+        return source[varname]
 
     def apply(self, data: dict):
         for key, val in data.items():
@@ -74,7 +77,7 @@ class VarsLoader:
                 self.apply(val)
             elif isinstance(val, str):
                 replace = self.replace_string(val, data)
-                if replace is not None:
+                if replace is not self._replace_no_match:
                     data[key] = replace
             elif isinstance(val, list):
                 for i, sub in enumerate(val):
