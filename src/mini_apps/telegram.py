@@ -354,7 +354,6 @@ class ChatActionsBot(TelegramBot):
         """
         user = await event.get_user()
         chat = await event.get_chat()
-        chat_id = chat.id
         joined = event.user_joined or event.user_added
         left = event.user_kicked or event.user_left
 

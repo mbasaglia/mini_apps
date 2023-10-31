@@ -5,7 +5,7 @@ import asyncio
 import pathlib
 import dataclasses
 
-from ..telegram import TelegramBot, ChatActionsBot, bot_command
+from ..telegram import TelegramBot, ChatActionsBot
 from ..command import BotCommand, admin_command
 from ..utils.telegram import (
     MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker, parse_text,
@@ -181,7 +181,7 @@ class ApprovedChatBot(ChatActionsBot):
         reply = "Chats this bot operates in:\n\n"
         for group in groups:
             try:
-                chat = await chat.to_telegram(group.telegram_id)
+                chat = await group.to_telegram(group.telegram_id)
                 name = chat.title
                 found = True
             except Exception:
@@ -426,11 +426,11 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         reply = "Setting title for %s to %s\n" % (chunk.mentioned_name, title)
         for chat in chats:
             try:
-                entity = await set_admin_title(event.client, chat, chunk.mentioned_user, title)
+                await set_admin_title(event.client, chat, chunk.mentioned_user, title)
                 reply += "✅ %s\n" % chat.title
             except ChatAdminRequiredError:
                 reply += "❌ %s - I'm not and admin\n" % chat.title
-            except ChatAdminInviteRequiredError as e:
+            except ChatAdminInviteRequiredError:
                 reply += "❌ %s - User is already an admin or not in the chat\n" % chat.title
             except Exception as e:
                 reply += "❌ %s - %s\n" % (chat.title, e)
@@ -485,7 +485,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
                     reply += "%s %s in %s\n" % (name, action + "d", chat.title)
                 except ChatAdminRequiredError:
                     reply += "I don't have enough permissions in %s to %s %s\n" % (chat.title, action, name)
-                except Exception as e:
+                except Exception:
                     self.log_exception()
 
         if not reply:

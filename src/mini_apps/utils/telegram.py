@@ -222,7 +222,7 @@ class MessageChunk:
                 self.mentioned_user = await self.client.get_entity(self.text)
                 self.mentioned_id = self.mentioned_user.id
                 self.mentioned_name = user_name(self.mentioned_user)
-            except Exception as e:
+            except Exception:
                 self.mentioned_user = None
                 self.mentioned_id = None
                 self.mentioned_name = self.text
