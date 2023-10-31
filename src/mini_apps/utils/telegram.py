@@ -214,15 +214,15 @@ class MessageChunk:
     async def load(self):
         if isinstance(self.entity, telethon.tl.types.MessageEntityMentionName):
             self.is_mention = True
-            self.mentioned_user = await self.client.get_entity(self.entity.user_id)
+            self.mentioned_user = await self.client.get_input_entity(self.entity.user_id)
             self.mentioned_id = self.entity.user_id
             self.mentioned_name = self.text
         elif isinstance(self.entity, telethon.tl.types.MessageEntityMention):
             try:
                 self.mentioned_user = await self.client.get_entity(self.text)
                 self.mentioned_id = self.mentioned_user.id
-                self.mentioned_name = self.client.user_name(self.mentioned_user)
-            except Exception:
+                self.mentioned_name = user_name(self.mentioned_user)
+            except Exception as e:
                 self.mentioned_user = None
                 self.mentioned_id = None
                 self.mentioned_name = self.text
@@ -250,8 +250,11 @@ async def parse_text(event: telethon.events.NewMessage.Event):
         start_index = end_index
         chunks.append(MessageChunk(event.client, text, entity))
 
-    if start_index < len(self.text):
+    if start_index < len(event.text):
         chunks.append(MessageChunk(event.client, event.text[start_index:], None))
+
+    for chunk in chunks:
+        chunk.message = event
     return chunks
 
 
@@ -285,3 +288,10 @@ def user_name(user):
         return user.username
 
     return "Unnamed user"
+
+
+async def set_admin_title(client, chat, user, title):
+    user = await client.get_input_entity(user)
+    entity = await client.get_input_entity(chat)
+    rights = telethon.tl.types.ChatAdminRights(other=True)
+    return await client(telethon.tl.functions.channels.EditAdminRequest(entity, user, rights, rank=title))

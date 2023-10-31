@@ -102,6 +102,9 @@ class SettingsValue:
     def __contains__(self, item):
         return item in self.dict()
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def pop(self, key: str):
         """
         Removes a setting and returns its value

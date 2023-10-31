@@ -1,23 +1,25 @@
 """
 Various bot components and utilities
 """
+import asyncio
 import pathlib
 import dataclasses
 
 from ..telegram import TelegramBot, ChatActionsBot, bot_command
 from ..command import BotCommand, admin_command
 from ..utils.telegram import (
-    MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker
+    MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker, parse_text,
+    set_admin_title,
 )
+from ..settings import SettingsValue
 
 from telethon import tl
 from telethon.events import NewMessage
-from telethon.errors.rpcerrorlist import ChatAdminRequiredError, ChatAdminInviteRequiredError
+from telethon.errors.rpcerrorlist import ChatAdminRequiredError, ChatAdminInviteRequiredError, ChatIdInvalidError
+from telethon.tl.types import ChannelParticipantsKicked, ChannelParticipantsBanned
 
 import lottie
 from lottie.utils.font import FontStyle, TextJustify
-
-
 
 
 class AdminMessageBot(TelegramBot):
@@ -63,6 +65,28 @@ class BotChat:
     name: str
     approved: bool = False
 
+    @classmethod
+    def from_settings(cls, value):
+        if isinstance(value, (dict, SettingsValue)):
+            return BotChat(value["id"], value.get("name", "?"), True)
+        elif isinstance(value, int):
+            return BotChat(value, "?", True)
+        elif isinstance(value, str):
+            return BotChat(int(value), "?", True)
+        else:
+            raise TypeError("Invalid chat %r" % value)
+
+    async def to_telegram(self, client):
+        try:
+            return await client.get_entity(tl.types.PeerChat(self.id))
+        except (ChatIdInvalidError, ValueError):
+            pass
+        try:
+            return await client.get_entity(tl.types.PeerChannel(self.id))
+        except (ChatIdInvalidError, ValueError):
+            pass
+        raise Exception("Not %s a chat or channel" % self)
+
 
 class ApprovedChatBot(ChatActionsBot):
     """
@@ -72,13 +96,14 @@ class ApprovedChatBot(ChatActionsBot):
     def __init__(self, settings):
         super().__init__(settings)
         self.chats = {}
+        for chat in self.settings.get("chats", []):
+            chat = BotChat.from_settings(chat)
+            self.chats[str(chat.id)] = chat
 
     async def get_info(self, info: dict):
         await super().get_info(info)
         chats = await self.get_chats()
-        info.update(
-            chats=[chat.bot_chat for chat in chats]
-        )
+        info["chats"] = [chat.bot_chat for chat in chats]
 
     def is_allowed_chat(self, chat):
         str_id = str(chat.id)
@@ -138,7 +163,7 @@ class ApprovedChatBot(ChatActionsBot):
     async def get_chats(self):
         chats = []
         for chat in self.chats.values():
-            tg_chat = await self.telegram.get_entity(tl.types.PeerChat(int(chat.id)))
+            tg_chat = await chat.to_telegram(self.telegram)
             chat.name = tg_chat.title
             tg_chat.bot_chat = chat
             chats.append(tg_chat)
@@ -156,7 +181,7 @@ class ApprovedChatBot(ChatActionsBot):
         reply = "Chats this bot operates in:\n\n"
         for group in groups:
             try:
-                chat = await event.client.get_entity(tl.types.PeerChat(int(group.telegram_id)))
+                chat = await chat.to_telegram(group.telegram_id)
                 name = chat.title
                 found = True
             except Exception:
@@ -170,7 +195,7 @@ class ApprovedChatBot(ChatActionsBot):
             else:
                 reply += " Needs Approval"
 
-            if group.telegram_id == self.admin_chat_id:
+            if group.telegram_id == getattr(getattr(self, "admin_chat_bot", None), "id", None):
                 reply += " Admin"
 
             if not found:
@@ -178,7 +203,7 @@ class ApprovedChatBot(ChatActionsBot):
 
             reply += "\n"
 
-        await self.send_to_admin_chat(reply)
+        await self.admin_log(reply)
 
     @admin_command()
     async def list_chats(self, args: str, event: NewMessage.Event):
@@ -247,7 +272,10 @@ class LogToChatBot(TelegramBot):
     """
     def __init__(self, settings):
         super().__init__(settings)
-        self.admin_chat_id = self.settings.admin_chat_id
+        if self.settings.admin_chat:
+            self.admin_chat_bot = BotChat.from_settings(self.settings.admin_chat)
+        else:
+            self.admin_chat_bot = None
         self._admin_chat = None
 
     async def get_info(self, info: dict):
@@ -257,7 +285,8 @@ class LogToChatBot(TelegramBot):
 
     async def admin_chat(self):
         if self._admin_chat is None:
-            self._admin_chat = await self.telegram.get_entity(tl.types.PeerChat(int(self.admin_chat_id)))
+            chat = await self.admin_chat_bot.to_telegram(self.telegram)
+            self._admin_chat = chat
         return self._admin_chat
 
     async def send_to_admin_chat(self, *args, **kwargs):
@@ -270,7 +299,7 @@ class LogToChatBot(TelegramBot):
     async def on_telegram_connected(self):
         await super().on_telegram_connected()
 
-        if self.admin_chat_id is None:
+        if self.admin_chat_bot is None:
             return
 
         chat = await self.admin_chat()
@@ -287,11 +316,16 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         super().__init__(settings)
         self.owner = self.settings.admins[0]
 
+    async def get_user_info(self, id):
+        user = await self.telegram(tl.functions.users.GetFullUserRequest(int(id)))
+        user = user.users[0]
+        return {"id": user.id, "name": user_name(user)}
+
     async def get_info(self, info: dict):
         await super().get_info(info)
         info.update(
-            admins=self.filter.admins,
-            owner=self.owner,
+            admins=await asyncio.gather(*map(self.get_user_info, self.filter.admins)),
+            owner=await self.get_user_info(self.owner),
         )
 
     def is_admin(self, event: NewMessage.Event):
@@ -329,8 +363,6 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         """
         Santa will take note
         """
-        from telethon.tl.types import ChannelParticipantsKicked, ChannelParticipantsBanned
-
         msg = MessageFormatter()
 
         chats = await self.get_chats()
@@ -373,7 +405,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         """
         Sets admin title for a user
         """
-        chunks = await event.parse_text()
+        chunks = await parse_text(event)
 
         for index, chunk in enumerate(chunks):
             if chunk.is_mention:
@@ -382,8 +414,6 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
                     return
 
                 await chunk.load()
-                id = chunk.mentioned_id
-                name = chunk.mentioned_name
                 break
         else:
             await self.send_to_admin_chat("Missing mention")
@@ -393,10 +423,10 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
 
         chats = await self.get_chats()
 
-        reply = ""
+        reply = "Setting title for %s to %s\n" % (chunk.mentioned_name, title)
         for chat in chats:
             try:
-                entity = await event.client.set_admin_title(chat, chunk.mentioned_name, title)
+                entity = await set_admin_title(event.client, chat, chunk.mentioned_user, title)
                 reply += "✅ %s\n" % chat.title
             except ChatAdminRequiredError:
                 reply += "❌ %s - I'm not and admin\n" % chat.title
@@ -404,6 +434,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
                 reply += "❌ %s - User is already an admin or not in the chat\n" % chat.title
             except Exception as e:
                 reply += "❌ %s - %s\n" % (chat.title, e)
+                self.log_exception()
 
         await self.send_to_admin_chat(reply)
 
@@ -468,7 +499,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         """
         chat = await event.get_chat()
         msg = "Title: %s\nId: %s" % (chat.title, chat.id)
-        if not self.admin_chat_id:
+        if not self.admin_chat_bot:
             await self.telegram.send_message(event.chat, msg)
         else:
             await self.send_to_admin_chat(msg)
