@@ -36,7 +36,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
     Inherit from this and override the relevant methods to implement your own bot
     """
     _class_bot_commands = {}
-    command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?(?P<args>.*)", re.DOTALL)
+    command_trigger = re.compile(r"^/(?P<trigger>[a-zA-Z0-9_]+)(?:@(?P<username>[a-zA-Z0-9_]+))?\s?(?P<args>.*)", re.DOTALL)
     meta_processors = set([meta_bot])
 
     def __init__(self, settings):

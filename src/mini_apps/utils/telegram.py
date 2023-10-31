@@ -187,14 +187,17 @@ class MessageFormatter:
     def code(self, text):
         self._add_entity(telethon.tl.types.MessageEntityCode, text)
 
-    def pre(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityPre, text, language="")
+    def pre(self, text, language=""):
+        self._add_entity(telethon.tl.types.MessageEntityPre, text, language=language)
 
     def mention(self, text, user):
         self._add_entity(telethon.tl.types.InputMessageEntityMentionName, text, user_id=user)
 
     def block_quote(self):
         return self.EntityTag("Blockquote", self)
+
+    def bot_command(self, text):
+        self._add_entity(MessageFormatter.tl.types.MessageEntityBotCommand, text)
 
     @staticmethod
     def text_length(text):
