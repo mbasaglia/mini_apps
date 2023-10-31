@@ -268,7 +268,7 @@ class JinjaApp(WebApp):
     def get_url(self, url_name, **kwargs):
         if url_name in self.app.router.named_resources():
             kwargs["app"] = self.app
-        return self.http.url(url_name, **kwargs)
+        return str(self.http.url(url_name, **kwargs))
 
     async def exception_debug_response(self, request):
         """

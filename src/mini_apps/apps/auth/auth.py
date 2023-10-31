@@ -114,10 +114,11 @@ class AuthApp(JinjaApp):
         redirect = data.pop("redirect", "")
         self.log.info(data)
         data = clean_telegram_auth(data, self.settings.bot_token)
-        if data and data["user"]:
+        if data:
             user = User.from_telegram_dict(data)
+            user.telegram_id = int(user.telegram_id)
             await self.middleware.log_in(request, user)
-            return aiohttp.web.HTTPSeeOther(request.url.with_path(redirect))
+            return aiohttp.web.HTTPSeeOther(URL(self.http.base_url).with_path(redirect))
         else:
             return self.middleware.redirect(redirect)
 
