@@ -1,6 +1,8 @@
 """
 Various bot components and utilities
 """
+import math
+import random
 import asyncio
 import pathlib
 import dataclasses
@@ -9,12 +11,12 @@ from ..telegram import TelegramBot, ChatActionsBot
 from ..command import BotCommand, admin_command
 from ..utils.telegram import (
     MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker, parse_text,
-    set_admin_title,
+    set_admin_title, InlineKeyboard
 )
 from ..settings import SettingsValue
 
 from telethon import tl
-from telethon.events import NewMessage
+from telethon.events import NewMessage, CallbackQuery
 from telethon.errors.rpcerrorlist import ChatAdminRequiredError, ChatAdminInviteRequiredError, ChatIdInvalidError
 from telethon.tl.types import ChannelParticipantsKicked, ChannelParticipantsBanned
 
@@ -223,9 +225,12 @@ class WelcomeBot(ChatActionsBot):
     def __init__(self, settings):
         super().__init__(settings)
         self.welcome_image = None
+        self.welcome_on_join = True
 
     async def on_user_join(self, user, chat, event):
-        await self.welcome(user, chat, event)
+        super().on_user_join(user, chat, event)
+        if self.welcome_on_join:
+            await self.welcome(user, chat, event)
 
     async def welcome(self, user, chat, event):
         full_name = user_name(user)
@@ -293,8 +298,8 @@ class LogToChatBot(TelegramBot):
         chat = await self.admin_chat()
         return await self.telegram.send_message(chat, *args, **kwargs)
 
-    async def admin_log(self, message):
-        await self.send_to_admin_chat(message)
+    async def admin_log(self, message, *args, **kwargs):
+        await self.send_to_admin_chat(message, *args, **kwargs)
 
     async def on_telegram_connected(self):
         await super().on_telegram_connected()
@@ -514,3 +519,119 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
             await self.send_to_admin_chat("\n".join("%s %s" % item for item in users.items()))
         else:
             await self.send_to_admin_chat("No users to get info for")
+
+
+class RandomChoiceCaptchaBot(ChatActionsBot):
+    """
+    Shows a captcha based on settings
+    """
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.values = list(self.settings.values.dict().items())
+        self.choices = self.settings.get("choices", 6)
+        self.prompt = self.settings.get(
+            "prompt",
+            "Hi [{user_name}](tg://user?id={user.id}) welcome to **{chat.title}**.\nPlease click the button showing {correct}"
+        )
+        self.challenges = {}
+        self.columns = math.ceil(math.sqrt(self.choices))
+        self.timeout = self.settings.get("timeout", 5)
+
+    async def on_user_join(self, user, chat, event):
+        options = random.choices(self.values, k=self.choices)
+        correct = options[0]
+        incorrect = options[1:]
+        random.shuffle(options)
+        message = self.prompt.format(
+            user=user,
+            chat=chat,
+            user_name=user_name(user),
+            correct=correct,
+            incorrect=incorrect,
+            timeout=self.timeout
+        )
+        buttons = InlineKeyboard()
+        for i, (display, value) in enumerate(options):
+            if i % self.columns == 0:
+                buttons.add_row()
+            buttons.add_button_callback(display, "%s::%s" % (user.id, value))
+
+        buttons.add_row()
+        buttons.add_button_callback("🟩 Approve", "admin:approve:%s" % user.id)
+        buttons.add_button_callback("🟥 Reject", "admin:reject:%s" % user.id)
+
+        self.challenges[user.id] = correct[1]
+
+        await self.telegram.edit_permissions(chat, user, send_messages=False)
+        await self.telegram.send_message(chat, message, parse_mode="md")
+
+        await asyncio.sleep(self.timeout * 60)
+        challenge = self.challenges.pop(user.id, None)
+        if challenge is not None:
+            msg = MessageFormatter()
+            msg += "User "
+            msg.mention(user_name(user), user.id)
+            msg += " "
+            msg.bold("TIMED OUT")
+            msg += " (%s minutes)" % self.timeout
+            await self.admin_log(msg.text, formatting_entities=msg.entities)
+            await self.telegram.edit_permissions(event.chat, user, view_messages=False)
+
+    async def on_telegram_callback(self, event: CallbackQuery.Event):
+        button_user_id, button_action, button_value = event.query.split(":", 2)
+
+        if button_user_id == "admin":
+            user_id = int(button_value)
+            user = await self.telegram.get_entity(tl.types.PeerUser(user_id))
+
+            challenge = self.challenges.pop(user.id, None)
+            if not challenge:
+                self.admin_log("Captcha challenge not found")
+                await event.answer()
+                return
+
+            msg = MessageFormatter()
+            msg += "User "
+            msg.mention(user_name(user), user.id)
+            msg += " "
+            if button_action == "approve":
+                msg.bold("APPROVED")
+                await self.telegram.edit_permissions(event.chat, user, send_messages=True)
+            else:
+                msg.bold("REJECTED")
+                await self.telegram.edit_permissions(event.chat, user, view_messages=False)
+
+            admin = await event.get_sender()
+            msg += " by "
+            msg.mention(user_name(admin), admin.id)
+            await event.answer()
+            return
+
+        button_user_id = int(button_user_id)
+        user = await event.get_sender()
+        if button_user_id != user.id:
+            await event.answer()
+            return
+
+        challenge = self.challenges.pop(user.id, None)
+        if not challenge:
+            await event.answer()
+            return
+
+        msg = MessageFormatter()
+        msg += "User "
+        msg.mention(user_name(user), user.id)
+        msg += " "
+
+        if challenge == event.query:
+            msg.bold("PASSED")
+            await self.telegram.edit_permissions(event.chat, user, send_messages=True)
+        else:
+            msg.bold("FAILED")
+            await self.telegram.edit_permissions(event.chat, user, view_messages=False)
+
+        msg += " the captcha!"
+        await self.admin_log(msg.text, formatting_entities=msg.entities)
+        message = await event.get_message()
+        await message.delete()
+        await event.answer()

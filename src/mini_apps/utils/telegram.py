@@ -190,8 +190,8 @@ class MessageFormatter:
     def pre(self, text, language=""):
         self._add_entity(telethon.tl.types.MessageEntityPre, text, language=language)
 
-    def mention(self, text, user):
-        self._add_entity(telethon.tl.types.InputMessageEntityMentionName, text, user_id=user)
+    def mention(self, text, user_id):
+        self._add_entity(telethon.tl.types.InputMessageEntityMentionName, text, user_id=user_id)
 
     def block_quote(self):
         return self.EntityTag("Blockquote", self)

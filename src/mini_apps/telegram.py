@@ -218,7 +218,8 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         just wraps on_telegram_callback() with exception handling for convenience
         """
         try:
-            if not self.filter.filter_telegram_id(event.sender_id):
+            event.bot_user = self.filter.filter_telegram_id(event.sender_id)
+            if not event.bot_user:
                 self.log.debug("%s is banned", event.sender_id)
                 return
             await self.on_telegram_callback(event)
@@ -231,7 +232,8 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         just wraps on_telegram_inline() with exception handling for convenience
         """
         try:
-            if not self.filter.filter_telegram_id(event.sender_id):
+            event.bot_user = self.filter.filter_telegram_id(event.sender_id)
+            if not event.bot_user:
                 self.log.debug("%s is banned", event.sender_id)
                 await event.answer([])
                 return
@@ -281,7 +283,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         return bot_command(*args, **kwargs)
 
-    async def admin_log(self, message):
+    async def admin_log(self, message, *args, **kwargs):
         """
         Logs a bot administration message
         """
