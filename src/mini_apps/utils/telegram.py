@@ -124,6 +124,9 @@ class InlineKeyboard(MessageMarkup):
     def add_button_callback(self, text, data, row=-1):
         self.add_button(telethon.tl.types.KeyboardButtonCallback(text, data), row)
 
+    def add_button_webview(self, *args, row=-1, **kwargs):
+        self.add_button(telethon.tl.types.KeyboardButtonWebView(*args, **kwargs), row)
+
     def to_data(self):
         return self.rows
 
