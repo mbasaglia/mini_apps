@@ -31,7 +31,7 @@ class Glaximini(TelegramMiniApp, ServiceWithModels):
     async def index(self, request):
         return {
             "socket": self.http.websocket_url,
-            "app_name": self.app_name
+            "app_name": self.name
         }
 
     def prepare_app(self, http, app: ExtendedApplication):
@@ -39,7 +39,7 @@ class Glaximini(TelegramMiniApp, ServiceWithModels):
         Registers routes to the web server
         """
         super().prepare_app(http, app)
-        app.add_static_path("/js", self.get_server_path() / "public")
+        app.add_static_path("/js", Glaximini.get_server_path() / "public")
 
     def inline_buttons(self):
         """
