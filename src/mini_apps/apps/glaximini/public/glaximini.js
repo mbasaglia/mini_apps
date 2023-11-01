@@ -6,9 +6,9 @@ import { ShapeDeleteCommand } from "./command.js";
 
 export class GlaximiniApp extends App
 {
-    constructor(telegram)
+    constructor(name, telegram)
     {
-        super("glaximini", telegram);
+        super(name, telegram);
         this.connection.addEventListener("document.open", this.on_document_open.bind(this));
         this.connection.addEventListener("document.loaded", this.on_document_loaded.bind(this));
 

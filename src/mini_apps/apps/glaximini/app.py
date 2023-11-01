@@ -30,7 +30,8 @@ class Glaximini(TelegramMiniApp, ServiceWithModels):
     @template_view("/", template="glaximini.html")
     async def index(self, request):
         return {
-            "socket": self.http.websocket_url
+            "socket": self.http.websocket_url,
+            "app_name": self.app_name
         }
 
     def prepare_app(self, http, app: ExtendedApplication):
