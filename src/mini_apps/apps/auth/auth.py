@@ -42,7 +42,7 @@ class AuthMiddleware(Middleware):
         return request.user
 
     async def needs_login(self, request, handler):
-        user = await self.get_user(request)
+        await self.get_user(request)
 
         if not getattr(handler, "requires_auth", False):
             return False

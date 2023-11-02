@@ -98,7 +98,6 @@ def csrf_protect(handler=None):
             if isinstance(request, aiohttp.web.View):
                 request = request.request
 
-
             if request.method not in UNPROTECTED_HTTP_METHODS:
                 if not isinstance(request, aiohttp.web.Request):
                     raise RuntimeError('Can\'t get request from handler params')
