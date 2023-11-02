@@ -303,7 +303,11 @@ class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
         Called to authenticate a user based on the mini app initData
         Return None if authentication fails, otherwise return a user object
         """
-        data = self.decode_telegram_data(message["data"])
+
+        return self.user_from_data(message["data"])
+
+    def user_from_data(self, data):
+        data = self.decode_telegram_data(data)
         if data is None:
             fake_user = self.settings.get("fake-user")
             if fake_user:

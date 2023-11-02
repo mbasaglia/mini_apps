@@ -41,11 +41,11 @@ class Storage():
 
         return token
 
-    async def _save_token(self, request, response, token):
+    async def set_token(self, request, token):
         session = await get_session(request)
         session[SESSION_KEY] = token
 
-    async def save_token(self, request, response):
+    async def save_token(self, request):
         old_token = await self._get(request)
 
         if REQUEST_NEW_TOKEN_KEY in request:
@@ -56,10 +56,12 @@ class Storage():
             token = None
 
         if token is not None:
-            await self._save_token(request, response, token)
+            await self.set_token(request, token)
+
+        return token
 
 
-async def form_check(self, request, original_value):
+async def form_check(request, original_value):
     get = request.match_info.get(FORM_FIELD_NAME, None)
     post_req = await request.post() if get is None else None
     post = post_req.get(FORM_FIELD_NAME) if post_req is not None else None
@@ -69,8 +71,8 @@ async def form_check(self, request, original_value):
     return hmac.compare_digest(token, original_value)
 
 
-async def header_check(self, request, original_value):
-    token = request.headers.get(HEADER_NAME)
+async def header_check(request, original_value):
+    token = request.headers.get(HEADER_NAME, "")
     return hmac.compare_digest(token, original_value)
 
 
@@ -87,14 +89,6 @@ async def form_or_header_check(request, original_value):
 storage = Storage()
 
 
-async def _check(request):
-    if not isinstance(request, aiohttp.web.Request):
-        raise RuntimeError('Can\'t get request from handler params')
-
-    original_token = await storage.get_token(request)
-    return await form_or_header_check(request, original_token)
-
-
 def csrf_protect(handler=None):
     def wrapper(handler):
         @functools.wraps(handler)
@@ -104,13 +98,18 @@ def csrf_protect(handler=None):
             if isinstance(request, aiohttp.web.View):
                 request = request.request
 
-            if (
-                request.method not in UNPROTECTED_HTTP_METHODS
-                and not await _check(request)
-            ):
-                raise aiohttp.web.HTTPForbidden(reason="csrf token mismatch")
+
+            if request.method not in UNPROTECTED_HTTP_METHODS:
+                if not isinstance(request, aiohttp.web.Request):
+                    raise RuntimeError('Can\'t get request from handler params')
+
+                original_token = await storage.get_token(request)
+                if not await form_or_header_check(request, original_token):
+                    raise aiohttp.web.HTTPForbidden(reason="csrf token mismatch")
 
             raise_response = False
+
+            token = await storage.save_token(request)
 
             try:
                 response = await handler(*args, **kwargs)
@@ -118,8 +117,8 @@ def csrf_protect(handler=None):
                 response = exc
                 raise_response = True
 
-            if isinstance(response, aiohttp.web.Response):
-                await storage.save_token(request, response)
+            if isinstance(response, aiohttp.web.Response) and token:
+                response.headers[HEADER_NAME] = token
 
             if raise_response:
                 raise response
@@ -137,13 +136,8 @@ def csrf_protect(handler=None):
 
 
 def csrf_exempt(handler):
-    @functools.wraps(handler)
-    async def wrapped_handler(*args, **kwargs):
-        return await handler(*args, **kwargs)
-
-    setattr(wrapped_handler, MIDDLEWARE_SKIP_PROPERTY, True)
-
-    return wrapped_handler
+    setattr(handler, MIDDLEWARE_SKIP_PROPERTY, True)
+    return handler
 
 
 @aiohttp.web.middleware

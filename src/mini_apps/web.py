@@ -84,15 +84,15 @@ def view_decorator(func, url=None, methods=["get"], name=None):
     return func
 
 
-def view(url=None, methdods=["get"], name=None):
+def view(url=None, methods=["get"], name=None):
     """
     Decorator to register a method as URL handler
     """
     def deco(func):
-        return view_decorator(func, url, methdods, name)
+        return view_decorator(func, url, methods, name)
 
     if callable(url):
-        return view_decorator(url, None, methdods, name)
+        return view_decorator(url, None, methods, name)
 
     return deco
 

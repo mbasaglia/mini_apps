@@ -25,11 +25,7 @@ class AuthMiddleware(Middleware):
         self.cookie_max_age = datetime.timedelta(seconds=self.settings.get("max_age", 24*60*60))
         self.cookie_refresh = self.settings.get("refresh", True)
 
-    async def needs_login(self, request, handler):
-        if not getattr(handler, "requires_auth", False):
-            request.user = None
-            return False
-
+    async def get_user(self, request):
         session = await aiohttp_session.get_session(request)
         session_user = session.get(self.auth_key)
         if session_user:
@@ -37,11 +33,18 @@ class AuthMiddleware(Middleware):
         else:
             fake_user = self.settings.get("fake-user")
             if not fake_user:
-                return True
+                return None
 
             user = User.from_telegram_dict(fake_user.dict())
 
         request.user = self.filter.filter_user(user)
+        return request.user
+
+    async def needs_login(self, request, handler):
+        user = await self.get_user(request)
+
+        if not getattr(handler, "requires_auth", False):
+            return False
 
         if not request.user:
             return True
@@ -104,8 +107,8 @@ class AuthApp(JinjaApp):
         http.common_template_paths += self.template_paths()
         return super().add_routes(http)
 
-    @template_view(template="login.html", name="login")
-    async def login(self, request: aiohttp.web.Request):
+    @template_view(url="/login", template="login.html", name="login")
+    async def login_view(self, request: aiohttp.web.Request):
         return {}
 
     @view(name="login_auth")
@@ -122,10 +125,22 @@ class AuthApp(JinjaApp):
         else:
             return self.middleware.redirect(redirect)
 
-    @view(name="logout")
-    async def loggout(self, request: aiohttp.web.Request):
+    @view(url="/logout", name="logout")
+    async def loggout_view(self, request: aiohttp.web.Request):
         await self.middleware.log_out(request)
         return self.middleware.redirect(request.headers().get("referer", ""))
+
+    def register_consumer(self, what, service):
+        pass
+
+    def provides(self):
+        return ["auth"]
+
+    async def log_in(self, request, user):
+        return await self.middleware.log_in(request, user)
+
+    async def log_out(self, request):
+        return await self.middleware.log_out(request)
 
 
 def require_user(func=None, *, is_admin=False):
