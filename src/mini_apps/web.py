@@ -212,6 +212,11 @@ class WebApp(Service):
         """
         return aiohttp.web.Response(body=traceback.format_exc(), status=500)
 
+    def get_url(self, url_name, **kwargs):
+        if url_name in self.app.router.named_resources():
+            kwargs["app"] = self.app
+        return str(self.http.url(url_name, **kwargs))
+
 
 class JinjaApp(WebApp):
     """
@@ -264,11 +269,6 @@ class JinjaApp(WebApp):
             "request": request,
             "url": self.get_url
         }
-
-    def get_url(self, url_name, **kwargs):
-        if url_name in self.app.router.named_resources():
-            kwargs["app"] = self.app
-        return str(self.http.url(url_name, **kwargs))
 
     async def exception_debug_response(self, request):
         """
