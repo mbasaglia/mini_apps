@@ -1,8 +1,10 @@
 import io
+import asyncio
 
 from PIL import Image
 
 import telethon
+from telethon import tl
 from telethon.helpers import add_surrogate
 
 import lottie
@@ -62,12 +64,35 @@ class InlineHandler:
         self.builder = event.builder
         self.query = event.query.query
         self.results = []
+        #For how long this result should be cached on the user's client. Defaults to 0 for no cache.
+        self.cache_time = 0
+        # Whether the results should show as a gallery (grid) or not.
+        self.gallery = False
+        self.switch_webview = None
 
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *a, **kw):
-        await self.event.answer(self.results)
+        await self.answer()
+
+    async def answer(self):
+        if self.results:
+            results = await asyncio.gather(*self.results)
+        else:
+            results = []
+        await self.event.client(
+            tl.functions.messages.SetInlineBotResultsRequest(
+                query_id=self.event.query.query_id,
+                results=results,
+                cache_time=self.cache_time,
+                gallery=self.gallery,
+                next_offset=None,
+                private=False,
+                switch_pm=None,
+                switch_webview=self.switch_webview
+            )
+        )
 
     def document(self, *a, **kw):
         self.results.append(self.builder.document(*a, **kw))
@@ -98,6 +123,9 @@ class InlineHandler:
                 telethon.tl.types.DocumentAttributeFilename("sticker.tgs")
             ]
         ))
+
+    def webview_button(self, text: str, url: str):
+        self.switch_webview = tl.types.InlineBotWebView(text, url)
 
 
 class MessageMarkup:
