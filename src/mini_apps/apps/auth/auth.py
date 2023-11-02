@@ -33,6 +33,7 @@ class AuthMiddleware(Middleware):
         else:
             fake_user = self.settings.get("fake-user")
             if not fake_user:
+                request.user = None
                 return None
 
             user = User.from_telegram_dict(fake_user.dict())
