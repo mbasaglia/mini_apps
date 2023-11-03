@@ -9,7 +9,6 @@ from telethon.helpers import add_surrogate
 
 import lottie
 from lottie.exporters.core import export_tgs
-from lottie.exporters.cairo import export_png
 
 
 def animated_sticker_file(animation):
@@ -25,6 +24,7 @@ def static_sticker_file(image):
 
 def photo_file(image, format, background=(0, 0, 0, 0)):
     if isinstance(image, lottie.objects.Animation):
+        from lottie.exporters.cairo import export_png
         data_png = io.BytesIO()
         export_png(image, data_png)
         data_png.seek(0)
