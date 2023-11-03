@@ -23,16 +23,22 @@ class HeaderMiddleware(Service, Middleware):
     async def run(self):
         self.status = ServiceStatus.Running
 
+    def set_headers(self, response):
+        for header, value in self.settings.headers.dict().items():
+            response.headers[header.replace("_", "-")] = str(value)
 
     async def on_process_request(self, request: aiohttp.web.Request, handler):
         """
         Request processing implementation
         """
-        resp: aiohttp.web.Response = await handler(request)
-        for header, value in self.settings.headers.dict().items():
-            resp.headers[header.replace("_", "-")] = str(value)
-
-        return resp
+        try:
+            resp: aiohttp.web.Response = await handler(request)
+            self.set_headers(resp)
+            return resp
+        except Exception as e:
+            if isinstance(e, aiohttp.web.Response):
+                self.set_headers(e)
+            raise
 
     def consumes(self):
         return super().consumes() + ["http"]
