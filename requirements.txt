@@ -19,3 +19,6 @@ aiocron
 git+https://gitlab.com/mattbas/python-lottie.git@master
 hashids
 peewee
+
+#misc
+json-five

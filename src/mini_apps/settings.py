@@ -1,11 +1,12 @@
 import os
 import re
 import sys
-import json
 import logging
 import pathlib
 import importlib
 import traceback
+
+import json5
 
 
 class LogSource:
@@ -46,7 +47,7 @@ class VarsLoader:
     _replace_no_match = object()
 
     def __init__(self, data):
-        self.vars = data.pop("$vars")
+        self.vars = data.pop("$vars", {})
         self.constants = {
             "cwd": str(pathlib.Path().absolute())
         }
@@ -85,7 +86,7 @@ class VarsLoader:
                         self.apply(sub)
                     elif isinstance(sub, str):
                         replace = self.replace_string(sub, data)
-                        if replace is not None:
+                        if replace is not self._replace_no_match:
                             val[i] = replace
 
 
@@ -128,13 +129,13 @@ class SettingsValue:
         Loads settings from a JSON file
         """
         with open(filename, "r") as settings_file:
-            data = json.load(settings_file)
+            data = json5.load(settings_file)
             if "$include" in data:
                 include_path = filename.parent / data.pop("$include")
                 with open(include_path, "r") as include:
-                    dict_merge_recursive(data, json.load(include))
-            if "$vars" in data:
-                VarsLoader(data)
+                    dict_merge_recursive(data, json5.load(include))
+
+            VarsLoader(data)
             data.update(extra)
             return cls(data)
 
