@@ -80,7 +80,8 @@ class HttpServer(BaseService):
             await self.site.start()
 
             self.status = ServiceStatus.Running
-            self.log.info("Connected as %s:%s" % (self.host, self.port))
+            self.log.info("Connected as %s:%s", self.host, self.port)
+            self.log.info("Public URL %s", self.base_url)
             # run until task is cancelled or until self.stop()
             await self.stop_future
             self.log.info("Stopped")
