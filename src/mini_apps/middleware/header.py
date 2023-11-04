@@ -4,7 +4,6 @@ from .base import Middleware
 from ..service import Service, ServiceStatus
 
 
-
 class HeaderMiddleware(Service, Middleware):
     def __init__(self, settings):
         Service.__init__(self, settings)
