@@ -147,6 +147,16 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         ))
         return r
 
+    def gather_telegram_commands(self, scope, predicate):
+        """
+        Returns command objects to send to Telegram
+        """
+        commands = []
+        for command in self.bot_commands.values():
+            if predicate(command):
+                commands.append(command.to_data())
+        return commands
+
     async def send_telegram_commands(
         self,
         scope=telethon.tl.types.BotCommandScopeDefault(),
@@ -155,10 +165,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         Automatically sends the registered commands
         """
-        commands = []
-        for command in self.bot_commands.values():
-            if predicate(command):
-                commands.append(command.to_data())
+        commands = self.gather_telegram_commands(scope, predicate)
 
         await self.telegram(telethon.functions.bots.SetBotCommandsRequest(
             scope, "en", commands

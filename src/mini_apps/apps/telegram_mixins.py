@@ -635,3 +635,34 @@ class RandomChoiceCaptchaBot(ChatActionsBot):
         message = await event.get_message()
         await message.delete()
         await event.answer()
+
+
+class ReplyBot(TelegramBot):
+    """
+    Bot that gives fixed (or randomized) replies to given commands
+    """
+    class Command:
+        def __init__(self, messages, kwargs):
+            self.kwargs = kwargs
+            self.messages = messages
+
+        async def __call__(self, bot, args, event):
+                await event.client.send_message(event.chat, random.choice(self.messages), **self.kwargs)
+
+    def __init__(self, settings):
+        super().__init__(settings)
+        for trigger, command in settings.commands.dict().items():
+            kwargs = {}
+            if isinstance(command, SettingsValue):
+                kwargs = command.dict()
+                command = kwargs.pop("message")
+
+            description = kwargs.pop("description", "")
+            hidden = kwargs.pop("hidden", False)
+            admin_only = kwargs.pop("admin_only", False)
+
+            if not isinstance(command, list):
+                command = [command]
+
+            handler = self.Command(command, kwargs)
+            self.bot_commands[trigger] = BotCommand(handler, trigger, description, hidden, admin_only)
