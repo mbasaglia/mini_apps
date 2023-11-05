@@ -8,13 +8,15 @@ import time
 
 import aiocron
 import peewee
-import telethon
 
 from mini_apps.apps.auth.user import User
-from mini_apps.telegram import TelegramMiniApp, bot_command
+from mini_apps.telegram.bot import TelegramMiniApp, bot_command
+from mini_apps.telegram.events import NewMessageEvent, InlineQueryEvent
+from mini_apps.telegram.utils import InlineKeyboard
+from mini_apps.telegram import tl
 from mini_apps.db import BaseModel, ServiceWithModels
 from mini_apps.service import Client
-from mini_apps.web import ExtendedApplication, template_view
+from mini_apps.http.web_app import ExtendedApplication, template_view
 
 
 class Event(BaseModel):
@@ -275,7 +277,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
             await client.send(type="event", **self.event_data(event, client.user, attendees))
 
     @bot_command("start", description="Shows the start message")
-    async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
+    async def on_telegram_start(self, args: str, event: NewMessageEvent):
         """
         Called when a user sends /start to the bot
         """
@@ -289,17 +291,11 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         """
         Returns the telegram inline button that opens the web app
         """
-        types = telethon.tl.types
-        return types.ReplyInlineMarkup([
-            types.TypeKeyboardButtonRow([
-                types.KeyboardButtonWebView(
-                    "View Events",
-                    self.url
-                )
-            ])
-        ])
+        kb = InlineKeyboard()
+        kb.add_button_webview("View Events", self.url)
+        return kb.to_data()
 
-    async def on_telegram_inline(self, query: telethon.events.InlineQuery):
+    async def on_telegram_inline(self, query: InlineQueryEvent):
         """
         Called on telegram bot inline queries
         """
@@ -361,7 +357,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
                 description=preview_text,
                 text=text,
                 #buttons=self.inline_buttons(),
-                thumb=telethon.tl.types.InputWebDocument(
+                thumb=tl.types.InputWebDocument(
                     image_url,
                     size=0,
                     mime_type=mimetypes.guess_type(event.image)[0],

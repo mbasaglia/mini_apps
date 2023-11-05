@@ -9,10 +9,9 @@ import pathlib
 import importlib
 import importlib.util
 
-import telethon
-
-from ..telegram import TelegramBot
-from ..command import BotCommand
+from .bot import TelegramBot
+from .command import BotCommand
+from .events import NewMessageEvent, CallbackQueryEvent, InlineQueryEvent
 
 
 class AutoBotData:
@@ -179,15 +178,15 @@ class AutoBot(TelegramBot):
             self.handlers = self.registry.child(named).current
         self._bot_commands = self.handlers.commands
 
-    async def on_telegram_callback(self, event: telethon.events.CallbackQuery.Event):
+    async def on_telegram_callback(self, event: CallbackQueryEvent):
         if self.handlers.button_callback:
             await self.handlers.button_callback(self, event.query.data, event)
 
-    async def on_telegram_inline(self, event: telethon.events.InlineQuery.Event):
+    async def on_telegram_inline(self, event: InlineQueryEvent):
         if self.handlers.inline:
             await self.handlers.inline(event)
 
-    async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
+    async def on_telegram_message(self, event: NewMessageEvent):
         if self.handlers.media and event.message.media and not event.sender.is_self:
             self.handlers.media(self, event)
             return True

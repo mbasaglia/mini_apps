@@ -2,10 +2,12 @@ import inspect
 import random
 
 import hashids
-import telethon
 
-from mini_apps.telegram import TelegramMiniApp, bot_command
-from mini_apps.web import ExtendedApplication, template_view
+from mini_apps.telegram.bot import TelegramMiniApp, bot_command
+from mini_apps.telegram import tl
+from mini_apps.telegram.utils import InlineKeyboard
+from mini_apps.telegram.events import NewMessageEvent, InlineQueryEvent
+from mini_apps.http.web_app import ExtendedApplication, template_view
 from mini_apps.service import Client
 
 
@@ -191,15 +193,9 @@ class TicTacToe(TelegramMiniApp):
         """
         Returns the telegram inline button that opens the web app
         """
-        types = telethon.tl.types
-        return types.ReplyInlineMarkup([
-            types.TypeKeyboardButtonRow([
-                types.KeyboardButtonWebView(
-                    "Play",
-                    self.url
-                )
-            ])
-        ])
+        kb = InlineKeyboard()
+        kb.add_button_webview("Play", self.url)
+        return kb.to_data()
 
     async def on_client_authenticated(self, client: Client):
         """
@@ -264,7 +260,7 @@ class TicTacToe(TelegramMiniApp):
                 self.log_exception()
 
     @bot_command("start", description="Start message")
-    async def on_telegram_start(self, args: str, event: telethon.events.NewMessage):
+    async def on_telegram_start(self, args: str, event: NewMessageEvent):
         """
         Called when a user sends /start to the bot
         """
@@ -345,7 +341,7 @@ class TicTacToe(TelegramMiniApp):
                     game.guest.game = None
                     game.host.game = None
 
-    async def on_telegram_inline(self, query: telethon.events.InlineQuery):
+    async def on_telegram_inline(self, query: InlineQueryEvent):
         """
         Called on telegram bot inline queries
         """

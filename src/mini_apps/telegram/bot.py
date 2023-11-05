@@ -7,10 +7,12 @@ import urllib.parse
 import telethon
 from telethon.sessions import MemorySession
 
-from .service import ServiceStatus, LogRetainingService
+from ..service import ServiceStatus, LogRetainingService
+from ..apps.auth.user import clean_telegram_auth, User
+from ..http.web_app import SocketService, JinjaApp, ServiceWithUserFilter
 from .command import bot_command, BotCommand
-from .apps.auth.user import clean_telegram_auth, User
-from .web import SocketService, JinjaApp, ServiceWithUserFilter
+from .events import NewMessageEvent, InlineQueryEvent, ChatActionEvent, CallbackQueryEvent
+from . import tl
 
 
 def meta_bot(name, bases, attrs):
@@ -143,7 +145,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         if not self.telegram:
             return None
         r = await self.telegram(telethon.functions.bots.GetBotCommandsRequest(
-            telethon.tl.types.BotCommandScopeDefault(), "en"
+            tl.types.BotCommandScopeDefault(), "en"
         ))
         return r
 
@@ -159,7 +161,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
 
     async def send_telegram_commands(
         self,
-        scope=telethon.tl.types.BotCommandScopeDefault(),
+        scope=tl.types.BotCommandScopeDefault(),
         predicate=(lambda cmd: not cmd.hidden and not cmd.admin_only)
     ):
         """
@@ -171,7 +173,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
             scope, "en", commands
         ))
 
-    async def on_telegram_message_raw(self, event: telethon.events.NewMessage.Event):
+    async def on_telegram_message_raw(self, event: NewMessageEvent):
         """
         Called on messages sent to the telegram bot
         wraps on_telegram_message() for convenience and detects bot /commands
@@ -206,7 +208,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         return True
 
-    async def on_telegram_command(self, trigger: str, args: str, event: telethon.events.NewMessage.Event):
+    async def on_telegram_command(self, trigger: str, args: str, event: NewMessageEvent):
         """
         Called on a telegram /command
 
@@ -219,7 +221,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
 
         return False
 
-    async def on_telegram_callback_raw(self, event: telethon.events.CallbackQuery.Event):
+    async def on_telegram_callback_raw(self, event: CallbackQueryEvent):
         """
         Called on telegram callback queries (inline button presses),
         just wraps on_telegram_callback() with exception handling for convenience
@@ -233,7 +235,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def on_telegram_inline_raw(self, event: telethon.events.InlineQuery.Event):
+    async def on_telegram_inline_raw(self, event: InlineQueryEvent):
         """
         Called on telegram inline queries,
         just wraps on_telegram_inline() with exception handling for convenience
@@ -260,7 +262,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         pass
 
-    async def on_telegram_message(self, event: telethon.events.NewMessage.Event):
+    async def on_telegram_message(self, event: NewMessageEvent):
         """
         Called on messages sent to the telegram bot
 
@@ -268,13 +270,13 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         pass
 
-    async def on_telegram_callback(self, event: telethon.events.CallbackQuery.Event):
+    async def on_telegram_callback(self, event: CallbackQueryEvent):
         """
         Called on button presses on the telegram bot
         """
         pass
 
-    async def on_telegram_inline(self, event: telethon.events.InlineQuery.Event):
+    async def on_telegram_inline(self, event: InlineQueryEvent):
         """
         Called on telegram bot inline queries
         """
@@ -351,7 +353,7 @@ class ChatActionsBot(TelegramBot):
         super().add_event_handlers()
         self.telegram.add_event_handler(self.on_chat_action_raw, telethon.events.ChatAction)
 
-    async def on_chat_action_raw(self, event: telethon.events.ChatAction.Event):
+    async def on_chat_action_raw(self, event: ChatActionEvent):
         """
         Called on telegram chat actions
         wraps on_chat_action() for convenience
@@ -361,7 +363,7 @@ class ChatActionsBot(TelegramBot):
         except Exception as e:
             await self.on_telegram_exception(e)
 
-    async def on_chat_action(self, event: telethon.events.ChatAction.Event):
+    async def on_chat_action(self, event: ChatActionEvent):
         """
         Chat action handler
         """

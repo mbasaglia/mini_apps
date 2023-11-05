@@ -1,4 +1,4 @@
-from mini_apps.web import WebApp
+from mini_apps.http.web_app import WebApp
 
 
 class MiniAppsCommon(WebApp):

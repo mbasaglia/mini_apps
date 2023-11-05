@@ -1,9 +1,27 @@
 import aiohttp.web
+from ...service import Service, ServiceStatus
 
 
-class Middleware:
-    def __init__(self, http):
-        self.http = http
+class Middleware(Service):
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.http = None
+
+    @property
+    def runnable(self):
+        return False
+
+    async def run(self):
+        self.status = ServiceStatus.Running
+
+    def consumes(self):
+        return super().consumes() + ["http"]
+
+    def on_provider_added(self, provider):
+        super().on_provider_added(provider)
+        if provider.name == "http":
+            self.http = provider.service
+            self.http.middleware.append(self)
 
     @aiohttp.web.middleware
     async def process_request(self, request: aiohttp.web.Request, handler):

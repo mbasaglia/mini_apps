@@ -6,21 +6,20 @@ import aiohttp
 import aiohttp_session
 from yarl import URL
 
-from mini_apps.web import JinjaApp, view, template_view
-from mini_apps.middleware.base import Middleware
+from mini_apps.http.web_app import JinjaApp, view, template_view
+from mini_apps.http.middleware.base import Middleware
 from .user import User, UserFilter, clean_telegram_auth
 
 
-class AuthMiddleware(Middleware):
+class Auth(JinjaApp, Middleware):
     """
     Middleware thhat handles logins and adds request.user
     """
     auth_key = "__auth"
 
-    def __init__(self, settings, http, prefix):
-        super().__init__(http)
+    def __init__(self, settings):
+        super().__init__(settings)
         self.settings = settings
-        self.prefix = prefix
         self.filter = UserFilter.from_settings(self.settings)
         self.cookie_max_age = datetime.timedelta(seconds=self.settings.get("max_age", 24*60*60))
         self.cookie_refresh = self.settings.get("refresh", True)
@@ -77,7 +76,7 @@ class AuthMiddleware(Middleware):
     def redirect(self, redirect):
         if isinstance(redirect, URL):
             redirect = redirect.path
-        return aiohttp.web.HTTPSeeOther(self.http.url("%s:login" % self.prefix).with_query(redirect=redirect))
+        return aiohttp.web.HTTPSeeOther(self.http.url("%s:login" % self.name).with_query(redirect=redirect))
 
     async def log_in(self, request, user):
         session = await aiohttp_session.get_session(request)
@@ -100,11 +99,7 @@ class AuthMiddleware(Middleware):
             "user": request.user
         }
 
-
-class AuthApp(JinjaApp):
     def add_routes(self, http):
-        self.middleware = AuthMiddleware(self.settings, http, self.name)
-        http.register_middleware(self.middleware)
         http.common_template_paths += self.template_paths()
         return super().add_routes(http)
 

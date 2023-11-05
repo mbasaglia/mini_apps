@@ -1,6 +1,6 @@
 import inspect
 
-import telethon
+from . import tl
 
 
 class BotCommand:
@@ -23,7 +23,7 @@ class BotCommand:
         """
         Returns the telegram data for the command
         """
-        return telethon.tl.types.BotCommand(
+        return tl.types.BotCommand(
             self.trigger,
             self.description or self.trigger
         )

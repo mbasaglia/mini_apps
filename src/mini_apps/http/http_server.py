@@ -7,9 +7,9 @@ import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from yarl import URL
 
-from .service import BaseService, ServiceStatus, Client, Service, ServiceProvider
+from ..service import BaseService, ServiceStatus, Client, Service, ServiceProvider
 from .middleware.csrf import CsrfMiddleware
-from .web import ExtendedApplication
+from .utils import ExtendedApplication
 
 
 class HttpServer(BaseService):
@@ -21,7 +21,7 @@ class HttpServer(BaseService):
         super().__init__(settings)
         self.app = ExtendedApplication()
         self.middleware = [
-            CsrfMiddleware(self)
+            CsrfMiddleware(settings)
         ]
         aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.secret_key))
         self.host = settings.get("host", "localhost")

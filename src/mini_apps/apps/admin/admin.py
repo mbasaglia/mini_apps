@@ -3,10 +3,10 @@ import traceback
 
 import aiohttp
 
-from mini_apps.web import template_view, JinjaApp, view
+from mini_apps.http.middleware import messages
+from mini_apps.http.web_app import template_view, JinjaApp, view
+from mini_apps.telegram.bot import TelegramBot
 from mini_apps.apps.auth.auth import require_admin
-from mini_apps.telegram import TelegramBot
-from mini_apps.middleware import messages
 
 
 def admin_view(*args, **kwargs):

@@ -3,12 +3,13 @@ import asyncio
 
 from PIL import Image
 
-import telethon
-from telethon import tl
 from telethon.helpers import add_surrogate
 
 import lottie
 from lottie.exporters.core import export_tgs
+
+from . import tl
+from .events import InlineQueryEvent, NewMessageEvent
 
 
 def animated_sticker_file(animation):
@@ -43,14 +44,14 @@ def photo_file(image, format, background=(0, 0, 0, 0)):
 
 async def send_animated_sticker(client, chat, file, *a, **kw):
     return await client.send_file(chat, file, attributes=[
-        telethon.tl.types.DocumentAttributeFilename("sticker.tgs")
+        tl.types.DocumentAttributeFilename("sticker.tgs")
     ], *a, **kw)
 
 
 async def send_sticker(client, chat, file):
     file.name = "sticker.webp"
     return await client.send_file(chat, file, force_document=False, attributes=[
-        telethon.tl.types.DocumentAttributeFilename("sticker.webp")
+        tl.types.DocumentAttributeFilename("sticker.webp")
     ])
 
 
@@ -59,7 +60,7 @@ class InlineHandler:
     Context manager that provides a simple interface to provide inline results
     It also includes sticker support
     """
-    def __init__(self, event: telethon.events.InlineQuery.Event):
+    def __init__(self, event: InlineQueryEvent):
         self.event = event
         self.builder = event.builder
         self.query = event.query.query
@@ -110,7 +111,7 @@ class InlineHandler:
             mime_type="image/webp",
             type="sticker",
             attributes=[
-                telethon.tl.types.DocumentAttributeFilename("sticker.webp")
+                tl.types.DocumentAttributeFilename("sticker.webp")
             ]
         ))
 
@@ -120,7 +121,7 @@ class InlineHandler:
             mime_type="application/x-tgsticker",
             type="sticker",
             attributes=[
-                telethon.tl.types.DocumentAttributeFilename("sticker.tgs")
+                tl.types.DocumentAttributeFilename("sticker.tgs")
             ]
         ))
 
@@ -147,13 +148,13 @@ class InlineKeyboard(MessageMarkup):
         self.rows[row].append(button)
 
     def add_button_url(self, *args, row=-1, **kwargs):
-        self.add_button(telethon.tl.types.KeyboardButtonUrl(*args, **kwargs), row)
+        self.add_button(tl.types.KeyboardButtonUrl(*args, **kwargs), row)
 
     def add_button_callback(self, text, data, row=-1):
-        self.add_button(telethon.tl.types.KeyboardButtonCallback(text, data), row)
+        self.add_button(tl.types.KeyboardButtonCallback(text, data), row)
 
     def add_button_webview(self, *args, row=-1, **kwargs):
-        self.add_button(telethon.tl.types.KeyboardButtonWebView(*args, **kwargs), row)
+        self.add_button(tl.types.KeyboardButtonWebView(*args, **kwargs), row)
 
     def to_data(self):
         return self.rows
@@ -162,7 +163,7 @@ class InlineKeyboard(MessageMarkup):
 class MessageFormatter:
     class EntityTag:
         def __init__(self, entity_type, formatter, **kwargs):
-            self.type = getattr(telethon.tl.types, "MessageEntity" + entity_type)
+            self.type = getattr(tl.types, "MessageEntity" + entity_type)
             self.formatter = formatter
             self.offset = 0
             self.kwargs = kwargs
@@ -204,25 +205,25 @@ class MessageFormatter:
         self.offset += length
 
     def bold(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityBold, text)
+        self._add_entity(tl.types.MessageEntityBold, text)
 
     def italic(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityItalic, text)
+        self._add_entity(tl.types.MessageEntityItalic, text)
 
     def strike(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityStrike, text)
+        self._add_entity(tl.types.MessageEntityStrike, text)
 
     def underline(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityUnderline, text)
+        self._add_entity(tl.types.MessageEntityUnderline, text)
 
     def code(self, text):
-        self._add_entity(telethon.tl.types.MessageEntityCode, text)
+        self._add_entity(tl.types.MessageEntityCode, text)
 
     def pre(self, text, language=""):
-        self._add_entity(telethon.tl.types.MessageEntityPre, text, language=language)
+        self._add_entity(tl.types.MessageEntityPre, text, language=language)
 
     def mention(self, text, user_id):
-        self._add_entity(telethon.tl.types.InputMessageEntityMentionName, text, user_id=user_id)
+        self._add_entity(tl.types.InputMessageEntityMentionName, text, user_id=user_id)
 
     def block_quote(self):
         return self.EntityTag("Blockquote", self)
@@ -240,18 +241,18 @@ class MessageChunk:
         self.client = client
         self.text = text
         self.entity = entity
-        self.is_mention_name = isinstance(self.entity, telethon.tl.types.MessageEntityMentionName)
-        self.is_mention_username = isinstance(self.entity, telethon.tl.types.MessageEntityMention)
+        self.is_mention_name = isinstance(self.entity, tl.types.MessageEntityMentionName)
+        self.is_mention_username = isinstance(self.entity, tl.types.MessageEntityMention)
         self.is_mention = self.is_mention_name or self.is_mention_username
         self.is_text = entity is None
 
     async def load(self):
-        if isinstance(self.entity, telethon.tl.types.MessageEntityMentionName):
+        if isinstance(self.entity, tl.types.MessageEntityMentionName):
             self.is_mention = True
             self.mentioned_user = await self.client.get_input_entity(self.entity.user_id)
             self.mentioned_id = self.entity.user_id
             self.mentioned_name = self.text
-        elif isinstance(self.entity, telethon.tl.types.MessageEntityMention):
+        elif isinstance(self.entity, tl.types.MessageEntityMention):
             try:
                 self.mentioned_user = await self.client.get_entity(self.text)
                 self.mentioned_id = self.mentioned_user.id
@@ -268,7 +269,7 @@ class MessageChunk:
         )
 
 
-async def parse_text(event: telethon.events.NewMessage.Event):
+async def parse_text(event: NewMessageEvent):
     """
     Returns a list of MessageChunk
     """
@@ -292,7 +293,7 @@ async def parse_text(event: telethon.events.NewMessage.Event):
     return chunks
 
 
-async def mentions_from_message(event: telethon.events.NewMessage.Event):
+async def mentions_from_message(event: NewMessageEvent):
     """
     Returns a dict of id => name from mentions in event
     """
@@ -327,5 +328,5 @@ def user_name(user):
 async def set_admin_title(client, chat, user, title):
     user = await client.get_input_entity(user)
     entity = await client.get_input_entity(chat)
-    rights = telethon.tl.types.ChatAdminRights(other=True)
-    return await client(telethon.tl.functions.channels.EditAdminRequest(entity, user, rights, rank=title))
+    rights = tl.types.ChatAdminRights(other=True)
+    return await client(tl.functions.channels.EditAdminRequest(entity, user, rights, rank=title))

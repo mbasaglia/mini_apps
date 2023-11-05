@@ -7,18 +7,17 @@ import asyncio
 import pathlib
 import dataclasses
 
-from ..telegram import TelegramBot, ChatActionsBot
-from ..command import BotCommand, admin_command
-from ..utils.telegram import (
+from .bot import TelegramBot, ChatActionsBot
+from .command import BotCommand, admin_command
+from .utils import (
     MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker, parse_text,
     set_admin_title, InlineKeyboard
 )
 from ..settings import SettingsValue
+from .events import NewMessageEvent, CallbackQueryEvent
+from . import tl
 
-from telethon import tl
-from telethon.events import NewMessage, CallbackQuery
 from telethon.errors.rpcerrorlist import ChatAdminRequiredError, ChatAdminInviteRequiredError, ChatIdInvalidError
-from telethon.tl.types import ChannelParticipantsKicked, ChannelParticipantsBanned
 
 import lottie
 from lottie.utils.font import FontStyle, TextJustify
@@ -44,13 +43,13 @@ class AdminMessageBot(TelegramBot):
             admin_message=self.admin_message
         )
 
-    async def admin(self, args: str, event: NewMessage.Event):
+    async def admin(self, args: str, event: NewMessageEvent):
         """
         Notifies all admins
         """
         await event.reply(self.admin_message)
 
-    async def on_telegram_message(self, event: NewMessage.Event):
+    async def on_telegram_message(self, event: NewMessageEvent):
         if await super().on_telegram_message(event):
             return True
 
@@ -114,7 +113,7 @@ class ApprovedChatBot(ChatActionsBot):
             return False
         return self.chats[str_id].approved
 
-    async def should_process_event(self, event: NewMessage.Event):
+    async def should_process_event(self, event: NewMessageEvent):
         chat = getattr(event, "chat", None)
         # Not sure if this can actually happen
         if not chat:
@@ -141,7 +140,7 @@ class ApprovedChatBot(ChatActionsBot):
         return "%s %r" % (chat.id, chat.title)
 
     @admin_command()
-    async def add_chat(self, args: str, event: NewMessage.Event):
+    async def add_chat(self, args: str, event: NewMessageEvent):
         """
         Adds the current chat to the bot
         """
@@ -152,7 +151,7 @@ class ApprovedChatBot(ChatActionsBot):
             await self.admin_log("Chat %s was already enabled" % self.format_chat(chat))
 
     @admin_command()
-    async def remove_chat(self, args: str, event: NewMessage.Event):
+    async def remove_chat(self, args: str, event: NewMessageEvent):
         """
         Removes the current chat from the bot
         """
@@ -171,7 +170,7 @@ class ApprovedChatBot(ChatActionsBot):
             chats.append(tg_chat)
         return chats
 
-    async def do_list_chats(self, event: NewMessage.Event):
+    async def do_list_chats(self, event: NewMessageEvent):
         """
         Shows allowed groups
         """
@@ -208,7 +207,7 @@ class ApprovedChatBot(ChatActionsBot):
         await self.admin_log(reply)
 
     @admin_command()
-    async def list_chats(self, args: str, event: NewMessage.Event):
+    async def list_chats(self, args: str, event: NewMessageEvent):
         """
         Shows chats enabled for the bot
         """
@@ -333,7 +332,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
             owner=await self.get_user_info(self.owner),
         )
 
-    def is_admin(self, event: NewMessage.Event):
+    def is_admin(self, event: NewMessageEvent):
         """
         Checks if the event was triggered by an admin
         """
@@ -341,14 +340,14 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         return user and user.is_admin
 
     @admin_command()
-    async def admin_help(self, args: str, event: NewMessage.Event):
+    async def admin_help(self, args: str, event: NewMessageEvent):
         """
         Shows all the admin commands
         """
         await self.do_show_hidden_commands(event)
 
     @admin_command()
-    async def mute(self, args: str, event: NewMessage.Event):
+    async def mute(self, args: str, event: NewMessageEvent):
         """
         Mutes users
         """
@@ -356,7 +355,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         await self.toggle_mute(event, ids, True)
 
     @admin_command()
-    async def unmute(self, args: str, event: NewMessage.Event):
+    async def unmute(self, args: str, event: NewMessageEvent):
         """
         Unmutes users
         """
@@ -364,7 +363,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         await self.toggle_mute(event, ids, False)
 
     @admin_command()
-    async def naughty_list(self, args: str, event: NewMessage.Event):
+    async def naughty_list(self, args: str, event: NewMessageEvent):
         """
         Santa will take note
         """
@@ -375,13 +374,13 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
             msg += "%s\n" % chat.title
             naughty = []
 
-            kicked_users = await event.client.get_participants(chat, filter=ChannelParticipantsKicked)
+            kicked_users = await event.client.get_participants(chat, filter=tl.types.ChannelParticipantsKicked)
             for user in kicked_users:
                 naughty.append((user, "Kicked"))
 
             not_banned = await event.client.get_participants(chat)
             not_banned_id = set(u.id for u in not_banned)
-            banned_users = await event.client.get_participants(chat, filter=ChannelParticipantsBanned)
+            banned_users = await event.client.get_participants(chat, filter=tl.types.ChannelParticipantsBanned)
             for user in banned_users:
                 naughty.append((user, "Restricted" if user.id in not_banned_id else "Banned"))
 
@@ -406,7 +405,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         await self.send_to_admin_chat(msg.text or "Everyone is nice", formatting_entities=msg.entities)
 
     @admin_command()
-    async def set_title(self, args: str, event: NewMessage.Event):
+    async def set_title(self, args: str, event: NewMessageEvent):
         """
         Sets admin title for a user
         """
@@ -443,7 +442,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
 
         await self.send_to_admin_chat(reply)
 
-    async def do_show_hidden_commands(self, event: NewMessage.Event):
+    async def do_show_hidden_commands(self, event: NewMessageEvent):
         """
         Shows hidden commands
         """
@@ -498,7 +497,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
         await self.send_to_admin_chat(reply)
 
     @admin_command()
-    async def chat_info(self, args: str, event: NewMessage.Event):
+    async def chat_info(self, args: str, event: NewMessageEvent):
         """
         Shows chat ID and title
         """
@@ -510,7 +509,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
             await self.send_to_admin_chat(msg)
 
     @admin_command()
-    async def user_info(self, args: str, event: NewMessage.Event):
+    async def user_info(self, args: str, event: NewMessageEvent):
         """
         Shows user ID and and name
         """
@@ -577,7 +576,7 @@ class RandomChoiceCaptchaBot(ChatActionsBot):
             await self.admin_log(msg.text, formatting_entities=msg.entities)
             await self.telegram.edit_permissions(event.chat, user, view_messages=False)
 
-    async def on_telegram_callback(self, event: CallbackQuery.Event):
+    async def on_telegram_callback(self, event: CallbackQueryEvent):
         button_user_id, button_action, button_value = event.query.split(":", 2)
 
         if button_user_id == "admin":

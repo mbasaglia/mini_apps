@@ -69,7 +69,7 @@ class Server(LogSource):
         for prov in service.provides():
             self.providers[prov] = service
 
-        for cons in service.consumes():
+        for cons in set(service.consumes()):
             self.providers[cons].register_consumer(cons, service)
 
     def setup_run(self, host, port):
