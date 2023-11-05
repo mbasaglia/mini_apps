@@ -6,7 +6,7 @@ from aiohttp.web_urldispatcher import PrefixedSubAppResource, PlainResource, Sta
 
 from mini_apps.server import Server
 from mini_apps.settings import Settings
-from mini_apps.web import FileResource
+from mini_apps.http.utils import FileResource, NakedSubAppResource
 
 parser = argparse.ArgumentParser(description="Lists HTTP server URLs")
 
@@ -39,6 +39,9 @@ def print_app(app):
             print_resource(info["prefix"], resource.name, info["directory"])
         elif isinstance(resource, DynamicResource):
             print_resource(info["formatter"], resource.name, format_handler(resource._routes[0].handler))
+        elif isinstance(resource, NakedSubAppResource):
+            print_resource(".", resource.name, "app")
+            print_app(info["app"])
         else:
             print(resource, info)
 

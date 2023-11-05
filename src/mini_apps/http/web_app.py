@@ -100,6 +100,7 @@ class WebApp(Service):
 
     def __init__(self, settings):
         super().__init__(settings)
+        self.prefix = self.settings.get("prefix", "/" + self.name)
 
     def consumes(self):
         return super().consumes() + ["http"]
@@ -125,10 +126,13 @@ class WebApp(Service):
         self.prepare_app(http, app)
 
         for view in self.views:
-            for method in view.methods:
+            methods = list(view.methods)
+            if "get" in methods:
+                methods.append("head")
+            for method in methods:
                 app.router.add_route(method, view.url, view.bound_handler(self), name=view.name)
 
-        http.app.add_named_subapp(self.name, app)
+        http.app.add_named_subapp(self.prefix, self.name, app)
         self.app = app
 
     @property

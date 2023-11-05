@@ -36,7 +36,6 @@ class AdminApp(JinjaApp):
         """
         Registers routes to the web server
         """
-        http.register_middleware(messages.MessageMiddleware(http))
         super().prepare_app(http, app)
         app.add_static_path("/static", self.get_server_path() / "static")
 

@@ -116,27 +116,21 @@ class Auth(JinjaApp, Middleware):
         if data:
             user = User.from_telegram_dict(data)
             user.telegram_id = int(user.telegram_id)
-            await self.middleware.log_in(request, user)
+            await self.log_in(request, user)
             return aiohttp.web.HTTPSeeOther(URL(self.http.base_url).with_path(redirect))
         else:
-            return self.middleware.redirect(redirect)
+            return self.redirect(redirect)
 
     @view(url="/logout", name="logout")
     async def loggout_view(self, request: aiohttp.web.Request):
-        await self.middleware.log_out(request)
-        return self.middleware.redirect(request.headers().get("referer", ""))
+        await self.log_out(request)
+        return self.redirect(request.headers().get("referer", ""))
 
     def register_consumer(self, what, service):
         pass
 
     def provides(self):
         return ["auth"]
-
-    async def log_in(self, request, user):
-        return await self.middleware.log_in(request, user)
-
-    async def log_out(self, request):
-        return await self.middleware.log_out(request)
 
 
 def require_user(func=None, *, is_admin=False):
