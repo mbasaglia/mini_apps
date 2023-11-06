@@ -60,7 +60,7 @@ parser.add_argument(
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    reload = not args.no_reload and (args.reload or settings.get("reload"))
+    reload = not args.no_reload and (args.reload or settings.data.get("reload"))
     try:
         asyncio.run(run_server(settings, args.host, args.port, reload, set(args.start)))
     except KeyboardInterrupt:

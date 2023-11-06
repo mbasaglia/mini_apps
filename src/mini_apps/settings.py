@@ -5,6 +5,7 @@ import logging
 import pathlib
 import importlib
 import traceback
+import collections
 
 import json5
 
@@ -129,11 +130,12 @@ class Settings:
     """
     Global settings
     """
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, paths: dict):
         apps = data.pop("apps")
         log = data.pop("log", {})
         sys.path += data.pop("pythonpath", [])
         self.data = data
+        self.paths = collections.namedtuple("Paths", paths.keys())(**paths)
 
         self.init_logging(log)
         self.apps = {}
@@ -222,8 +224,7 @@ class Settings:
                     dict_merge_recursive(data, json5.load(include))
 
             VarsLoader(data)
-            data.update(extra)
-            return cls(data)
+            return cls(data, **extra)
 
     @classmethod
     def load_global(cls):

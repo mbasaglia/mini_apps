@@ -164,11 +164,14 @@ class AutoBot(TelegramBot):
         self.name = self.settings["name"]
 
         if self.settings.get("command-path"):
-            self.handlers = self.registry.load_path(pathlib.Path(self.settings["command-path"]))
+            path = pathlib.Path(self.settings["command-path"])
+            if not path.exists():
+                raise Exception("%s does not exist" % path)
+            self.handlers = self.registry.load_path(path)
         elif self.settings.get("command-module"):
             self.handlers = self.registry.load_module(self.settings["command-module"])
         else:
-            self.handlers = AutoBotData()
+            raise Exception("Missing `command-path` and `command-module`")
 
         # Allow filtering by name
         named = self.settings.get("named", None)
@@ -177,6 +180,14 @@ class AutoBot(TelegramBot):
                 named = self.name
             self.handlers = self.registry.child(named).current
         self._bot_commands = self.handlers.commands
+
+    async def get_info(self, info: dict):
+        await super().get_info(info)
+        if "command-path" in self.settings:
+            info["command-path"] = self.settings["command-path"]
+        elif "command-module" in self.settings:
+            info["command-module"] = self.settings["command-module"]
+
 
     async def on_telegram_callback(self, event: CallbackQueryEvent):
         if self.handlers.button_callback:

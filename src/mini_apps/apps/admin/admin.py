@@ -57,7 +57,7 @@ class AdminApp(JinjaApp):
         )
 
     def get_bot(self, name: str) -> TelegramBot:
-        bot = self.settings["apps"].get(name)
+        bot = self.settings.apps.get(name)
         if not isinstance(bot, TelegramBot):
             raise aiohttp.web.HTTPNotFound()
         return bot
