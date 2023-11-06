@@ -23,14 +23,14 @@ class HttpServer(BaseService):
         self.middleware = [
             CsrfMiddleware(settings)
         ]
-        aiohttp_session.setup(self.app, EncryptedCookieStorage(settings.secret_key))
+        aiohttp_session.setup(self.app, EncryptedCookieStorage(settings["secret-key"]))
         self.host = settings.get("host", "localhost")
         self.port = settings.get("port", 2537)
         self.http_provider = ServiceProvider("http", self)
         self.socket_provider = ServiceProvider("websocket", self)
         self.stop_future = None
         self.websocket_settings = settings.get("websocket", "")
-        self.base_url = settings.url.rstrip("/")
+        self.base_url = settings["url"].rstrip("/")
         self.websocket_url = self.base_url.replace("http", "ws") + self.websocket_settings
         self.common_template_paths = []
         if self.websocket_settings:

@@ -161,12 +161,12 @@ class AutoBot(TelegramBot):
         super().__init__(*args)
 
         # Ensures we have an explicit name
-        self.name = self.settings.name
+        self.name = self.settings["name"]
 
-        if self.settings.get("command_path"):
-            self.handlers = self.registry.load_path(pathlib.Path(self.settings.command_path))
-        elif self.settings.get("command_module"):
-            self.handlers = self.registry.load_module(self.settings.command_module)
+        if self.settings.get("command-path"):
+            self.handlers = self.registry.load_path(pathlib.Path(self.settings["command-path"]))
+        elif self.settings.get("command-module"):
+            self.handlers = self.registry.load_module(self.settings["command-module"])
         else:
             self.handlers = AutoBotData()
 

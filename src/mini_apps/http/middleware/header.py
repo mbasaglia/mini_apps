@@ -5,7 +5,7 @@ from .base import Middleware
 
 class HeaderMiddleware(Middleware):
     def set_headers(self, response):
-        for header, value in self.settings.headers.dict().items():
+        for header, value in self.settings["headers"].items():
             response.headers[header.replace("_", "-")] = str(value)
 
     async def on_process_request(self, request: aiohttp.web.Request, handler):

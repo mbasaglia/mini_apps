@@ -13,7 +13,6 @@ from .utils import (
     MessageFormatter, static_sticker_file, mentions_from_message, user_name, send_sticker, parse_text,
     set_admin_title, InlineKeyboard
 )
-from ..settings import SettingsValue
 from .events import NewMessageEvent, CallbackQueryEvent
 from . import tl
 
@@ -29,7 +28,7 @@ class AdminMessageBot(TelegramBot):
     """
     def __init__(self, settings):
         super().__init__(settings)
-        self.admin_message = self.settings.admin_message
+        self.admin_message = self.settings["admin-message"]
         self.trigger = settings.get("trigger", "admin")
 
     def get_bot_commands(self):
@@ -68,7 +67,7 @@ class BotChat:
 
     @classmethod
     def from_settings(cls, value):
-        if isinstance(value, (dict, SettingsValue)):
+        if isinstance(value, dict):
             return BotChat(value["id"], value.get("name", "?"), True)
         elif isinstance(value, int):
             return BotChat(value, "?", True)
@@ -262,7 +261,7 @@ class WelcomeBot(ChatActionsBot):
         text_layer.add_shape(lottie.objects.Stroke(stroke_color, stroke_width))
 
         if self.welcome_image is None:
-            self.welcome_image = self._asset_root / self.settings.welcome_image
+            self.welcome_image = self._asset_root / self.settings["welcome-image"]
         asset = lottie.objects.Image.embedded(self.welcome_image)
         anim.assets.append(asset)
         anim.add_layer(lottie.objects.ImageLayer(asset.id))
@@ -276,8 +275,8 @@ class LogToChatBot(TelegramBot):
     """
     def __init__(self, settings):
         super().__init__(settings)
-        if self.settings.admin_chat:
-            self.admin_chat_bot = BotChat.from_settings(self.settings.admin_chat)
+        if self.settings["admin-chat"]:
+            self.admin_chat_bot = BotChat.from_settings(self.settings["admin-chat"])
         else:
             self.admin_chat_bot = None
         self._admin_chat = None
@@ -318,7 +317,7 @@ class AdminCommandsBot(LogToChatBot, ApprovedChatBot):
     """
     def __init__(self, settings):
         super().__init__(settings)
-        self.owner = self.settings.admins[0]
+        self.owner = self.settings["admins"][0]
 
     async def get_user_info(self, id):
         user = await self.telegram(tl.functions.users.GetFullUserRequest(int(id)))
@@ -526,7 +525,7 @@ class RandomChoiceCaptchaBot(ChatActionsBot):
     """
     def __init__(self, settings):
         super().__init__(settings)
-        self.values = list(self.settings.values.dict().items())
+        self.values = list(self.settings["values"].items())
         self.choices = self.settings.get("choices", 6)
         self.prompt = self.settings.get(
             "prompt",
@@ -650,10 +649,10 @@ class ReplyBot(TelegramBot):
 
     def __init__(self, settings):
         super().__init__(settings)
-        for trigger, command in settings.commands.dict().items():
+        for trigger, command in settings["commands"].items():
             kwargs = {}
-            if isinstance(command, SettingsValue):
-                kwargs = command.dict()
+            if isinstance(command, dict):
+                kwargs = command
                 command = kwargs.pop("message")
 
             description = kwargs.pop("description", "")

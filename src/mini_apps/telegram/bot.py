@@ -45,7 +45,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         super().__init__(settings)
         self.telegram = None
         self.telegram_me = None
-        self.token = self.settings.bot_token
+        self.token = self.settings["bot-token"]
         self.flood_end = 0
         self._bot_commands = None
 
@@ -98,13 +98,13 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         try:
             self.status = ServiceStatus.Starting
             session = self.settings.get("session", MemorySession())
-            api_id = self.settings.api_id
-            api_hash = self.settings.api_hash
+            api_id = self.settings["api-id"]
+            api_hash = self.settings["api-hash"]
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
             dc = self.settings.get("telegram_server")
             if dc:
-                self.telegram.session.set_dc(dc.dc, dc.address, dc.port)
+                self.telegram.session.set_dc(dc["dc"], dc["address"], dc["port"])
             self.add_event_handlers()
 
             while True:
@@ -320,7 +320,7 @@ class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
         if data is None:
             fake_user = self.settings.get("fake-user")
             if fake_user:
-                data = {"user": fake_user.dict()}
+                data = {"user": fake_user}
             else:
                 return None
 
@@ -338,7 +338,7 @@ class TelegramMiniApp(TelegramBot, JinjaApp, SocketService):
         for key, value in sorted(urllib.parse.parse_qs(data).items()):
             clean[key] = value[0]
 
-        clean = clean_telegram_auth(clean, self.settings.bot_token, key_prefix=b"WebAppData")
+        clean = clean_telegram_auth(clean, self.token, key_prefix=b"WebAppData")
         if clean is not None:
             clean["user"] = json.loads(clean["user"])
 

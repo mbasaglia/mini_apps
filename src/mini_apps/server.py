@@ -72,7 +72,7 @@ class Server(LogSource):
         for cons in set(service.consumes()):
             self.providers[cons].register_consumer(cons, service)
 
-    def setup_run(self, host, port):
+    def load_services(self, host, port):
         # Register all the services
         for app in self.settings.app_list:
             if isinstance(app, HttpServer):
@@ -104,7 +104,7 @@ class Server(LogSource):
 
         :return: True if the server needs to be reloaded
         """
-        self.setup_run(host, port)
+        self.load_services(host, port)
 
         # Start the tasks
         for task in self.services.values():

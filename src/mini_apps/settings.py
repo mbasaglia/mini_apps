@@ -90,66 +90,16 @@ class VarsLoader:
                             val[i] = replace
 
 
-class SettingsValue:
-    """
-    Object to access settings in a more convenient way than a dict
-    """
-    def __init__(self, data: dict = {}):
-        for key, value in data.items():
-            if isinstance(value, dict):
-                value = SettingsValue(value)
-            setattr(self, key.replace("-", "_"), value)
-
-    def __contains__(self, item):
-        return item in self.dict()
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def pop(self, key: str):
-        """
-        Removes a setting and returns its value
-        """
-        value = getattr(self, key)
-        delattr(self, key)
-        return value
-
-    def get(self, key: str, default=None):
-        """
-        Get an item or the default value if not present
-        """
-        return getattr(self, key.replace("-", "_"), default)
-
-    def dict(self):
-        return vars(self)
-
-    @classmethod
-    def load(cls, filename, **extra):
-        """
-        Loads settings from a JSON file
-        """
-        with open(filename, "r") as settings_file:
-            data = json5.load(settings_file)
-            if "$include" in data:
-                include_path = filename.parent / data.pop("$include")
-                with open(include_path, "r") as include:
-                    dict_merge_recursive(data, json5.load(include))
-
-            VarsLoader(data)
-            data.update(extra)
-            return cls(data)
-
-
-class AppSettings(SettingsValue):
+class AppSettings:
     """
     Access both app-specific and global settings
     """
     def __init__(self, data, global_settings):
-        super().__init__(data)
+        self._data = data
         self._global = global_settings
 
     def __getattr__(self, name):
-        if name != "_global" and hasattr(self._global, name):
+        if name != "_global" and name != "_data" and hasattr(self._global, name):
             return getattr(self._global, name)
 
         raise AttributeError(name)
@@ -157,8 +107,25 @@ class AppSettings(SettingsValue):
     def __contains__(self, item):
         return item in self.dict() or item in self._global
 
+    def __contains__(self, item):
+        return item in self._data or item in self._global.data
 
-class Settings(SettingsValue):
+    def __getitem__(self, key):
+        if key in self._data:
+            return self._data[key]
+        return self._global.data[key]
+
+    def pop(self, key: str):
+        return self._data.pop(key)
+
+    def get(self, key: str, default=None):
+        if key in self._data:
+            return self._data[key]
+
+        return self._global.data.get(key, default)
+
+
+class Settings:
     """
     Global settings
     """
@@ -166,11 +133,10 @@ class Settings(SettingsValue):
         apps = data.pop("apps")
         log = data.pop("log", {})
         sys.path += data.pop("pythonpath", [])
-
-        super().__init__(data)
+        self.data = data
 
         self.init_logging(log)
-        self.apps = SettingsValue()
+        self.apps = {}
         self.app_list = []
 
         for app_settings in apps:
@@ -181,7 +147,7 @@ class Settings(SettingsValue):
     def add_app(self, app):
         if app.name in self.apps:
             raise KeyError("Duplicate app %s" % app.name)
-        setattr(self.apps, app.name, app)
+        self.apps[app.name] = app
         self.app_list.append(app)
         return app
 
@@ -242,6 +208,22 @@ class Settings(SettingsValue):
             "server": server_path,
             "settings": settings_path,
         }
+
+    @classmethod
+    def load(cls, filename, **extra):
+        """
+        Loads settings from a JSON file
+        """
+        with open(filename, "r") as settings_file:
+            data = json5.load(settings_file)
+            if "$include" in data:
+                include_path = filename.parent / data.pop("$include")
+                with open(include_path, "r") as include:
+                    dict_merge_recursive(data, json5.load(include))
+
+            VarsLoader(data)
+            data.update(extra)
+            return cls(data)
 
     @classmethod
     def load_global(cls):

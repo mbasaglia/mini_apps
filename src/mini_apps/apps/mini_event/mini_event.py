@@ -62,6 +62,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         super().__init__(*args)
         self.events = {}
         self.sorted_events = []
+        self.media_url = self.settings["media-url"]
 
     def database_models(self):
         """
@@ -256,7 +257,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         """
         data = event.to_json()
 
-        data["image"] = self.settings.media_url + event.image
+        data["image"] = self.media_url + event.image
         data["attending"] = bool(event.attendees.filter(UserEvent.telegram_id == user.telegram_id).first())
 
         # This allows passing the attendee count so we don't have to calculate it
@@ -328,7 +329,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
         results = []
 
         for event in events:
-            image_url = self.settings.media_url + event.image
+            image_url = self.media_url + event.image
 
             text = inspect.cleandoc("""
             **{event.title}**[\u200B]({image_url})
@@ -341,7 +342,7 @@ class MiniEventApp(TelegramMiniApp, ServiceWithModels):
             """).format(
                 event=event,
                 me=self.telegram_me.username,
-                shortname=self.settings.short_name,
+                shortname=self.settings["short-name"],
                 image_url=image_url
             )
 

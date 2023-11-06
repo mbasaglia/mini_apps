@@ -35,7 +35,7 @@ class Auth(JinjaApp, Middleware):
                 request.user = None
                 return None
 
-            user = User.from_telegram_dict(fake_user.dict())
+            user = User.from_telegram_dict(fake_user)
 
         request.user = self.filter.filter_user(user)
         return request.user
