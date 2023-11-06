@@ -13,7 +13,6 @@ from ..apps.auth.user import UserFilter
 from .utils import ExtendedApplication
 
 
-
 class ViewHandler:
     def __init__(self, instance: "WebApp", handler):
         self.handler = handler.__get__(instance, instance.__class__)

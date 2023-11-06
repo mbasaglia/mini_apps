@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import argparse
-import asyncio
-import subprocess
 import sys
+import argparse
 
 from mini_apps.settings import Settings
 
@@ -22,7 +20,6 @@ def format_field(service, field_name, field_func):
             value = value()
     else:
         value = field_func(service)
-
 
     return format_value(value)
 
@@ -49,7 +46,7 @@ def format_services(services, fields, show_titles):
 
 fields = {
     "name": None,
-    "class": lambda service: "%s.%s" % (service.__class__.__module__, service.__class__.__name__) ,
+    "class": lambda service: "%s.%s" % (service.__class__.__module__, service.__class__.__name__),
     "runnable": None,
     "autostart": None,
     "provides": None,

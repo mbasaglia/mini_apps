@@ -188,7 +188,6 @@ class AutoBot(TelegramBot):
         elif "command-module" in self.settings:
             info["command-module"] = self.settings["command-module"]
 
-
     async def on_telegram_callback(self, event: CallbackQueryEvent):
         if self.handlers.button_callback:
             await self.handlers.button_callback(self, event.query.data, event)

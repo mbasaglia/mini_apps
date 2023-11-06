@@ -106,9 +106,6 @@ class AppSettings:
         raise AttributeError(name)
 
     def __contains__(self, item):
-        return item in self.dict() or item in self._global
-
-    def __contains__(self, item):
         return item in self._data or item in self._global.data
 
     def __getitem__(self, key):

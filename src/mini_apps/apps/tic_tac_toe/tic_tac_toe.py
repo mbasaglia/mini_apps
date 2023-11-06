@@ -4,7 +4,6 @@ import random
 import hashids
 
 from mini_apps.telegram.bot import TelegramMiniApp, bot_command
-from mini_apps.telegram import tl
 from mini_apps.telegram.utils import InlineKeyboard
 from mini_apps.telegram.events import NewMessageEvent, InlineQueryEvent
 from mini_apps.http.web_app import ExtendedApplication, template_view
