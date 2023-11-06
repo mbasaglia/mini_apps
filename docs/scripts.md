@@ -20,28 +20,28 @@ Please note that the installation guide uses SQLite to minimize set up,
 so you might need to restart the server after changing data on the database.
 
 
-## `src/list_users.py`
-
-```{argparse}
-   :filename: ../src/list_users.py
-   :func: parser
-   :prog: src/list_users.py
-```
-
-## `src/make_admin.py`
-
-```{argparse}
-   :filename: ../src/make_admin.py
-   :func: parser
-   :prog: src/make_admin.py
-```
-
 ## `src/server.py`
 
 ```{argparse}
    :filename: ../src/server.py
    :func: parser
    :prog: src/server.py
+```
+
+## `src/urls.py`
+
+```{argparse}
+   :filename: ../src/urls.py
+   :func: parser
+   :prog: src/urls.py
+```
+
+## `src/list-services.py`
+
+```{argparse}
+   :filename: ../src/list-services.py
+   :func: parser
+   :prog: src/list-services.py
 ```
 
 ## `src/websocket_client.py`

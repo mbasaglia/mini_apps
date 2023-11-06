@@ -46,7 +46,7 @@ sys.path.append(str(here))
 import js_to_py
 pyjs_path = here / "pyjs" / "src"
 sys.path.append(str(pyjs_path.parent))
-js_source = root / "src" / "mini_apps" / "apps" / "mini_apps_common" / "public" / "src"
+js_source = root / "src" / "mini_apps" / "apps" / "mini_apps" / "public" / "src"
 pyjs_path.mkdir(parents=True, exist_ok=True)
 dest_path = here / "js"
 dest_path.mkdir(exist_ok=True)

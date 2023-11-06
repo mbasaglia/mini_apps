@@ -14,11 +14,8 @@ aiohttp-jinja2
 # Mini Events
 aiocron
 
-# Glaximini
-#lottie
-git+https://gitlab.com/mattbas/python-lottie.git@master
+# Tic Tac Toe
 hashids
-peewee
 
-#misc
+# misc
 json-five

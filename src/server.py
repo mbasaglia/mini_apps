@@ -23,8 +23,6 @@ async def run_server(settings, host, port, reload, start):
             return
 
 
-settings = Settings.load_global()
-
 parser = argparse.ArgumentParser(description="Runs the server")
 parser.add_argument(
     "--host", "-H",
@@ -60,6 +58,7 @@ parser.add_argument(
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    settings = Settings.load_global()
     reload = not args.no_reload and (args.reload or settings.data.get("reload"))
     try:
         asyncio.run(run_server(settings, args.host, args.port, reload, set(args.start)))

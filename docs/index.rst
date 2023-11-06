@@ -23,7 +23,6 @@ Mini Apps
    apps/index
    apps/mini_event
    apps/tic_tac_toe
-   apps/glaximini
    apps/custom
 
 .. toctree::
