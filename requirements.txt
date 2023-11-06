@@ -20,3 +20,6 @@ hashids
 
 # misc
 json-five
+
+# Utils
+Pillow
