@@ -274,19 +274,19 @@ async def parse_text(event: NewMessageEvent):
     Returns a list of MessageChunk
     """
     if not event.entities:
-        return [MessageChunk(event.client, event.text, None)]
+        return [MessageChunk(event.client, event.message.message, None)]
     chunks = []
     start_index = 0
     for entity in event.entities:
         if start_index < entity.offset:
-            chunks.append(MessageChunk(event.client, event.text[start_index:entity.offset], None))
+            chunks.append(MessageChunk(event.client, event.message.message[start_index:entity.offset], None))
         end_index = entity.offset + entity.length
-        text = event.text[entity.offset:end_index]
+        text = event.message.message[entity.offset:end_index]
         start_index = end_index
         chunks.append(MessageChunk(event.client, text, entity))
 
-    if start_index < len(event.text):
-        chunks.append(MessageChunk(event.client, event.text[start_index:], None))
+    if start_index < len(event.message.message):
+        chunks.append(MessageChunk(event.client, event.message.message[start_index:], None))
 
     for chunk in chunks:
         chunk.message = event
