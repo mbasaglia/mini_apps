@@ -50,6 +50,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     settings = Settings.load_global()
     server = Server(settings)
-    server.setup_run(None, None)
+    server.load_services(None, None)
 
     print_app(server.providers["http"].app)
