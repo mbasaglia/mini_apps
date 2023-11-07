@@ -117,7 +117,7 @@ class ApprovedChatBot(ChatActionsBot):
         # Not sure if this can actually happen
         if not chat:
             return True
-        return self.is_allowed_chat(chat) or event.bot_user.is_admin or isinstance(chat, tl.types.User)
+        return event.bot_user.is_admin or isinstance(chat, tl.types.User) or self.is_allowed_chat(chat)
 
     async def on_self_join(self, chat, event):
         self.chats[str(chat.id)] = BotChat(chat.id, chat.title)
