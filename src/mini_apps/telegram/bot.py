@@ -136,7 +136,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
 
     async def stop(self):
         if self.telegram and self.telegram.is_connected():
-            self.telegram.disconnect()
+            await self.telegram.disconnect()
 
     async def get_commands(self):
         """
