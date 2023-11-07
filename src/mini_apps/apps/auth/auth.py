@@ -88,6 +88,7 @@ class Auth(JinjaApp, Middleware):
 
         if user:
             session[self.auth_key] = user.to_json()
+            self.log.info("login from %s", user.to_json())
         else:
             session.pop(self.auth_key)
 
@@ -115,7 +116,7 @@ class Auth(JinjaApp, Middleware):
     async def login_auth(self, request: aiohttp.web.Request):
         data = dict(request.url.query)
         redirect = data.pop("redirect", "")
-        self.log.info(data)
+        self.log.debug(data)
         data = clean_telegram_auth(data, self.bot_token)
         if data:
             user = User.from_telegram_dict(data)
