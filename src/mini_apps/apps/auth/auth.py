@@ -23,6 +23,8 @@ class Auth(JinjaApp, Middleware):
         self.filter = UserFilter.from_settings(self.settings)
         self.cookie_max_age = datetime.timedelta(seconds=self.settings.get("max_age", 24*60*60))
         self.cookie_refresh = self.settings.get("refresh", True)
+        self.bot_token = self.settings.get("bot-token")
+        self.bot_username = self.settings.get("bot-username")
 
     async def get_user(self, request):
         session = await aiohttp_session.get_session(request)
@@ -105,14 +107,16 @@ class Auth(JinjaApp, Middleware):
 
     @template_view(url="/login", template="login.html", name="login")
     async def login_view(self, request: aiohttp.web.Request):
-        return {}
+        return {
+            "bot_username": self.bot_username
+        }
 
     @view(name="login_auth")
     async def login_auth(self, request: aiohttp.web.Request):
         data = dict(request.url.query)
         redirect = data.pop("redirect", "")
         self.log.info(data)
-        data = clean_telegram_auth(data, self.settings.bot_token)
+        data = clean_telegram_auth(data, self.bot_token)
         if data:
             user = User.from_telegram_dict(data)
             user.telegram_id = int(user.telegram_id)
