@@ -113,7 +113,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
                     break
                 except telethon.errors.rpcerrorlist.FloodWaitError as e:
                     self.status = ServiceStatus.StartFlood
-                    self.log.warn("Wating for %ss (Flood Wait)", e.seconds)
+                    self.log.warn("Wating for %ss (Flood Wait) %s", e.seconds, e)
                     self.flood_end = time.time() + e.seconds
                     await asyncio.sleep(e.seconds)
                     self.flood_end = 0
