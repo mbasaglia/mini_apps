@@ -127,6 +127,8 @@ class Settings:
     """
     Global settings
     """
+    _global = None
+
     def __init__(self, data: dict, paths: dict):
         apps = data.pop("apps")
         log = data.pop("log", {})
@@ -230,11 +232,15 @@ class Settings:
 
         :param fallback: If True, it will load a minimal default configuration without raising errors
         """
+        if cls._global:
+            return cls._global
+
         paths = cls.get_paths()
-        return cls.load(
+        cls._global = cls.load(
             paths["settings"],
             paths=paths
         )
+        return cls._global
 
     def load_app(self, app_settings: dict):
         """
