@@ -112,7 +112,10 @@ class WebApp(Service):
 
             self.url = self.settings.get("url")
             if not self.url:
-                self.url = "%s/%s/" % (http.base_url, self.name)
+                self.url = http.base_url
+                if self.prefix:
+                    self.url += self.prefix
+                self.url += "/"
 
             self.add_routes(http)
 

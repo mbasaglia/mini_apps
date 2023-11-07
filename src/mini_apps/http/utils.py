@@ -30,14 +30,14 @@ class ExtendedApplication(aiohttp.web.Application):
     """
     aiohttp application with extra stuff
     """
-    def add_static_path(self, prefix, path: pathlib.Path):
+    def add_static_path(self, prefix, path: pathlib.Path, *args, **kwargs):
         """
         Registers a static path to the app
         """
         if path.is_file():
-            self.router.register_resource(FileResource(prefix, path))
+            self.router.register_resource(FileResource(prefix, path, *args, **kwargs))
         else:
-            self.router.add_static(prefix, path)
+            self.router.add_static(prefix, path, *args, **kwargs)
 
     def add_named_subapp(self, prefix, name, app: aiohttp.web.Application):
         # Work around aiohttp add_aubapp so we can set the subapp name
