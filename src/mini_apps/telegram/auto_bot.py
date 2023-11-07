@@ -212,3 +212,21 @@ bot_media = AutoBot.registry.bot_media
 
 def bot(name):
     return AutoBot.registry.child(name)
+
+
+def named_bot_command(name, *a, **kw):
+    if a or kw:
+        return bot(name).bot_command(*a, **kw)
+    return bot(name).bot_command
+
+
+def named_bot_inline(name):
+    return bot(name).bot_inline
+
+
+def named_bot_media(name):
+    return bot(name).bot_media
+
+
+def named_bot_button_callback(name):
+    return bot(name).bot_button_callback
