@@ -15,7 +15,9 @@
     <tr><th>Icon</th><td><img src="{{ url("bot_picture", name=bot.name) }}" class="profile-pic"/></td></tr>
     <tr><th>Username</th><td><a href="{{ bot.telegram_link }}">@{{ bot.telegram_me.username }}</a></td></tr>
 {% endif %}
+{% if show_token %}
     <tr><th>Token</th><td style="font-size: small">{{ bot.token }}</td></tr>
+{% endif %}
     <tr><th>Service</th><td>{{ bot.name }}</td></tr>
     <tr><th>Class</th><td><pre><code>{{ bot.__class__.__module__ }}.{{ bot.__class__.__name__ }}</code></pre></td></tr>
     <tr><th>Status</th><td><div style="width: 1ch">{{ service_status(bot.status, True, "", bot.flood_left()) }}</div></td></tr>

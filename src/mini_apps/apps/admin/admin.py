@@ -24,11 +24,13 @@ class AdminApp(JinjaApp):
     def __init__(self, settings):
         super().__init__(settings)
         self.bot_pics = {}
+        self.show_token = self.settings.get("show-token", True)
 
     def context(self, title, **dict):
         dict.update(
             static=self.url + "static/",
             title=title,
+            show_token=self.show_token
         )
         return dict
 

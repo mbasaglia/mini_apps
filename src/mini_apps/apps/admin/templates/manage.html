@@ -47,7 +47,9 @@
             <th>Picture</th>
             <th>Status</th>
             <th>Service</th>
-            <th>Token</th>
+            {% if show_token %}
+                <th>Token</th>
+            {% endif %}
             <th>Actions</th>
         </tr>
     </thead>
@@ -68,7 +70,9 @@
                 {% endif %}
                 <td>{{ service_status(bot.status, False, bot.exception_log, bot.flood_left()) }}</td>
                 <td><p>{{ bot.name }}</p><p>{{ bot.__class__.__name__ }}</p></td>
-                <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
+                {% if show_token %}
+                    <td style="font-size: small"><pre><code>{{ bot.token }}</code></pre></td>
+                {% endif %}
                 <td>
                     <ul class="buttons">{{ bot_actions(bot) }}</ul>
                 </td>

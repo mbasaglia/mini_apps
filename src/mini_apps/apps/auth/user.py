@@ -20,7 +20,7 @@ def clean_telegram_auth(data: dict, bot_token: str, max_age=datetime.timedelta(d
     # Check the hash
     token = bot_token.encode("ascii")
     if key_prefix:
-        secret_key = hmac.new(b"WebAppData", token, digestmod=hashlib.sha256).digest()
+        secret_key = hmac.new(key_prefix, token, digestmod=hashlib.sha256).digest()
     else:
         secret_key = hashlib.sha256(token).digest()
     correct_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), hashlib.sha256).hexdigest()
