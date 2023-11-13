@@ -226,7 +226,7 @@ class WelcomeBot(ChatActionsBot):
         self.welcome_on_join = True
 
     async def on_user_join(self, user, chat, event):
-        super().on_user_join(user, chat, event)
+        await super().on_user_join(user, chat, event)
         if self.welcome_on_join:
             await self.welcome(user, chat, event)
 
