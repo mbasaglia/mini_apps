@@ -349,6 +349,10 @@ class ChatActionsBot(TelegramBot):
     """
     Telegram bot that handles chat action events
     """
+    def __init__(self, settings):
+        super().__init__(settings)
+        self.join_shown = set()
+
     def add_event_handlers(self):
         super().add_event_handlers()
         self.telegram.add_event_handler(self.on_chat_action_raw, telethon.events.ChatAction)
@@ -379,7 +383,14 @@ class ChatActionsBot(TelegramBot):
                 await self.on_self_leave(chat, event)
         else:
             if joined:
+                # Sometimes telegram sends two different events on user joins
+                # Since you can't be guaranteed either of them is going to get sent, we cache recently joined user ids
+                if user.id in self.join_shown:
+                    return
+                self.join_shown.add(user.id)
                 await self.on_user_join(user, chat, event)
+                asyncio.sleep(1)
+                self.join_shown.remove(user.id)
             elif left:
                 await self.on_user_leave(user, chat, event)
 
