@@ -389,7 +389,7 @@ class ChatActionsBot(TelegramBot):
                     return
                 self.join_shown.add(user.id)
                 await self.on_user_join(user, chat, event)
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
                 self.join_shown.remove(user.id)
             elif left:
                 await self.on_user_leave(user, chat, event)
