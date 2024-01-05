@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="/mini_apps/style.css" />
+    {% block style %}
+    <style>
+        .day-title {
+            text-align: center;
+        }
+        .description {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    {% endblock %}
+{% endblock %}
+
+{% block body %}
+
+{% for day in days %}
+    <h1 class="day-title">{{ day["day"].strftime("%A %d") }}</h1>
+
+    <main class="article-list">
+        {% for event in day["events"] %}
+            {% include "event-card.html" %}
+        {% endfor %}
+    </main>
+
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,30 @@
+
+{% block event %}
+    {% if event.visible %}
+        <article class="event {% if event.cancelled %}cancelled{% endif %}" id="event-{{ event.id }}">
+            <header>{{ event.title }}</header>
+            <section>
+                {% if event.image %}
+                    <img src="{{ event.image }}" alt="{{ event.title }}" />
+                {% endif %}
+                {% if event.description %}
+                    <div class="description">{{ event.description }}</div>
+                {% endif %}
+                <table>
+                    <tr>
+                        <th>Starts at</th>
+                        <td>{{ event.start.strftime("%H:%M") }}
+                    </tr>
+                    <tr>
+                        <th>Duration</th>
+                        <td>{{ minutes(event.duration) }}
+                    </tr>
+                    <tr>
+                        <th>Location</th>
+                        <td>{{ event.location }}
+                    </tr>
+                </table>
+            </section>
+        </article>
+    {% endif %}
+{% endblock %}
