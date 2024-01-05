@@ -40,10 +40,11 @@ main {
     margin: 0 auto;
 }
 
-#event-list {
+.article-list {
     display: flex;
-    flex-flow: row wrap;
+    flex-flow: column;
     justify-content: center;
+    align-items: center;
 }
 
 article {

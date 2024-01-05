@@ -180,6 +180,18 @@ class WebApp(Service):
         return str(self.http.url(url_name, **kwargs))
 
 
+def format_minutes(minutes):
+    if minutes < 60:
+        return "%s'" % minutes
+
+    hours = minutes // 60
+    minutes = minutes % 60
+    if minutes:
+        return "%d:%02d" % (hours, minutes)
+
+    return "%sh" % hours
+
+
 class JinjaApp(WebApp):
     """
     Web app that uses Jinja2 templates
@@ -229,7 +241,8 @@ class JinjaApp(WebApp):
             "app": self,
             "settings": self.settings,
             "request": request,
-            "url": self.get_url
+            "url": self.get_url,
+            "minutes": format_minutes,
         }
 
     async def exception_debug_response(self, request):
