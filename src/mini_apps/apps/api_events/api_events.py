@@ -72,15 +72,7 @@ class JsonStructure:
             return JsonPath(str).get(self.data)
 
     class Field:
-        conversions = {
-            "datetime": datetime.datetime.fromisoformat,
-            "date": datetime.date.fromisoformat,
-            "null": lambda x: None,
-            "markdown": markdown,
-            "html": Markup,
-        }
-
-        def __init__(self, key: str, url: URL):
+        def __init__(self, structure, key: str, url: URL):
             self.key = key
             if url.scheme == "eval":
                 expr = url.path
@@ -91,7 +83,7 @@ class JsonStructure:
                 self.conversion = conv
                 self.path = None
             else:
-                self.conversion = self.conversions.get(url.scheme)
+                self.conversion = structure.conversions.get(url.scheme)
                 self.path = JsonPath(url.path)
 
         def apply(self, obj):
@@ -103,10 +95,25 @@ class JsonStructure:
                     val = self.conversion(val)
             setattr(obj, self.key, val)
 
-    def __init__(self, data):
+    def __init__(self, data, datetime_format):
+        self.datetime_format = datetime_format
+        self.conversions = {
+            "datetime": self.datetime,
+            "date": datetime.date.fromisoformat,
+            "null": lambda x: None,
+            "markdown": markdown,
+            "html": Markup,
+        }
+
+
         self.fields = []
         for k, v in data.items():
-            self.fields.append(self.Field(k, URL(v)))
+            self.fields.append(self.Field(self, k, URL(v)))
+
+    def datetime(self, val):
+        if not self.datetime_format:
+            return datetime.datetime.fromisoformat(val)
+        return datetime.datetime.strptime(val, self.datetime_format)
 
     def object(self, data):
         obj = self.Object(data)
@@ -125,7 +132,10 @@ class ApiEventApp(TelegramMiniApp):
         self.events = []
         self.days = []
         self.path_events = JsonPath(self.settings["path-events"])
-        self.event_structure = JsonStructure(self.settings["event-data"])
+        self.event_structure = JsonStructure(
+            self.settings["event-data"],
+            self.settings.get("datetime-format", None)
+        )
 
     async def run(self):
         await asyncio.gather(
