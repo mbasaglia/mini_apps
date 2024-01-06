@@ -235,7 +235,8 @@ class ApiEventApp(TelegramMiniApp):
             text = await self.render_template("event.md", dict(
                 event=event,
                 me=self.telegram_me,
-                shortname=self.settings["short-name"]
+                shortname=self.settings["short-name"],
+                invis="\u200B"
             ))
 
             description = event.description

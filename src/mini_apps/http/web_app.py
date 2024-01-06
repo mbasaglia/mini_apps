@@ -207,7 +207,8 @@ class JinjaApp(WebApp):
         aiohttp_jinja2.setup(
             app,
             loader=jinja2.FileSystemLoader(paths),
-            context_processors=[m.process_context for m in http.middleware] + [self.context_processor]
+            context_processors=[m.process_context for m in http.middleware] + [self.context_processor],
+            autoescape=jinja2.select_autoescape(),
         )
 
     async def render_template(self, template_name, context):
