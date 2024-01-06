@@ -1,4 +1,5 @@
 import json
+import inspect
 import datetime
 
 import aiohttp
@@ -9,6 +10,8 @@ from markupsafe import Markup
 from mini_apps.telegram.bot import TelegramMiniApp
 from mini_apps.service import BaseService, ServiceStatus
 from mini_apps.http.web_app import template_view
+from mini_apps.telegram.events import InlineQueryEvent
+from mini_apps.telegram import tl
 
 
 class PollingService(BaseService):
@@ -105,7 +108,6 @@ class JsonStructure:
             "html": Markup,
         }
 
-
         self.fields = []
         for k, v in data.items():
             self.fields.append(self.Field(self, k, URL(v)))
@@ -129,7 +131,8 @@ class ApiEventApp(TelegramMiniApp):
         poll_frequency = int(self.settings.get("poll", 20)) * 60
         self.poller = PollingService(settings, self.poll, poll_frequency)
         self.data = None
-        self.events = []
+        self.events = {}
+        self.sorted_events = []
         self.days = []
         self.path_events = JsonPath(self.settings["path-events"])
         self.event_structure = JsonStructure(
@@ -153,16 +156,17 @@ class ApiEventApp(TelegramMiniApp):
         async with aiohttp.client.ClientSession() as session:
             response = await session.get(self.api_url, headers={"User-Agent": "MiniApps %s" % self.name})
             self.data = json.loads(await response.read())
-            events = [
-                self.event_structure.object(event)
-                for event in self.path_events.get(self.data)
-            ]
 
-            self.events = sorted(events, key=lambda e: e.start)
+            self.events = {}
+            for evdata in self.path_events.get(self.data):
+                evobj = self.event_structure.object(evdata)
+                self.events[evobj.id] = evobj
+
+            self.sorted_events = sorted(self.events.values(), key=lambda e: e.start)
 
             self.days = []
             day = None
-            for event in self.events:
+            for event in self.sorted_events:
                 if event.day != day:
                     day = event.day
                     self.days.append({"day": day, "events": []})
@@ -170,15 +174,93 @@ class ApiEventApp(TelegramMiniApp):
 
     @template_view("/", template="events.html")
     async def index(self, request):
-        now = datetime.datetime.now(datetime.timezone.utc)
-        current_events = []
-        for event in self.events:
-            if event.start <= now <= event.finish:
-                current_events.append(event)
         return {
             "data": self.data,
             "events": self.events,
             "days": self.days,
             "now": now,
-            "current": current_events,
+            "current": self.current_events(now),
         }
+
+    def current_events(self, now):
+        current_events = []
+        for event in self.events:
+            if event.start <= now <= event.finish:
+                current_events.append(event)
+        return current_events
+
+    def current_and_future(self, now):
+        current_events = []
+        for event in self.events:
+            if now <= event.finish:
+                current_events.append(event)
+        return current_events
+
+    def events_from_query(self, query: str):
+        events = []
+        # Telegram supports up to 50 inline results
+        limit = 50
+
+        # Specific event from the web app
+        if query.startswith("event:"):
+            event_id = query.split(":")[1]
+            event = self.events.get(event_id)
+            if event:
+                events = [event]
+            else:
+                return None
+        # Not enough to search, show all
+        elif len(query.text) < 2:
+            events = self.current_and_future(datetime.datetime.now(datetime.timezone.utc))[:limit]
+        # Text-based search
+        else:
+            pattern = query.lower()
+
+            for i in range(min(limit, len(self.sorted_events))):
+                event = self.sorted_events[i]
+                if pattern in event.title.lower() or pattern in event.description.lower():
+                    events.append(event)
+
+    async def on_telegram_inline(self, query: InlineQueryEvent):
+        """
+        Called on telegram bot inline queries
+        """
+        results = []
+
+        for event in self.events_from_query(query.text):
+            text = inspect.cleandoc("""
+            **{event.title}**[\u200B]({event.image})
+            {event.description}
+
+            **Starts at** {event.start}
+            **Duration** {event.duration:g} hours
+
+            [View Events](https://t.me/{me}/{shortname}?startapp={event.id})
+            """).format(
+                event=event,
+                me=self.telegram_me.username,
+                shortname=self.settings["short-name"],
+            )
+
+            preview_text = inspect.cleandoc("""
+            {event.description}
+            Starts at {event.start}. Duration: {event.duration:g} hours
+            """).format(
+                event=event
+            )
+
+            results.append(query.builder.article(
+                title=event.title,
+                description=preview_text,
+                text=text,
+                #buttons=self.inline_buttons(),
+                thumb=tl.types.InputWebDocument(
+                    image_url,
+                    size=0,
+                    mime_type=mimetypes.guess_type(event.image)[0],
+                    attributes=[]
+                ) if event.image else None,
+                link_preview=True,
+            ))
+
+        await query.answer(results)
