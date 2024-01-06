@@ -1,6 +1,7 @@
 import json
 import inspect
 import datetime
+import mimetypes
 
 import aiohttp
 import asyncio
@@ -261,7 +262,7 @@ class ApiEventApp(TelegramMiniApp):
                 text=text,
                 #buttons=self.inline_buttons(),
                 thumb=tl.types.InputWebDocument(
-                    image_url,
+                    event.image,
                     size=0,
                     mime_type=mimetypes.guess_type(event.image)[0],
                     attributes=[]
