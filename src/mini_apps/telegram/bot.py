@@ -102,7 +102,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
             api_hash = self.settings["api-hash"]
 
             self.telegram = telethon.TelegramClient(session, api_id, api_hash)
-            dc = self.settings.get("telegram_server")
+            dc = self.settings.get("telegram-server")
             if dc:
                 self.telegram.session.set_dc(dc["dc"], dc["address"], dc["port"])
             self.add_event_handlers()

@@ -189,7 +189,7 @@ def format_minutes(minutes):
     if minutes:
         return "%d:%02d" % (hours, minutes)
 
-    return "%sh" % hours
+    return "%dh" % hours
 
 
 class JinjaApp(WebApp):
@@ -209,6 +209,16 @@ class JinjaApp(WebApp):
             loader=jinja2.FileSystemLoader(paths),
             context_processors=[m.process_context for m in http.middleware] + [self.context_processor]
         )
+
+    async def render_template(self, template_name, context):
+        """
+        Render a jinja template to string
+        """
+        env = aiohttp_jinja2.get_env(self.app)
+        template = env.get_template(template_name)
+        ctx = await self.context_processor(None)
+        ctx.update(context)
+        return template.render(ctx)
 
     def template_paths(self):
         """

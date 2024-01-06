@@ -24,6 +24,9 @@
                         <td>{{ event.location }}
                     </tr>
                 </table>
+                <p class="buttons">
+                    <button onclick='window.Telegram.WebApp.switchInlineQuery("event:{{ event.id }}", ["users", "groups", "channels"])'>Share</button>
+                </p>
             </section>
         </article>
     {% endif %}

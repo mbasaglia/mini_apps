@@ -9,7 +9,7 @@ from markupsafe import Markup
 
 from mini_apps.telegram.bot import TelegramMiniApp
 from mini_apps.service import BaseService, ServiceStatus
-from mini_apps.http.web_app import template_view
+from mini_apps.http.web_app import template_view, format_minutes
 from mini_apps.telegram.events import InlineQueryEvent
 from mini_apps.telegram import tl
 
@@ -106,6 +106,7 @@ class JsonStructure:
             "null": lambda x: None,
             "markdown": markdown,
             "html": Markup,
+            "str": str,
         }
 
         self.fields = []
@@ -174,6 +175,7 @@ class ApiEventApp(TelegramMiniApp):
 
     @template_view("/", template="events.html")
     async def index(self, request):
+        now = datetime.datetime.now(datetime.timezone.utc)
         return {
             "data": self.data,
             "events": self.events,
@@ -184,20 +186,19 @@ class ApiEventApp(TelegramMiniApp):
 
     def current_events(self, now):
         current_events = []
-        for event in self.events:
+        for event in self.sorted_events:
             if event.start <= now <= event.finish:
                 current_events.append(event)
         return current_events
 
     def current_and_future(self, now):
         current_events = []
-        for event in self.events:
+        for event in self.sorted_events:
             if now <= event.finish:
                 current_events.append(event)
         return current_events
 
     def events_from_query(self, query: str):
-        events = []
         # Telegram supports up to 50 inline results
         limit = 50
 
@@ -206,20 +207,23 @@ class ApiEventApp(TelegramMiniApp):
             event_id = query.split(":")[1]
             event = self.events.get(event_id)
             if event:
-                events = [event]
+                return [event]
             else:
-                return None
-        # Not enough to search, show all
-        elif len(query.text) < 2:
-            events = self.current_and_future(datetime.datetime.now(datetime.timezone.utc))[:limit]
-        # Text-based search
-        else:
-            pattern = query.lower()
+                return []
 
-            for i in range(min(limit, len(self.sorted_events))):
-                event = self.sorted_events[i]
-                if pattern in event.title.lower() or pattern in event.description.lower():
-                    events.append(event)
+        # Not enough to search, show all
+        if len(query) < 2:
+            return self.current_and_future(datetime.datetime.now(datetime.timezone.utc))[:limit]
+
+        # Text-based search
+        pattern = query.lower()
+
+        events = []
+        for i in range(min(limit, len(self.sorted_events))):
+            event = self.sorted_events[i]
+            if pattern in event.title.lower() or pattern in (event.description or "").lower():
+                events.append(event)
+        return events
 
     async def on_telegram_inline(self, query: InlineQueryEvent):
         """
@@ -228,25 +232,26 @@ class ApiEventApp(TelegramMiniApp):
         results = []
 
         for event in self.events_from_query(query.text):
-            text = inspect.cleandoc("""
-            **{event.title}**[\u200B]({event.image})
-            {event.description}
-
-            **Starts at** {event.start}
-            **Duration** {event.duration:g} hours
-
-            [View Events](https://t.me/{me}/{shortname}?startapp={event.id})
-            """).format(
+            text = await self.render_template("event.md", dict(
                 event=event,
-                me=self.telegram_me.username,
-                shortname=self.settings["short-name"],
-            )
+                me=self.telegram_me,
+                shortname=self.settings["short-name"]
+            ))
+
+            description = event.description
+            if "\n" in description:
+                description = description.splitlines()[0] + "..."
+
+            if len(description) > 100:
+                description = description[:100] + "..."
 
             preview_text = inspect.cleandoc("""
             {event.description}
-            Starts at {event.start}. Duration: {event.duration:g} hours
+            Starts at {event.start}. Duration: {duration}
             """).format(
-                event=event
+                event=event,
+                description=description,
+                duration=format_minutes(event.duration)
             )
 
             results.append(query.builder.article(
