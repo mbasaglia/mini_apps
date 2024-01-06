@@ -82,7 +82,6 @@ article th {
 article img {
     width: 100%;
     border-radius: 6px;
-    aspect-ratio: 16 / 9;
 }
 
 .buttons {
