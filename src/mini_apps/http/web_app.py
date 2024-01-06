@@ -211,12 +211,16 @@ class JinjaApp(WebApp):
             autoescape=jinja2.select_autoescape(),
         )
 
-    async def render_template(self, template_name, context):
+    def get_template(self, name):
+        env = aiohttp_jinja2.get_env(self.app)
+        return env.get_template(name)
+
+    async def render_template(self, template, context):
         """
         Render a jinja template to string
         """
-        env = aiohttp_jinja2.get_env(self.app)
-        template = env.get_template(template_name)
+        if isinstance(template, str):
+            template = self.get_template(template)
         ctx = await self.context_processor(None)
         ctx.update(context)
         return template.render(ctx)

@@ -8,10 +8,10 @@ import asyncio
 from yarl import URL
 from markupsafe import Markup
 
-from mini_apps.telegram.bot import TelegramMiniApp
+from mini_apps.telegram.bot import TelegramMiniApp, bot_command
 from mini_apps.service import BaseService, ServiceStatus
 from mini_apps.http.web_app import template_view, format_minutes
-from mini_apps.telegram.events import InlineQueryEvent
+from mini_apps.telegram.events import InlineQueryEvent, NewMessageEvent
 from mini_apps.telegram import tl
 
 
@@ -185,11 +185,17 @@ class ApiEventApp(TelegramMiniApp):
             "current": self.current_events(now),
         }
 
-    def current_events(self, now):
+    def current_events(self, now, upcoming=0):
         current_events = []
         for event in self.sorted_events:
             if event.start <= now <= event.finish:
                 current_events.append(event)
+            elif event.start > now:
+                if upcoming > 0:
+                    current_events.append(event)
+                    upcoming -= 1
+                else:
+                    break
         return current_events
 
     def current_and_future(self, now):
@@ -199,7 +205,7 @@ class ApiEventApp(TelegramMiniApp):
                 current_events.append(event)
         return current_events
 
-    def events_from_query(self, query: str):
+    def events_from_query(self, query: str, now):
         # Telegram supports up to 50 inline results
         limit = 50
 
@@ -214,7 +220,7 @@ class ApiEventApp(TelegramMiniApp):
 
         # Not enough to search, show all
         if len(query) < 2:
-            return self.current_and_future(datetime.datetime.now(datetime.timezone.utc))[:limit]
+            return self.current_and_future(now)[:limit]
 
         # Text-based search
         pattern = query.lower()
@@ -226,18 +232,31 @@ class ApiEventApp(TelegramMiniApp):
                 events.append(event)
         return events
 
+    def thumb(self, event):
+        if not event.image:
+            return None
+        return tl.types.InputWebDocument(
+            event.image,
+            size=0,
+            mime_type=mimetypes.guess_type(event.image)[0],
+            attributes=[]
+        )
+
     async def on_telegram_inline(self, query: InlineQueryEvent):
         """
         Called on telegram bot inline queries
         """
         results = []
+        template = self.get_template("event.md")
+        now = datetime.datetime.now(datetime.timezone.utc)
+        mini_app_link = self.mini_app_link()
 
-        for event in self.events_from_query(query.text):
-            text = await self.render_template("event.md", dict(
+        for event in self.events_from_query(query.text, now):
+            text = await self.render_template(template, dict(
                 event=event,
-                me=self.telegram_me,
-                shortname=self.settings["short-name"],
-                invis="\u200B"
+                mini_app_link=mini_app_link,
+                invis="\u200B",
+                now=now
             ))
 
             description = event.description
@@ -261,13 +280,52 @@ class ApiEventApp(TelegramMiniApp):
                 description=preview_text,
                 text=text,
                 #buttons=self.inline_buttons(),
-                thumb=tl.types.InputWebDocument(
-                    event.image,
-                    size=0,
-                    mime_type=mimetypes.guess_type(event.image)[0],
-                    attributes=[]
-                ) if event.image else None,
+                thumb=self.thumb(event),
                 link_preview=True,
             ))
 
         await query.answer(results)
+
+    def mini_app_link(self):
+        return "https://t.me/{username}/{shortname}".format(
+            username=self.telegram_me.username,
+            shortname=self.settings["short-name"],
+        )
+
+    @bot_command
+    async def events(self, args: str, msgev: NewMessageEvent):
+        """
+        Shows current and upcoming events
+        """
+        mini_app_link = self.mini_app_link()
+
+        if not isinstance(msgev.chat, tl.types.User):
+            await self.telegram.send_message(
+                msgev.chat,
+                "[View Events](%s)" % mini_app_link,
+                link_preview=True,
+                reply_to=msgev.message,
+            )
+            return
+
+        template = self.get_template("event.md")
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        events = self.current_events(now, 3)
+        if not events:
+            await self.telegram.send_message(msgev.chat, "No upcoming events\n\n[View Events](%s)" % mini_app_link)
+
+        for event in events:
+            text = await self.render_template(template, dict(
+                event=event,
+                mini_app_link=mini_app_link,
+                invis="\u200B",
+                now=now
+            ))
+
+            await self.telegram.send_message(
+                msgev.chat,
+                text,
+                link_preview=True,
+                thumb=self.thumb(event)
+            )

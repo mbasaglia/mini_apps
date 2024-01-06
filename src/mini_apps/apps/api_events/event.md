@@ -4,9 +4,11 @@
 {%- endif %}
 
 **Held on** {{ event.start.strftime("%A %d") }}
-**Starts at** {{ event.start.strftime("%H:%M") }}
+**Starts at** {{ event.start.strftime("%H:%M") }} {% if event.start < now < event.finish -%}
+    (Already started)
+{%- endif %}
 **Ends at** {{ event.finish.strftime("%H:%M") }}
 **Duration** {{ minutes(event.duration) }}
 **Location** {{ event.location }}
 
-[View Events](https://t.me/{{ me.username }}/{{ shortname }}?startapp={{ event.id }})
+[View Events]({{ mini_app_link }}?startapp={{ event.id }})
