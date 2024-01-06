@@ -160,8 +160,15 @@ class ApiEventApp(TelegramMiniApp):
 
     @template_view("/", template="events.html")
     async def index(self, request):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        current_events = []
+        for event in self.events:
+            if event.start <= now <= event.finish:
+                current_events.append(event)
         return {
             "data": self.data,
             "events": self.events,
             "days": self.days,
+            "now": now,
+            "current": current_events,
         }

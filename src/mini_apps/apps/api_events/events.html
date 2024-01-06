@@ -13,19 +13,44 @@
         }
     </style>
     {% endblock %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block body %}
-
-{% for day in days %}
-    <h1 class="day-title">{{ day["day"].strftime("%A %d") }}</h1>
-
-    <main class="article-list">
-        {% for event in day["events"] %}
-            {% include "event-card.html" %}
+<nav>
+    <ul class="nav nav-underline nav-justified">
+        <li class="nav-item">
+            <span class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-ongoing">Ongoing</span>
+        </li>
+        {% for day in days %}
+            <li class="nav-item">
+                <span class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-{{ day["day"].strftime("%Y-%m-%d") }}">{{ day["day"].strftime("%A %d") }}</span>
+            </li>
         {% endfor %}
-    </main>
-
-{% endfor %}
+    </ul>
+</nav>
+<main class="tab-content">
+    <section class="tab-pane fade show active" id="tab-ongoing" role="tabpanel">
+        <div class="article-list">
+            {% if current %}
+                {% for event in current %}
+                    {% include "event-card.html" %}
+                {% endfor %}
+            {% else %}
+                <p>No events currently ongoing.</p>
+            {% endif %}
+        </div>
+    </section>
+    {% for day in days %}
+        <section class="tab-pane fade" id="tab-{{ day["day"].strftime("%Y-%m-%d") }}" role="tabpanel">
+            <div class="article-list">
+                {% for event in day["events"] %}
+                    {% include "event-card.html" %}
+                {% endfor %}
+            </div>
+        </section>
+    {% endfor %}
+</main>
 
 {% endblock %}
