@@ -1,4 +1,4 @@
-**{{ event.title }}**[{{ invis }}]({{ event.image }})
+**{{ event.title }}**
 {% if event.description -%}
 {{ event.description }}
 {%- endif %}

@@ -260,11 +260,19 @@ class ApiEventApp(TelegramMiniApp):
     def thumb(self, event):
         if not event.image:
             return None
+
         return tl.types.InputWebDocument(
             event.image,
             size=0,
             mime_type=mimetypes.guess_type(event.image)[0],
             attributes=[]
+        )
+
+    def file_preview(self, url):
+        return tl.types.InputMediaWebPage(
+            url,
+            force_large_media=True,
+            optional=True,
         )
 
     async def on_telegram_inline(self, query: InlineQueryEvent):
@@ -280,9 +288,10 @@ class ApiEventApp(TelegramMiniApp):
             text = await self.render_template(template, dict(
                 event=event,
                 mini_app_link=mini_app_link,
-                invis="\u200B",
                 now=now
             ))
+            if event.image:
+                text = "[\u200B](%s)%s" % (event.image, text)
 
             preview_text = inspect.cleandoc("""
             {start}, {duration}
@@ -323,6 +332,7 @@ class ApiEventApp(TelegramMiniApp):
                 "[View Events](%s)" % mini_app_link,
                 link_preview=True,
                 reply_to=msgev.message,
+                file=self.file_preview(mini_app_link)
             )
             return
 
@@ -331,13 +341,17 @@ class ApiEventApp(TelegramMiniApp):
 
         events = self.current_events(now, 3)
         if not events:
-            await self.telegram.send_message(msgev.chat, "No upcoming events\n\n[View Events](%s)" % mini_app_link)
+            await self.telegram.send_message(
+                msgev.chat,
+                "No upcoming events\n\n[View Events](%s)" % mini_app_link,
+                # link_preview=True,
+                file=self.file_preview(mini_app_link)
+            )
 
         for event in events:
             text = await self.render_template(template, dict(
                 event=event,
                 mini_app_link=mini_app_link,
-                invis="\u200B",
                 now=now
             ))
 
