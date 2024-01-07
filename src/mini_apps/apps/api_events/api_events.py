@@ -8,7 +8,8 @@ import asyncio
 from yarl import URL
 from markupsafe import Markup
 
-from mini_apps.telegram.bot import TelegramMiniApp, bot_command
+from mini_apps.telegram.bot import TelegramMiniApp
+from mini_apps.telegram.command import admin_command, bot_command
 from mini_apps.service import BaseService, ServiceStatus
 from mini_apps.http.web_app import template_view, format_minutes
 from mini_apps.telegram.events import InlineQueryEvent, NewMessageEvent
@@ -75,6 +76,11 @@ class JsonStructure:
         def get(self, path: str):
             return JsonPath(str).get(self.data)
 
+        def __json__(self):
+            data = dict(vars(self))
+            data.pop("data")
+            return data
+
     class Field:
         def __init__(self, structure, key: str, url: URL):
             self.key = key
@@ -131,7 +137,7 @@ class ApiEventApp(TelegramMiniApp):
         super().__init__(settings)
         self.api_url = self.settings["api-url"]
         poll_frequency = int(self.settings.get("poll", 20)) * 60
-        self.poller = PollingService(settings, self.poll, poll_frequency)
+        self.poller = PollingService(settings, self.load_commands, poll_frequency)
         self.data = None
         self.events = {}
         self.sorted_events = []
@@ -154,7 +160,7 @@ class ApiEventApp(TelegramMiniApp):
             super().stop()
         )
 
-    async def poll(self):
+    async def load_commands(self):
         async with aiohttp.client.ClientSession() as session:
             response = await session.get(self.api_url, headers={"User-Agent": "MiniApps %s" % self.name})
             self.data = json.loads(await response.read())
@@ -177,12 +183,31 @@ class ApiEventApp(TelegramMiniApp):
     @template_view("/", template="events.html")
     async def index(self, request):
         now = datetime.datetime.now(datetime.timezone.utc)
+
+        curr_id = request.url.query.get("tgWebAppStartParam", "")
+        curr_event = None
+        curr_day = "ongoing"
+
+        if curr_id is not None:
+            curr_event = self.events.get(curr_id, None)
+        else:
+            for event in self.sorted_events:
+                if event.finish > now:
+                    curr_event = event
+                    curr_id = event.id
+                    break
+
+        if curr_event:
+            curr_day = curr_event.day.isoformat()
+
         return {
             "data": self.data,
             "events": self.events,
             "days": self.days,
             "now": now,
             "current": self.current_events(now),
+            "active_day": curr_day,
+            "active_event": curr_id
         }
 
     def current_events(self, now, upcoming=0):
@@ -259,19 +284,12 @@ class ApiEventApp(TelegramMiniApp):
                 now=now
             ))
 
-            description = event.description
-            if "\n" in description:
-                description = description.splitlines()[0] + "..."
-
-            if len(description) > 100:
-                description = description[:100] + "..."
-
             preview_text = inspect.cleandoc("""
-            {event.description}
-            Starts at {event.start}. Duration: {duration}
+            {start}, {duration}
+            {description}
             """).format(
-                event=event,
-                description=description,
+                start=event.start.strftime("%A %d %H:%M"),
+                description=event.description or "",
                 duration=format_minutes(event.duration)
             )
 
@@ -329,3 +347,10 @@ class ApiEventApp(TelegramMiniApp):
                 link_preview=True,
                 thumb=self.thumb(event)
             )
+
+    @admin_command
+    async def refresh_events(self, args: str, msgev: NewMessageEvent):
+        """
+        Reloads the events from the API
+        """
+        await self.load_commands()

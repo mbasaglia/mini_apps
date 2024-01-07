@@ -1,5 +1,7 @@
+import json
 import pprint
 import pathlib
+import datetime
 import functools
 import traceback
 
@@ -7,6 +9,7 @@ import aiohttp.web
 import aiohttp_jinja2
 
 import jinja2
+from markupsafe import Markup
 
 from ..service import Service, ServiceStatus, Client
 from ..apps.auth.user import UserFilter
@@ -187,9 +190,18 @@ def format_minutes(minutes):
     hours = minutes // 60
     minutes = minutes % 60
     if minutes:
-        return "%d:%02d" % (hours, minutes)
+        return "%d:%02dh" % (hours, minutes)
 
     return "%dh" % hours
+
+
+def smart_to_json(value):
+    if hasattr(value, "__json__"):
+        return value.__json__()
+    elif isinstance(value, (datetime.datetime, datetime.date)):
+        return value.isoformat()
+    else:
+        raise ValueError(value)
 
 
 class JinjaApp(WebApp):
@@ -258,6 +270,7 @@ class JinjaApp(WebApp):
             "request": request,
             "url": self.get_url,
             "minutes": format_minutes,
+            "json_dump": lambda v: Markup(json.dumps(v, default=smart_to_json))
         }
 
     async def exception_debug_response(self, request):

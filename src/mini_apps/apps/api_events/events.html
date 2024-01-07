@@ -19,24 +19,41 @@
     <script>
         // Expand the telegram web view
         window.Telegram.WebApp.expand();
+
+        window.addEventListener("load", function() {
+            let active_event = "{{ active_event }}";
+            if ( active_event )
+            {
+                let container = document.querySelector(`#event-${active_event}`);
+                if ( container )
+                    container.scrollIntoView(true);
+            }
+        });
     </script>
 {% endblock %}
+
+{% macro nav_item(target, text) -%}
+    <li class="nav-item">
+        <button class="nav-link {% if target == active_day %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-{{ target }}">{{ text }}</button>
+    </li>
+{%- endmacro %}
+
+
+{% macro section_start(target) -%}
+    <section class="tab-pane fade {% if target == active_day %}show active{% endif %}" id="tab-{{ target }}">
+{%- endmacro %}
 
 {% block body %}
 <nav>
     <ul class="nav nav-underline nav-justified">
-        <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-ongoing">Ongoing</button>
-        </li>
+        {{ nav_item("ongoing", "Ongoing") }}
         {% for day in days %}
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-{{ day["day"].strftime("%Y-%m-%d") }}">{{ day["day"].strftime("%A %d") }}</button>
-            </li>
+            {{ nav_item(day["day"].strftime("%Y-%m-%d"), day["day"].strftime("%A %d")) }}
         {% endfor %}
     </ul>
 </nav>
 <main class="tab-content">
-    <section class="tab-pane fade show active" id="tab-ongoing" role="tabpanel">
+    {{ section_start("ongoing") }}
         <div class="article-list">
             {% if current %}
                 {% for event in current %}
@@ -48,7 +65,7 @@
         </div>
     </section>
     {% for day in days %}
-        <section class="tab-pane fade" id="tab-{{ day["day"].strftime("%Y-%m-%d") }}" role="tabpanel">
+        {{ section_start(day["day"].strftime("%Y-%m-%d")) }}
             <div class="article-list">
                 {% for event in day["events"] %}
                     {% include "event-card.html" %}
