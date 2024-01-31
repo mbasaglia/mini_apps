@@ -1,0 +1,10 @@
+:root {
+    --bs-body-color: var(--tg-theme-text-color);
+    --bs-body-bg: var(--tg-theme-bg-color);
+}
+
+.nav {
+    --bs-nav-link-color: var(--tg-theme-link-color);
+    --bs-nav-link-hover-color: var(--tg-theme-link-color);
+    --bs-nav-link-disabled-color: var(--tg-theme-text-color);
+}
