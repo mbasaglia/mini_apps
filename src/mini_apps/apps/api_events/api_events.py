@@ -249,12 +249,12 @@ class ApiEventApp(TelegramMiniApp):
 
         # Text-based search
         pattern = query.lower()
-
         events = []
-        for i in range(min(limit, len(self.sorted_events))):
-            event = self.sorted_events[i]
+        for event in self.sorted_events:
             if pattern in event.title.lower() or pattern in (event.description or "").lower():
                 events.append(event)
+                if len(events) >= limit:
+                    break
         return events
 
     def thumb(self, event):
