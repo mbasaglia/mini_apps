@@ -1,6 +1,6 @@
 **{{ event.title }}**
 {% if event.description -%}
-{{ event.description }}
+{{ html_to_markdown(event.description) }}
 {%- endif %}
 
 **Held on** {{ event.start.strftime("%A %d") }}

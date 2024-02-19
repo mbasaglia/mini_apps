@@ -14,6 +14,7 @@ from mini_apps.service import BaseService, ServiceStatus
 from mini_apps.http.web_app import template_view, format_minutes
 from mini_apps.telegram.events import InlineQueryEvent, NewMessageEvent
 from mini_apps.telegram import tl
+from mini_apps.markdown.html_to_markdown import html_to_markdown
 
 
 class PollingService(BaseService):
@@ -67,6 +68,7 @@ def markdown(text):
     import re
     import markdown
     from mini_apps.markdown.autolink import AutoLinkExtension
+
     return Markup(markdown.markdown(
         # force blocks for ul lists
         re.sub(r"(\n(?:\s*[-*] [^\n]*\n)+)", r"\n\1", text),
@@ -293,6 +295,7 @@ class ApiEventApp(TelegramMiniApp):
         for event in self.events_from_query(query.text, now):
             text = await self.render_template(template, dict(
                 event=event,
+                html_to_markdown=html_to_markdown,
                 mini_app_link=mini_app_link,
                 now=now
             ))
@@ -304,7 +307,7 @@ class ApiEventApp(TelegramMiniApp):
             {description}
             """).format(
                 start=event.start.strftime("%A %d %H:%M"),
-                description=event.description or "",
+                description=html_to_markdown(event.description or ""),
                 duration=format_minutes(event.duration)
             )
 
@@ -323,6 +326,18 @@ class ApiEventApp(TelegramMiniApp):
         return "https://t.me/{username}/{shortname}".format(
             username=self.telegram_me.username,
             shortname=self.settings["short-name"],
+        )
+
+    @bot_command
+    async def schedule(self, args: str, msgev: NewMessageEvent):
+        """
+        Shows a link to open the schedule app
+        """
+        mini_app_link = self.mini_app_link()
+        await self.telegram.send_message(
+            msgev.chat,
+            "[View Events](%s)" % mini_app_link,
+            link_preview=True,
         )
 
     @bot_command
@@ -357,6 +372,7 @@ class ApiEventApp(TelegramMiniApp):
         for event in events:
             text = await self.render_template(template, dict(
                 event=event,
+                html_to_markdown=html_to_markdown,
                 mini_app_link=mini_app_link,
                 now=now
             ))
