@@ -1,6 +1,6 @@
 {% extends "admin-base.html" %}
 
-{% from "macros.html" import service_status, bot_actions %}
+{% from "macros.html" import service_status, bot_actions, route_row %}
 
 {% block content %}
 <h1>User</h1>
@@ -38,6 +38,21 @@
         {% endfor %}
     </tbody>
 </table>
+
+<h1>Routes</h1>
+<details>
+    <summary>Routes</summary>
+    <table class="table">
+        <thead>
+            <tr><th>URL</th><th>Name</th><th>Handler</th></tr>
+        </thead>
+        <tbody>
+            {% for route in routes %}
+                {{ route_row(http.base_url, route) }}
+            {% endfor %}
+        </tbody>
+    </table>
+</details>
 
 <h1>Telegram Bots</h1>
 <table class="table">
@@ -80,4 +95,5 @@
         {% endfor %}
     </tbody>
 </table>
+
 {% endblock %}

@@ -39,3 +39,20 @@
     {% endif %}
     <li><a href="{{ url("bot_restart", name=bot.name) }}" title="Reconnect">{{ icon("sync") }}</a></li>
 {%- endmacro %}
+
+{% macro route_row(base_url, route) -%}
+    <tr>
+        <td>
+            {% if "{" not in route.path %}
+                <a href="{{ base_url }}{{ route.path }}">{{ route.path }}</a>
+            {% else %}
+                {{ route.path }}
+            {% endif %}
+        </td>
+        <td><code>{{ route.name or ""}}</code></td>
+        <td><code>{{ route.handler_name }}</code></td>
+    </tr>
+    {% for child in route.children %}
+        {{ route_row(base_url, child) }}
+    {% endfor %}
+{%- endmacro %}

@@ -1,6 +1,6 @@
 {% extends "admin-base.html" %}
 
-{% from "macros.html" import service_status, bot_actions %}
+{% from "macros.html" import service_status, bot_actions, route_row %}
 
 {% block content %}
 {% if bot.is_running %}
@@ -46,6 +46,20 @@
             {% endif %}
         </td></tr>
     {% endfor %}
+</table>
+{% endif %}
+
+{% if "http" in bot.consumes() and hasattr(bot, "route_info") %}
+<h2>Routes</h2>
+<table class="table">
+    <thead>
+        <tr><th>URL</th><th>Name</th><th>Handler</th></tr>
+    </thead>
+    <tbody>
+        {% for route in bot.route_info() %}
+            {{ route_row(bot.http.base_url, route) }}
+        {% endfor %}
+    </tbody>
 </table>
 {% endif %}
 

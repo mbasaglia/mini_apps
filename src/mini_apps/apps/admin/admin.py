@@ -5,6 +5,7 @@ import aiohttp
 
 from mini_apps.http.middleware import messages
 from mini_apps.http.web_app import template_view, JinjaApp, view
+from mini_apps.http.route_info import RouteInfo
 from mini_apps.telegram.bot import TelegramBot
 from mini_apps.apps.auth.auth import require_admin
 
@@ -56,6 +57,8 @@ class AdminApp(JinjaApp):
             "Services",
             services=services,
             bots=bots,
+            routes=RouteInfo.from_app(self.http.app),
+            http=self.http
         )
 
     def get_bot(self, name: str) -> TelegramBot:

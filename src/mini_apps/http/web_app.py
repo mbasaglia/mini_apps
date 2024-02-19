@@ -14,6 +14,7 @@ from markupsafe import Markup
 from ..service import Service, ServiceStatus, Client
 from ..apps.auth.user import UserFilter
 from .utils import ExtendedApplication
+from .route_info import RouteInfo
 
 
 class ViewHandler:
@@ -139,6 +140,9 @@ class WebApp(Service):
 
         http.app.add_named_subapp(self.prefix, self.name, app)
         self.app = app
+
+    def route_info(self):
+        return [RouteInfo(self.prefix, self.name, "app", None)] + RouteInfo.from_app(self.app)
 
     @property
     def runnable(self):
@@ -270,7 +274,8 @@ class JinjaApp(WebApp):
             "request": request,
             "url": self.get_url,
             "minutes": format_minutes,
-            "json_dump": lambda v: Markup(json.dumps(v, default=smart_to_json))
+            "json_dump": lambda v: Markup(json.dumps(v, default=smart_to_json)),
+            "hasattr": hasattr,
         }
 
     async def exception_debug_response(self, request):
