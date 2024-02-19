@@ -19,7 +19,7 @@ class RouteInfo:
     name: str
     handler_name: str
     resource: Resource
-    children: typing.List["UrlInfo"] =  dataclasses.field(default_factory=list)
+    children: typing.List["RouteInfo"] = dataclasses.field(default_factory=list)
 
     def __str__(self):
         return "%s%s -> %s" % (
@@ -52,5 +52,3 @@ class RouteInfo:
             return cls(".", resource.name, "app", resource, cls.from_app(info["app"]))
         else:
             raise Exception("%s %s" % (resource, info))
-
-
