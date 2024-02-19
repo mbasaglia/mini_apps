@@ -8,9 +8,12 @@
         .day-title {
             text-align: center;
         }
-        .description {
+        .description:not(:has(> *)) {
             white-space: pre-wrap;
+        }
+        .description {
             word-wrap: break-word;
+            margin-bottom: 1ex;
         }
         .nav-link {
             white-space: pre-wrap;
@@ -53,7 +56,7 @@
     <ul class="nav nav-underline nav-justified">
         {{ nav_item("ongoing", "Ongoing\n ") }}
         {% for day in days %}
-            {{ nav_item(day["day"].strftime("%Y-%m-%d"), day["day"].strftime("%A\n%d")) }}
+            {{ nav_item(day["day"].strftime("%Y-%m-%d"), day["day"].strftime("%a\n%d")) }}
         {% endfor %}
     </ul>
 </nav>

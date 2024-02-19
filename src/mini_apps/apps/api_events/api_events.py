@@ -64,8 +64,14 @@ class JsonPath:
 
 
 def markdown(text):
+    import re
     import markdown
-    return Markup(markdown.markdown(text))
+    from mini_apps.markdown.autolink import AutoLinkExtension
+    return Markup(markdown.markdown(
+        # force blocks for ul lists
+        re.sub(r"(\n(?:\s*[-*] [^\n]*\n)+)", r"\n\1", text),
+        extensions=[AutoLinkExtension()],
+    ))
 
 
 class JsonStructure:
