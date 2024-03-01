@@ -13,7 +13,19 @@
                 <table>
                     <tr>
                         <th>Starts at</th>
-                        <td>{{ event.start.strftime("%H:%M") }}
+                        {% if event.duration >= 60 * 24 %}
+                            <td>{{ event.start.strftime("%H:%M %a %d") }}</td>
+                        {% else %}
+                            <td>{{ event.start.strftime("%H:%M") }}</td>
+                        {% endif %}
+                    </tr>
+                    <tr>
+                        <th>Ends at</th>
+                        {% if event.duration >= 60 * 24 %}
+                            <td>{{ event.finish.strftime("%H:%M %a %d") }}</td>
+                        {% else %}
+                            <td>{{ event.finish.strftime("%H:%M") }}</td>
+                        {% endif %}
                     </tr>
                     <tr>
                         <th>Duration</th>

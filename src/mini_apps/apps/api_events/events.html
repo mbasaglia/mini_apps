@@ -54,14 +54,14 @@
 {% block body %}
 <nav>
     <ul class="nav nav-underline nav-justified">
-        {{ nav_item("ongoing", "Ongoing\n ") }}
+        {{ nav_item("live", "Live\n ") }}
         {% for day in days %}
             {{ nav_item(day["day"].strftime("%Y-%m-%d"), day["day"].strftime("%a\n%d")) }}
         {% endfor %}
     </ul>
 </nav>
 <main class="tab-content">
-    {{ section_start("ongoing") }}
+    {{ section_start("live") }}
         <div class="article-list">
             {% if current %}
                 {% for event in current %}

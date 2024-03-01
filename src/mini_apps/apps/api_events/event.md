@@ -4,10 +4,18 @@
 {%- endif %}
 
 **Held on** {{ event.start.strftime("%A %d") }}
-**Starts at** {{ event.start.strftime("%H:%M") }} {% if event.start < now < event.finish -%}
+**Starts at** {% if event.duration >= 60 * 24 -%}
+    {{ event.start.strftime("%H:%M %a %d") }}
+{%- else -%}
+    {{ event.start.strftime("%H:%M") }}
+{%- endif %} {% if event.start < now < event.finish -%}
     (Already started)
 {%- endif %}
-**Ends at** {{ event.finish.strftime("%H:%M") }}
+**Ends at** {% if event.duration >= 60 * 24 -%}
+    {{ event.finish.strftime("%H:%M %a %d") }}
+{%- else -%}
+    {{ event.finish.strftime("%H:%M") }}
+{%- endif %}
 **Duration** {{ minutes(event.duration) }}
 **Location** {{ event.location }}
 
