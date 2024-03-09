@@ -8,6 +8,7 @@ class JSONField(peewee.TextField):
     """
     Field that stores data as JSON
     """
+
     def db_value(self, value):
         return json.dumps(value)
 
@@ -36,6 +37,7 @@ class Database(BaseService):
     """
     Database connection service
     """
+
     def __init__(self, settings):
         super().__init__(settings)
         self.provider = ServiceProvider("database", self)

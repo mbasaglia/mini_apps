@@ -10,7 +10,7 @@ from markupsafe import Markup
 
 from mini_apps.telegram.bot import TelegramMiniApp
 from mini_apps.telegram.command import admin_command, bot_command
-from mini_apps.service import BaseService, ServiceStatus
+from mini_apps.service import BaseService, ServiceStatus, Client
 from mini_apps.http.web_app import template_view, format_minutes
 from mini_apps.telegram.events import InlineQueryEvent, NewMessageEvent
 from mini_apps.telegram import tl
@@ -155,6 +155,7 @@ class ApiEventApp(TelegramMiniApp):
             self.settings["event-data"],
             self.settings.get("datetime-format", None)
         )
+        self.supports_faving = False
 
     async def run(self):
         await asyncio.gather(
@@ -215,7 +216,9 @@ class ApiEventApp(TelegramMiniApp):
             "now": now,
             "current": self.current_events(now),
             "active_day": curr_day,
-            "active_event": curr_id
+            "active_event": curr_id,
+            "supports_faving": self.supports_faving,
+            "socket": self.http.websocket_url
         }
 
     def current_events(self, now, upcoming=0):
@@ -390,3 +393,29 @@ class ApiEventApp(TelegramMiniApp):
         Reloads the events from the API
         """
         await self.load_commands()
+
+    async def _on_attend(self, client: Client, data: dict):
+        raise NotImplementedError
+
+    async def _on_leave(self, client: Client, data: dict):
+        raise NotImplementedError
+
+    async def _event_from_message(self, client: Client, data: dict):
+        # Get the event
+        event_id = data.get("event", "")
+        event = self.events.get(event_id)
+        if not event:
+            await client.send(type="error", msg="No such event")
+            return None
+        return event
+
+    async def handle_message(self, client: Client, type: str, data: dict):
+        """
+        Handles messages received from the client
+        """
+        # User attends an event
+        if type == "attend":
+            await self._on_attend(client, data)
+        # User no longer attends an event
+        elif type == "leave":
+            await self._on_leave(client, data)
