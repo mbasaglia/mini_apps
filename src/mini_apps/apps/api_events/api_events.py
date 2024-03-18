@@ -1,3 +1,4 @@
+import re
 import json
 import inspect
 import datetime
@@ -153,8 +154,11 @@ class ApiEventApp(TelegramMiniApp):
         self.path_events = JsonPath(self.settings["path-events"])
         self.event_structure = JsonStructure(
             self.settings["event-data"],
-            self.settings.get("datetime-format", None)
+            self.settings.get("datetime-format", None),
         )
+        expand = self.settings.get("expand", None)
+        self.expand_path = JsonPath(expand) if expand else None
+        self.expand_name = self.settings.get("expand-name", "instance")
         self.supports_faving = False
 
     async def run(self):
@@ -176,8 +180,15 @@ class ApiEventApp(TelegramMiniApp):
 
             self.events = {}
             for evdata in self.path_events.get(self.data):
-                evobj = self.event_structure.object(evdata)
-                self.events[evobj.id] = evobj
+                if self.expand_path is None:
+                    evobj = self.event_structure.object(evdata)
+                    self.events[evobj.id] = evobj
+                else:
+                    for item in self.expand_path.get(evdata):
+                        evdata2 = dict(evdata)
+                        evdata2[self.expand_name] = item
+                        evobj = self.event_structure.object(evdata2)
+                        self.events[evobj.id] = evobj
 
             self.sorted_events = sorted(self.events.values(), key=lambda e: e.start)
 
