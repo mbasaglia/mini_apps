@@ -37,6 +37,16 @@
                     </tr>
                 </table>
                 <p class="buttons">
+                    {% if supports_faving %}
+                        <button onclick='fave_event("{{ event.id }}")' data-button-fave="{{ event.id }}">
+                            {% if event.faved %}
+                                <i class="fa-solid fa-star"></i>
+                            {% else %}
+                                <i class="fa-regular fa-star"></i>
+                            {% endif %}
+                            Favourite
+                        </button>
+                    {% endif %}
                     <button onclick='window.Telegram.WebApp.switchInlineQuery("event:{{ event.id }}", ["users", "groups", "channels"])'>
                         <i class="fa-solid fa-paper-plane"></i> Share
                     </button>

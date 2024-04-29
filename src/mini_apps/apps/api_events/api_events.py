@@ -221,6 +221,7 @@ class ApiEventApp(TelegramMiniApp):
             curr_day = curr_event.day.isoformat()
 
         return {
+            "service_name": self.name,
             "data": self.data,
             "events": self.events,
             "days": self.days,

@@ -38,6 +38,32 @@
             }
         });
     </script>
+    {% if supports_faving %}
+        <script type="module">
+            import { App } from "/mini_apps/src/app.js";
+
+            export class MiniEventApp extends App
+            {
+                constructor(telegram)
+                {
+                    super("{{ service_name }}", telegram);
+                    this.connection.addEventListener("faved", this._on_faved.bind(this));
+                }
+
+                fave(id)
+                {
+
+                }
+
+                _on_faved(ev)
+                {
+                    let id = ev.detail.id;
+
+                }
+            }
+
+        </script>
+    {% endif %}
 {% endblock %}
 
 {% macro nav_item(target, text) -%}
