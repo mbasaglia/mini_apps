@@ -142,7 +142,7 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         Returns the bot commands from the server
         """
-        if not self.telegram:
+        if not self.telegram or not self.telegram.is_connected():
             return None
         r = await self.telegram(telethon.functions.bots.GetBotCommandsRequest(
             tl.types.BotCommandScopeDefault(), "en"
