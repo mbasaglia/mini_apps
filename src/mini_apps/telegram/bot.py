@@ -95,44 +95,55 @@ class TelegramBot(LogRetainingService, ServiceWithUserFilter):
         """
         Runs the telegram bot
         """
-        try:
-            self.status = ServiceStatus.Starting
-            session = self.settings.get("session", MemorySession())
-            api_id = self.settings["api-id"]
-            api_hash = self.settings["api-hash"]
+        retry = True
+        retries = 0
+        while retry:
+            retry = False
+            try:
+                self.status = ServiceStatus.Starting
+                session = self.settings.get("session", MemorySession())
+                api_id = self.settings["api-id"]
+                api_hash = self.settings["api-hash"]
 
-            self.telegram = telethon.TelegramClient(session, api_id, api_hash)
-            dc = self.settings.get("telegram-server")
-            if dc:
-                self.telegram.session.set_dc(dc["dc"], dc["address"], dc["port"])
-            self.add_event_handlers()
+                self.telegram = telethon.TelegramClient(session, api_id, api_hash)
+                dc = self.settings.get("telegram-server")
+                if dc:
+                    self.telegram.session.set_dc(dc["dc"], dc["address"], dc["port"])
+                self.add_event_handlers()
 
-            while True:
-                try:
-                    await self.telegram.start(bot_token=self.token)
-                    break
-                except telethon.errors.rpcerrorlist.FloodWaitError as e:
-                    self.status = ServiceStatus.StartFlood
-                    self.log.warn("Wating for %ss (Flood Wait) %s", e.seconds, e)
-                    self.flood_end = time.time() + e.seconds
-                    await asyncio.sleep(e.seconds)
-                    self.flood_end = 0
+                while True:
+                    try:
+                        await self.telegram.start(bot_token=self.token)
+                        break
+                    except telethon.errors.rpcerrorlist.FloodWaitError as e:
+                        self.status = ServiceStatus.StartFlood
+                        self.log.warn("Wating for %ss (Flood Wait) %s", e.seconds, e)
+                        self.flood_end = time.time() + e.seconds
+                        await asyncio.sleep(e.seconds)
+                        self.flood_end = 0
 
-            self.status = ServiceStatus.Starting
+                self.status = ServiceStatus.Starting
 
-            self.telegram_me = await self.telegram.get_me()
-            self.log.info("Telegram bot @%s", self.telegram_me.username)
+                self.telegram_me = await self.telegram.get_me()
+                self.log.info("Telegram bot @%s", self.telegram_me.username)
 
-            self.status = ServiceStatus.Running
-            await self.on_telegram_connected()
+                self.status = ServiceStatus.Running
+                await self.on_telegram_connected()
 
-            await self.send_telegram_commands()
+                await self.send_telegram_commands()
 
-            await self.telegram.disconnected
-            self.status = ServiceStatus.Disconnected
-        except Exception as e:
-            self.status = ServiceStatus.Crashed
-            await self.on_telegram_exception(e)
+                await self.telegram.disconnected
+                self.status = ServiceStatus.Disconnected
+            except Exception as e:
+                self.status = ServiceStatus.Crashed
+                await self.on_telegram_exception(e)
+                retry = isinstance(e, ConnectionError)
+                if retry:
+                    retries += 1
+                    if retries >= 10:
+                        retry = False
+                    else:
+                        await asyncio.sleep(5)
 
     async def stop(self):
         if self.telegram and self.telegram.is_connected():
