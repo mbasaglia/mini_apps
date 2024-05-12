@@ -45,7 +45,11 @@ class DbStoreApiEventApp(ApiEventApp, ServiceWithModels):
                 break
             elif event.start <= notify_before:
                 text = "**{event.title}** is starting!".format(event=event)
-                faved = FavedEvent.select().where(FavedEvent.notified.is_null() | FavedEvent.notified < resend)
+                faved = (
+                    FavedEvent.select()
+                    .where(FavedEvent.notified.is_null() | FavedEvent.notified < resend)
+                    .where(FavedEvent.event_id == event.id)
+                )
                 for user in faved:
                     try:
                         # We can't send more than 30 messages (to diferent chats)
@@ -62,8 +66,9 @@ class DbStoreApiEventApp(ApiEventApp, ServiceWithModels):
                         user.notified = now
                         user.save()
 
-                    except Exception:
+                    except Exception as e:
                         self.log_exception("Notification error")
+                        self.on_telegram_exception(e)
                         pass
 
     def on_provider_start(self, provider):
