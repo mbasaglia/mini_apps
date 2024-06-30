@@ -18,9 +18,6 @@ from . import tl
 
 from telethon.errors.rpcerrorlist import ChatAdminRequiredError, ChatAdminInviteRequiredError, ChatIdInvalidError
 
-import lottie
-from lottie.utils.font import FontStyle, TextJustify
-
 
 class AdminMessageBot(TelegramBot):
     """
@@ -231,6 +228,9 @@ class WelcomeBot(ChatActionsBot):
             await self.welcome(user, chat, event)
 
     async def welcome(self, user, chat, event):
+        import lottie
+        from lottie.utils.font import FontStyle, TextJustify
+
         full_name = user_name(user)
 
         anim = lottie.objects.Animation()
@@ -284,12 +284,15 @@ class LogToChatBot(TelegramBot):
     async def get_info(self, info: dict):
         await super().get_info(info)
         chat = await self.admin_chat()
-        info["admin_chat"] = BotChat(chat.id, chat.title, True)
+        info["admin_chat"] = BotChat(chat.id, chat.title, True) if chat else None
 
     async def admin_chat(self):
         if self._admin_chat is None:
-            chat = await self.admin_chat_bot.to_telegram(self.telegram)
-            self._admin_chat = chat
+            if self.admin_chat_bot is None:
+                self._admin_chat = None
+            else:
+                chat = await self.admin_chat_bot.to_telegram(self.telegram)
+                self._admin_chat = chat
         return self._admin_chat
 
     async def send_to_admin_chat(self, *args, **kwargs):

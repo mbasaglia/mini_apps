@@ -171,7 +171,11 @@ class ApiEventApp(TelegramMiniApp):
     async def load_commands(self):
         async with aiohttp.client.ClientSession() as session:
             response = await session.get(self.api_url, headers={"User-Agent": "MiniApps %s" % self.name})
-            self.data = json.loads(await response.read())
+
+            try:
+                self.data = json.loads(await response.read())
+            except Exception:
+                self.data = {}
 
             self.events = {}
             for evdata in self.path_events.get(self.data):
