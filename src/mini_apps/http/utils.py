@@ -58,6 +58,7 @@ class NakedSubAppResource(aiohttp.web_urldispatcher.AbstractResource):
         super().__init__(name=name)
         self.app = app
 
+    @property
     def canonical(self) -> str:
         return "/"
 

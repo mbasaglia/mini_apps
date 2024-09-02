@@ -215,7 +215,7 @@ class WelcomeBot(ChatActionsBot):
     Bot that shows a welcome image
     """
     _asset_root = pathlib.Path()
-    emoji_path = pathlib.Path()
+    emoji_finder = None
 
     def __init__(self, settings):
         super().__init__(settings)
@@ -238,7 +238,7 @@ class WelcomeBot(ChatActionsBot):
         stroke_color = lottie.utils.color.from_uint8(0xff, 0xcc, 0x00)
         stroke_width = 12
 
-        font = FontStyle("Ubuntu:style=bold", 80, TextJustify.Center, emoji_svg=self.emoji_path)
+        font = FontStyle("Ubuntu:style=bold", 80, TextJustify.Center, emoji_finder=self.emoji_finder)
         text_layer = lottie.objects.ShapeLayer()
         anim.add_layer(text_layer)
         group = font.render("Welcome", lottie.NVector(256, font.line_height))
