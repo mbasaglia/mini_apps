@@ -18,6 +18,7 @@ class AutoBotData:
     """
     Collection of bot event handlers
     """
+
     def __init__(self):
         self.commands = {}
         self.media = None
@@ -35,6 +36,7 @@ class AutoBotRegistry:
     """
     Keeps track of all the "auto" bot handlers
     """
+
     def __init__(self):
         self.loaded = {}
         self.current = None
@@ -94,7 +96,8 @@ class AutoBotRegistry:
 
         def deco(func):
             command = BotCommand.from_function(func, trigger, description, hidden)
-            self.current.commands[command.trigger] = command
+            if self.current:
+                self.current.commands[command.trigger] = command
             return func
 
         if func is not None:
@@ -107,7 +110,8 @@ class AutoBotRegistry:
         Registers a bot inline handler
         """
         def deco(func):
-            self.current.inline = func
+            if self.current:
+                self.current.inline = func
             return func
 
         if func is not None:
@@ -120,7 +124,8 @@ class AutoBotRegistry:
         Registers a bot button callback handler
         """
         def deco(func):
-            self.current.button_callback = func
+            if self.current:
+                self.current.button_callback = func
             return func
 
         if func is not None:
@@ -133,7 +138,8 @@ class AutoBotRegistry:
         Registers a callback handler for messages containing media
         """
         def deco(func):
-            self.current.media = func
+            if self.current:
+                self.current.media = func
             return func
 
         if func is not None:
