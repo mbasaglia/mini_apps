@@ -41,13 +41,13 @@ class RouteInfo:
         if isinstance(resource, FileResource):
             return cls(info["prefix"], resource.name, info["file"], resource)
         elif isinstance(resource, PlainResource):
-            return cls(info["path"], resource.name, format_handler(resource._routes[0].handler), resource)
+            return cls(info["path"], resource.name, format_handler(next(iter(resource._routes.values())).handler), resource)
         elif isinstance(resource, PrefixedSubAppResource):
             return cls(info["prefix"], resource.name, "app", resource, cls.from_app(info["app"]))
         elif isinstance(resource, StaticResource):
             return cls(info["prefix"], resource.name, info["directory"], resource)
         elif isinstance(resource, DynamicResource):
-            return cls(info["formatter"], resource.name, format_handler(resource._routes[0].handler), resource)
+            return cls(info["formatter"], resource.name, format_handler(next(iter(resource._routes.values())).handler), resource)
         elif isinstance(resource, NakedSubAppResource):
             return cls(".", resource.name, "app", resource, cls.from_app(info["app"]))
         else:
